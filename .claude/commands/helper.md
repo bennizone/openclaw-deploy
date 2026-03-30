@@ -47,12 +47,13 @@ journalctl --user -u openclaw-gateway.service -f
 journalctl --user -u openclaw-extractor.service -f
 ```
 
-**Config aendern:**
+**Config aendern (immer ueber Claude Code!):**
 ```
-chmod 644 ~/.openclaw/openclaw.json   # Entsperren
+cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak   # Backup
 # ... Aenderung ...
-chmod 444 ~/.openclaw/openclaw.json   # Wieder sperren
-systemctl --user restart openclaw-gateway.service
+jq . < ~/.openclaw/openclaw.json > /dev/null                 # Validieren
+systemctl --user restart openclaw-gateway.service             # Neustarten
+# Bei Fehler: cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
 ```
 
 **Neuen Skill erstellen:** Nutze `/openclaw-skill-creator`

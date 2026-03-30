@@ -41,7 +41,7 @@ OpenClaw unterstuetzt `${VAR_NAME}` in allen Config-Strings.
 
 ### Kritische Lektionen
 1. Node 24 VOR OpenClaw installieren
-2. `openclaw.json` nach Setup auf `chmod 444` — Claude Code ist einziger Editor
+2. Config nur ueber Claude Code aendern — immer Backup + Validierung + Git-Commit
 3. bge-m3 = 1024 Dimensionen, NICHT 1536
 4. OpenClaw darf sich NICHT selbst administrieren
 5. `loginctl enable-linger` ist Pflicht fuer systemd User-Services

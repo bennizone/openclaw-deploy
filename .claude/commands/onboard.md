@@ -118,7 +118,7 @@ Falls der User Home Assistant hat:
 
 ## Phase 8: Abschluss
 
-1. `openclaw.json` auf `chmod 444` setzen (Schutz vor Selbst-Aenderung)
+1. `openclaw.json` in Git committen (Config ist ab jetzt versioniert — jede Aenderung nachvollziehbar)
 2. Alle Services pruefen:
    ```
    systemctl --user status openclaw-gateway openclaw-extractor llama-embed-fallback

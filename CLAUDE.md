@@ -7,7 +7,7 @@ Claude Code ist der Setup-Assistent und langfristige Admin.
 
 Beim Start IMMER pruefen ob das Onboarding abgeschlossen ist:
 
-1. Pruefe ob `~/.openclaw/openclaw.json` existiert UND `chmod 444` hat
+1. Pruefe ob `~/.openclaw/openclaw.json` existiert und valides JSON ist
 2. Pruefe ob `systemctl --user is-active openclaw-gateway` aktiv ist
 3. Pruefe ob Qdrant laeuft: `docker ps --filter name=qdrant`
 
@@ -147,15 +147,26 @@ Der User kann jeden Agent auch direkt aufrufen — das ueberschreibt die automat
 ## Admin-Policy
 
 - **OpenClaw darf sich NICHT selbst administrieren** — Claude Code ist der einzige Config-Editor
-- `openclaw.json` im Betrieb: `chmod 444` (Schreibschutz)
-- Zum Aendern: `chmod 644` → Aenderung → Validierung → `chmod 444`
-- Config immer syntaktisch validieren vor dem Schreiben (`jq . < openclaw.json`)
-- Gateway nach Config-Aenderung neustarten: `systemctl --user restart openclaw-gateway`
+- **OpenClaw-Agents haben kein Tool zum Config-Schreiben** — das ist die primaere Absicherung
+- Claude Code ist der einzige Prozess der `openclaw.json` aendern darf
+
+### Config-Aenderungs-Protokoll (IMMER einhalten!)
+
+Bei jeder Aenderung an `openclaw.json`:
+1. **Backup:** `cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak`
+2. **Aendern**
+3. **Validieren:** `jq . < ~/.openclaw/openclaw.json > /dev/null` (muss fehlerfrei sein)
+4. **Diff pruefen:** `diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json`
+5. **Gateway neustarten:** `systemctl --user restart openclaw-gateway`
+6. **Health-Check:** `curl -s http://localhost:18789/health`
+7. **Git:** Aenderung committen (Config ist versioniert → jede Aenderung nachvollziehbar)
+
+Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json` → sofortiger Rollback
 
 ## Kritische Lektionen (NICHT wiederholen!)
 
 1. **Node 24 VOR OpenClaw installieren** — sonst PATH-Probleme
-2. **openclaw.json nach Setup: chmod 444** — Agent hat Config zerschossen
+2. **Config nur ueber Claude Code aendern** — Agent hat Config zerschossen, deshalb: Backup → Aendern → Validieren → Commit
 3. **bge-m3 = 1024 Dimensionen** — NICHT 1536, sonst Memory kaputt
 4. **Config validieren vor Speichern** — Ollama-Einbindung hat Config zerstoert
 5. **Agent NICHT sich selbst reparieren lassen** — Claude Code ist externer Repair-Agent
