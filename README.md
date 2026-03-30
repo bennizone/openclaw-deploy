@@ -71,18 +71,22 @@ source ~/.bashrc
 fnm install 24
 fnm default 24
 
-# npm global prefix
+# npm global prefix (fuer OpenClaw, nicht fuer Claude Code)
 mkdir -p ~/.npm-global
 npm config set prefix ~/.npm-global
 echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 
-# Claude Code
-npm install -g @anthropic-ai/claude-code
+# Claude Code (NICHT per npm — native Installer verwenden!)
+curl -fsSL https://claude.ai/install.sh | sh
 
 # Git
 sudo apt install -y git
 ```
+
+> **Wichtig:** Claude Code NICHT per `npm install -g @anthropic-ai/claude-code` installieren!
+> Der npm-Install wird automatisch zum Native-Installer migriert, was zu Problemen fuehrt.
+> Immer den offiziellen Installer verwenden.
 
 ### 4. Claude Code authentifizieren
 
