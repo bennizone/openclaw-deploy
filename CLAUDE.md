@@ -3,6 +3,23 @@
 Dieses Repo enthält alles, um einen kompletten OpenClaw Smart-Home-Stack reproduzierbar aufzusetzen.
 Claude Code ist der Setup-Assistent und langfristige Admin.
 
+## Onboarding-Erkennung (WICHTIG — bei jedem Start pruefen!)
+
+Beim Start IMMER pruefen ob das Onboarding abgeschlossen ist:
+
+1. Pruefe ob `~/.openclaw/openclaw.json` existiert UND `chmod 444` hat
+2. Pruefe ob `systemctl --user is-active openclaw-gateway` aktiv ist
+3. Pruefe ob Qdrant laeuft: `docker ps --filter name=qdrant`
+
+**Wenn ALLE drei OK:** System ist eingerichtet. Normal arbeiten.
+
+**Wenn NICHT alle OK:** Onboarding ist unvollstaendig oder noch nicht gestartet.
+- Begruesse den User auf Deutsch
+- Erklaere kurz: "Das OpenClaw-System ist noch nicht vollstaendig eingerichtet."
+- Wenn `~/.openclaw-setup.env` existiert: "Das Onboarding wurde bereits begonnen. Soll ich dort weitermachen wo wir aufgehoert haben?"
+- Wenn nicht: "Starte mit `/onboard` um das Setup zu beginnen."
+- Fuehre KEINE anderen Aufgaben aus bis das Onboarding abgeschlossen ist (ausser `/helper` fuer Fragen).
+
 ## Quick-Start
 
 - **Neues System aufsetzen:** `/onboard`
@@ -58,19 +75,49 @@ Proxmox / Bare-Metal
 | 8080 | llama.cpp Chat | GPU-Server |
 | 8081 | llama.cpp Embedding | GPU-Server + LXC (Fallback) |
 
-## Automatische Agent-Nutzung
+## Automatische Agent-Nutzung (PFLICHT)
 
-Claude Code MUSS die spezialisierten Slash-Commands automatisch einsetzen:
+Claude Code waehlt automatisch den richtigen spezialisierten Agent basierend auf der Aufgabe.
+Der User muss die Agents NICHT manuell aufrufen.
 
-- **Nach Code-Aenderungen:** Automatisch `/reviewer` ausfuehren bevor committet wird
-- **Nach Review:** Automatisch `/tester` fuer Health-Checks ausfuehren
-- **Nach nicht-trivialen Entscheidungen:** Automatisch `/docs` fuer DECISIONS.md-Update
-- **Bei Plugin-Fragen:** `/openclaw-expert` oder `/openclaw-skill-creator` nutzen
-- **Bei Docker/Qdrant-Problemen:** `/docker-admin` nutzen
-- **Bei GPU-Server-Problemen:** `/gpu-server-admin` nutzen
-- **Wenn der User Hilfe braucht:** `/helper` fuer Ueberblick
+### Agent-Auswahl nach Kontext
 
-Der User muss die Agents nicht manuell aufrufen — Claude Code erkennt den Kontext und waehlt den passenden Agent.
+| Situation | Agent | Modell |
+|-----------|-------|--------|
+| User will Code schreiben/aendern | `/coder` | Sonnet |
+| User fragt nach OpenClaw Config/Architektur | `/openclaw-expert` | Sonnet |
+| User will neuen Skill erstellen | `/openclaw-skill-creator` | Sonnet |
+| User hat Docker/Qdrant-Problem | `/docker-admin` | Haiku |
+| User hat GPU-Server-Problem | `/gpu-server-admin` | Haiku |
+| User fragt "was ist...", "wie geht...", "wo finde ich..." | `/helper` | Haiku |
+| Onboarding laeuft | `/onboard` | Sonnet |
+
+### Automatische Pipeline nach Code-Aenderungen (IMMER!)
+
+Nach JEDER Code-Aenderung wird automatisch diese Pipeline durchlaufen:
+
+```
+Code-Aenderung abgeschlossen
+  │
+  ├── 1. Build: `npm run build` (wenn Plugin/Service)
+  │
+  ├── 2. `/reviewer` (Sonnet) — Code-Review gegen Checkliste
+  │     └── Bei Problemen: Fix → zurueck zu 1.
+  │
+  ├── 3. `/tester` (Haiku) — Health-Checks + Tests
+  │     └── Bei Fehlern: Diagnose → Fix → zurueck zu 1.
+  │
+  ├── 4. Commit — Aenderungen committen mit aussagekraeftiger Message
+  │
+  └── 5. `/docs` (Haiku) — DECISIONS.md aktualisieren (wenn nicht-trivial)
+```
+
+Diese Pipeline ist NICHT optional. Claude Code fuehrt sie automatisch aus.
+Der User wird nur informiert, nicht gefragt (ausser bei Review-Problemen).
+
+### Manuelle Aufrufe
+
+Der User kann jeden Agent auch direkt aufrufen — das ueberschreibt die automatische Auswahl.
 
 ## Workflow-Regeln
 
@@ -78,11 +125,12 @@ Der User muss die Agents nicht manuell aufrufen — Claude Code erkennt den Kont
 1. **Plan erstellen** und mit User besprechen
 2. **Freigabe** abwarten
 3. **Baseline-Commit** vor Aenderungen
-4. **Implementieren**
-5. **Testen** — `/tester` automatisch ausfuehren
-6. **Review** — `/reviewer` automatisch ausfuehren
-7. **Dokumentieren** — `/docs` fuer DECISIONS.md-Update
-8. **Commit**
+4. **Implementieren** — `/coder` (Sonnet)
+5. **Build** — `npm run build` / `openclaw plugins doctor`
+6. **Review** — `/reviewer` (Sonnet) automatisch
+7. **Test** — `/tester` (Haiku) automatisch
+8. **Commit** — automatisch
+9. **Dokumentieren** — `/docs` (Haiku) automatisch bei nicht-trivialen Aenderungen
 
 ### Mindestanforderungen
 - Code muss gebaut werden koennen (`npm run build`)
