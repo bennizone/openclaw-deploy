@@ -8,7 +8,7 @@ Reproduzierbares Setup fuer einen kompletten OpenClaw Smart-Home-Stack mit Claud
 - **GPU-Server** — Lokales LLM (Qwen 3.5 9B) + Embeddings (bge-m3) via llama.cpp
 - **Memory-System** — Qdrant Vektordatenbank + automatische Fakten-Extraktion
 - **Home Assistant Integration** — Sprachassistent als HA Conversation Agent
-- **4 Plugins** — HA Voice, Memory Recall, Sonarr/Radarr, Home Assistant Steuerung
+- **3 Plugins** — HA Voice, Memory Recall, Sonarr/Radarr (HA-Skill optional via ClaWHub)
 
 ## Voraussetzungen
 

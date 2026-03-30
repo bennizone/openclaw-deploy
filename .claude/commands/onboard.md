@@ -10,6 +10,19 @@ Du begleitest den User Schritt fuer Schritt durch alle Phasen.
 - Bei Fehlern: Diagnose, Loesung vorschlagen, nicht einfach weitermachen
 - Dokumentiere Entscheidungen in DECISIONS.md
 - Sprache: Deutsch
+- **Nach jeder abgeschlossenen Phase:** `~/.openclaw-deploy-state.json` aktualisieren
+
+## Fortschritts-Datei
+
+Lies zuerst `~/.openclaw-deploy-state.json`. Wenn sie existiert, zeige dem User
+den Fortschritt und frage ob er dort weitermachen will wo er aufgehoert hat.
+
+Nach jeder abgeschlossenen Phase: Datei aktualisieren mit `"done": true` und Timestamp.
+Interview-Antworten in `config`-Sektion speichern (statt separate .env-Datei).
+
+Format: Siehe CLAUDE.md Abschnitt "Onboarding-Erkennung".
+
+Am Ende: `"onboarding_complete": true` setzen.
 
 ## Phase 0: Interview
 
@@ -20,21 +33,23 @@ Begruessung und Datensammlung. Frage nacheinander:
 3. **Home Assistant URL:** "Unter welcher URL ist dein Home Assistant erreichbar? (z.B. https://haos.local:8123)"
 4. **MiniMax API-Key:** "Hast du einen MiniMax API-Key? (Pflicht fuer das primaere LLM)"
 5. **Channels:** "Welche Channels moechtest du nutzen? (WhatsApp, Matrix, Telegram, ...)"
-6. **Agents:** "Wie viele persoenliche Agents moechtest du? (Standard: 1 persoenlicher + 1 household)"
+6. **HA-Skill:** "Moechtest du den openclaw-homeassistant ClaWHub-Skill installieren? (34 Tools fuer HA-Steuerung direkt ueber OpenClaw). Wenn du nur die HA-Voice-Integration nutzt, brauchst du ihn nicht."
+7. **Sonarr/Radarr:** "Hast du Sonarr/Radarr fuer Medienverwaltung? (optional)"
+8. **Agents:** "Wie viele persoenliche Agents moechtest du? (Standard: 1 persoenlicher + 1 household)"
    - Fuer jeden Agent: Name erfragen
    - **WICHTIG - erklaere dem User:**
      "Der erste Agent wird als 'default' markiert. Das bedeutet: Alle Nachrichten, die keinem anderen Agent explizit zugeordnet sind, landen bei diesem Agent. Der Household-Agent braucht kein 'default', weil er immer explizit ueber die HA-Integration angesprochen wird."
    - Channel-Zuordnung pro Agent
 
 Nach dem Interview:
+- Alle Antworten in `~/.openclaw-deploy-state.json` speichern (config-Sektion)
 - SSH-Key generieren falls keiner existiert: `ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -N ""`
 - One-Liner ausgeben:
   ```
   ssh-copy-id -i ~/.ssh/id_ed25519.pub <USER>@<GPU_IP>
   ```
 - User ausfuehren lassen, dann SSH-Verbindung testen
-
-Speichere alle gesammelten Daten in einer temporaeren Datei `~/.openclaw-setup.env`.
+- Phase "interview" als done markieren
 
 ## Phase 1: GPU-Server Setup
 
@@ -47,6 +62,7 @@ Ueber SSH auf dem GPU-Server:
 5. Services starten + Health-Check:
    - `curl http://<GPU_IP>:8080/health` (Chat)
    - `curl http://<GPU_IP>:8081/health` (Embedding)
+6. Phase "gpu_server" als done markieren
 
 ## Phase 2: LXC Setup
 
@@ -60,14 +76,18 @@ Lokal auf dem OpenClaw-Container:
    - Gateway-Token generieren: `openssl rand -hex 24`
 5. `loginctl enable-linger` pruefen (KRITISCH!)
 6. Gateway starten + Health-Check
+7. Phase "lxc_setup" als done markieren
 
 ## Phase 3: Plugins
 
-1. Plugins aus `plugins/` nach `~/.openclaw/extensions/` kopieren
+1. Plugins aus `plugins/` nach `~/.openclaw/extensions/` kopieren (ha-voice, memory-recall, sonarr-radarr)
 2. Pro Plugin: `cd <plugin-dir> && npm install && npm run build`
 3. Plugin-Configs in `openclaw.json` eintragen (URLs, Tokens aus Interview)
-4. `openclaw plugins doctor` ausfuehren
-5. Gateway neustarten: `systemctl --user restart openclaw-gateway.service`
+4. **Wenn User HA-Skill will:** `openclaw skills install homeassistant` (ClaWHub)
+5. **Wenn User Sonarr/Radarr NICHT will:** Plugin nicht kopieren/aktivieren
+6. `openclaw plugins doctor` ausfuehren
+7. Gateway neustarten: `systemctl --user restart openclaw-gateway.service`
+8. Phase "plugins" als done markieren
 
 ## Phase 4: Agents
 
@@ -81,6 +101,7 @@ Lokal auf dem OpenClaw-Container:
    - AGENTS.md kopieren, BOOTSTRAP.md NICHT kopieren (kein Interview noetig)
 4. `agents.list` in `openclaw.json` aktualisieren
 5. **Default-Agent setzen** — erster persoenlicher Agent bekommt `"default": true`
+6. Phase "agents" als done markieren
 
 ## Phase 5: Memory-System
 
@@ -88,6 +109,7 @@ Lokal auf dem OpenClaw-Container:
    - `memories_<agentId>` fuer jeden persoenlichen Agent
    - `memories_household` fuer den Household-Agent
    - Vektor-Dimension: 1024 (bge-m3!)
+   - Schema: dense (1024, Cosine) + bm25 (sparse, idf)
 2. Extractor deployen:
    - `services/extractor/` nach `~/extractor/` kopieren
    - `npm install && npm run build`
@@ -97,6 +119,7 @@ Lokal auf dem OpenClaw-Container:
 3. Memory Write/Read Test:
    - Embedding-Anfrage an GPU-Server testen
    - Qdrant Insert + Search testen
+4. Phase "memory" als done markieren
 
 ## Phase 6: Channels
 
@@ -106,6 +129,7 @@ Den User durch das Channel-Setup begleiten:
 - **Telegram:** BotFather-Anleitung
 - Allowlists konfigurieren
 - Test-Nachricht senden lassen
+- Phase "channels" als done markieren
 
 ## Phase 7: HA-Integration (optional)
 
@@ -115,10 +139,11 @@ Falls der User Home Assistant hat:
 3. HA Config Flow durchlaufen
 4. OpenClaw chatCompletions Endpoint testen
 5. Conversation Agent in HA aktivieren
+6. Phase "ha_integration" als done markieren (oder `"skipped": true` wenn nicht gewuenscht)
 
 ## Phase 8: Abschluss
 
-1. `openclaw.json` in Git committen (Config ist ab jetzt versioniert — jede Aenderung nachvollziehbar)
+1. `openclaw.json` in Git committen (Config ist ab jetzt versioniert)
 2. Alle Services pruefen:
    ```
    systemctl --user status openclaw-gateway openclaw-extractor llama-embed-fallback
@@ -130,3 +155,4 @@ Falls der User Home Assistant hat:
    - Wie man einen neuen Skill erstellt
    - Wie man OpenClaw sicher updatet
 4. Hinweis: "Starte eine Unterhaltung mit deinem Agent ueber WhatsApp (oder den gewaehlten Channel). Der Agent wird dich im Bootstrap-Interview kennenlernen wollen."
+5. `"onboarding_complete": true` und Phase "verification" als done markieren

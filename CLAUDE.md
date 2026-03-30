@@ -5,20 +5,50 @@ Claude Code ist der Setup-Assistent und langfristige Admin.
 
 ## Onboarding-Erkennung (WICHTIG — bei jedem Start pruefen!)
 
-Beim Start IMMER pruefen ob das Onboarding abgeschlossen ist:
+Beim Start: Lies die Datei `~/.openclaw-deploy-state.json` (KEINE Runtime-Checks noetig).
 
-1. Pruefe ob `~/.openclaw/openclaw.json` existiert und valides JSON ist
-2. Pruefe ob `systemctl --user is-active openclaw-gateway` aktiv ist
-3. Pruefe ob Qdrant laeuft: `docker ps --filter name=qdrant`
+**Datei existiert und `"onboarding_complete": true`:** System ist eingerichtet. Normal arbeiten.
 
-**Wenn ALLE drei OK:** System ist eingerichtet. Normal arbeiten.
-
-**Wenn NICHT alle OK:** Onboarding ist unvollstaendig oder noch nicht gestartet.
+**Datei existiert aber `"onboarding_complete": false`:**
 - Begruesse den User auf Deutsch
-- Erklaere kurz: "Das OpenClaw-System ist noch nicht vollstaendig eingerichtet."
-- Wenn `~/.openclaw-setup.env` existiert: "Das Onboarding wurde bereits begonnen. Soll ich dort weitermachen wo wir aufgehoert haben?"
-- Wenn nicht: "Starte mit `/onboard` um das Setup zu beginnen."
-- Fuehre KEINE anderen Aufgaben aus bis das Onboarding abgeschlossen ist (ausser `/helper` fuer Fragen).
+- Zeige den aktuellen Fortschritt: "Onboarding ist bei Phase X. Soll ich weitermachen?"
+- Die Checkliste in der Datei zeigt welche Phasen erledigt sind
+
+**Datei existiert NICHT:**
+- Begruesse den User: "Willkommen! Das OpenClaw-System ist noch nicht eingerichtet."
+- "Starte mit `/onboard` um das Setup zu beginnen."
+
+Fuehre KEINE anderen Aufgaben aus bis das Onboarding abgeschlossen ist (ausser `/helper` fuer Fragen).
+
+### Format von `~/.openclaw-deploy-state.json`
+
+```json
+{
+  "onboarding_complete": false,
+  "phases": {
+    "interview": { "done": true, "timestamp": "2026-03-30T14:00:00Z" },
+    "gpu_server": { "done": true, "timestamp": "2026-03-30T14:30:00Z" },
+    "lxc_setup": { "done": false },
+    "plugins": { "done": false },
+    "agents": { "done": false },
+    "memory": { "done": false },
+    "channels": { "done": false },
+    "ha_integration": { "done": false, "skipped": true },
+    "verification": { "done": false }
+  },
+  "config": {
+    "gpu_server_ip": "10.83.1.110",
+    "gpu_ssh_user": "badmin",
+    "ha_url": "https://homeassistant.local:8123",
+    "agent_names": ["benni", "household"],
+    "default_agent": "benni",
+    "channels": ["whatsapp"]
+  }
+}
+```
+
+Diese Datei wird vom `/onboard` Agent bei jeder abgeschlossenen Phase aktualisiert.
+Die `config`-Sektion speichert Interview-Antworten fuer spaetere Referenz.
 
 ## Quick-Start
 
@@ -50,7 +80,7 @@ Proxmox / Bare-Metal
 
 | Verzeichnis | Was | Laeuft wo |
 |-------------|-----|-----------|
-| `plugins/` | 4 OpenClaw Plugins (Source) | LXC: ~/.openclaw/extensions/ |
+| `plugins/` | 3 OpenClaw Plugins (Source) | LXC: ~/.openclaw/extensions/ |
 | `services/extractor/` | Memory-Extractor Service | LXC: ~/extractor/ |
 | `services/home-llm/` | HA Custom Component | Home Assistant |
 | `setup/lxc/` | LXC Setup-Scripts + systemd | LXC |

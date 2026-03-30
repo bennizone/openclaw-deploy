@@ -204,15 +204,7 @@
     }
   },
   "skills": {
-    "entries": {
-      "openclaw-homeassistant": {
-        "enabled": true,
-        "config": {
-          "url": "${HA_URL}",
-          "token": "${HA_LONG_LIVED_TOKEN}"
-        }
-      }
-    }
+    "entries": {}
   },
   "plugins": {
     "slots": {
