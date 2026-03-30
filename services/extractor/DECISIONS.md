@@ -58,7 +58,7 @@ doppelt gemoppelt. Fix 2026-03-30: Exklusives Routing nach Scope.
 ```
 MINIMAX_API_KEY=...
 EXTRACTION_MODEL=MiniMax-M2.7
-EMBED_GPU_URL=http://10.83.1.110:8081
+EMBED_GPU_URL=http://<GPU_SERVER_IP>:8081
 EMBED_LOCAL_URL=http://localhost:8081
 QDRANT_URL=http://localhost:6333
 EMBEDDING_MODEL=bge-m3

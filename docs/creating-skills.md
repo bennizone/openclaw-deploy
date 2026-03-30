@@ -43,14 +43,15 @@ In `openclaw.json` unter `plugins.entries`:
 
 ## Referenz-Plugins
 
-Die 4 Plugins im `plugins/` Verzeichnis dienen als Beispiele:
+Die 3 Plugins im `plugins/` Verzeichnis dienen als Beispiele:
 
 | Plugin | Besonderheit |
 |--------|-------------|
 | openclaw-ha-voice | Hooks (before_prompt_build, before_message_write) |
 | openclaw-memory-recall | Qdrant-Integration, Embedding-Abfragen |
 | openclaw-sonarr-radarr | REST-API Calls, mehrere Tools |
-| openclaw-homeassistant | 34 Tools, grosses Skill, Safety Guards |
+
+Optional via ClaWHub: `openclaw skills install homeassistant` (34 Tools fuer HA-Steuerung)
 
 ## SDK-Dokumentation
 

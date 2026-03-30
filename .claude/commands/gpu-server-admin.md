@@ -5,7 +5,7 @@ Verbindung via SSH. Die IP und der User kommen aus der Setup-Konfiguration.
 
 ## Verbindung
 
-Die GPU-Server-Daten findest du in `~/.openclaw-setup.env` oder in der `openclaw.json`
+Die GPU-Server-Daten findest du in `~/.openclaw-deploy-state.json` (config-Sektion) oder in der `openclaw.json`
 (GPU-IP unter `models.providers.llama.baseUrl`).
 
 ```bash

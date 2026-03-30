@@ -7,7 +7,7 @@
     "bge-m3": {
       "file": "bge-m3-q8_0.gguf",
       "size": "634MB",
-      "url": "https://huggingface.co/ggml-org/bge-m3-Q8_0-GGUF",
+      "url": "https://huggingface.co/compilade/bge-m3-GGUF/resolve/main/bge-m3-q8_0.gguf",
       "dimension": 1024
     },
     "qwen": {
@@ -27,6 +27,6 @@
     "openclaw-ha-voice": "0.1.0",
     "openclaw-memory-recall": "0.1.0",
     "openclaw-sonarr-radarr": "0.1.0",
-    "openclaw-homeassistant": "0.1.1"
+    "openclaw-homeassistant": "0.1.1 (optional, ClaWHub)"
   }
 }

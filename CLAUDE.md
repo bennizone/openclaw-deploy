@@ -37,8 +37,8 @@ Fuehre KEINE anderen Aufgaben aus bis das Onboarding abgeschlossen ist (ausser `
     "verification": { "done": false }
   },
   "config": {
-    "gpu_server_ip": "10.83.1.110",
-    "gpu_ssh_user": "badmin",
+    "gpu_server_ip": "192.168.1.100",
+    "gpu_ssh_user": "admin",
     "ha_url": "https://homeassistant.local:8123",
     "agent_names": ["benni", "household"],
     "default_agent": "benni",

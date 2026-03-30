@@ -4,14 +4,14 @@
 
 ### 1. Conversation Agent (Basis)
 **Status:** Aktiv seit 2026-03-29
-- Qwen 3.5 9B (Q4_K_M) via llama-server auf GPU (10.83.1.110:8080)
+- Qwen 3.5 9B (Q4_K_M) via llama-server auf GPU (<GPU_SERVER_IP>:8080)
 - Deutsch, kurze natuerliche Antworten (Sprachausgabe, kein Markdown)
 - `enable_thinking: false` — IMMER mitsenden (sonst denkt Qwen sichtbar nach)
 
 ### 2. Memory Recall (Qdrant)
 **Status:** Aktiv seit 2026-03-29
 - Semantic Search auf `memories_household` Collection
-- bge-m3 Embeddings via GPU (10.83.1.110:8081)
+- bge-m3 Embeddings via GPU (<GPU_SERVER_IP>:8081)
 - top_k=3, score_threshold=0.3
 - Wird als "Bekannte Fakten ueber den Haushalt" in System-Prompt injiziert
 
@@ -31,7 +31,7 @@
 - Qwen erkennt Anfragen jenseits Smart Home via System-Prompt
 - Generiert `OPENCLAW: <query>` als Response-Prefix
 - `async_process()` erkennt Prefix, ruft OpenClaw chatCompletions auf
-- Endpoint: `http://10.83.1.13:18789/v1/chat/completions`
+- Endpoint: `http://<LXC_IP>:18789/v1/chat/completions`
 - Model: `openclaw/household` (NICHT `current` — OpenClaw erfordert dieses Format)
 - Auth: Bearer Token (Gateway-Auth aus openclaw.json)
 - Timeout: 60s (OpenClaw + MiniMax brauchen Zeit)
@@ -79,14 +79,14 @@ User (Voice PE) → HA Assist Pipeline → home_llm (conversation.py)
 
 | Parameter | Default | Beschreibung |
 |-----------|---------|-------------|
-| llm_url | http://10.83.1.110:8080 | llama-server Endpoint |
+| llm_url | http://<GPU_SERVER_IP>:8080 | llama-server Endpoint |
 | llm_model | Qwen3.5-9B-Q4_K_M | Model-Name fuer llama-server |
 | persona | (leer) | Zusaetzliche Persona-Anweisung |
-| qdrant_url | http://10.83.1.13:6333 | Qdrant Vector DB |
-| embed_url | http://10.83.1.110:8081 | Embedding-Server |
+| qdrant_url | http://<LXC_IP>:6333 | Qdrant Vector DB |
+| embed_url | http://<GPU_SERVER_IP>:8081 | Embedding-Server |
 | retention_minutes | 15 | Conversation Buffer Retention |
 | top_k | 3 | Anzahl Memory-Facts |
-| openclaw_url | http://10.83.1.13:18789 | OpenClaw Gateway |
+| openclaw_url | http://<LXC_IP>:18789 | OpenClaw Gateway |
 | openclaw_api_key | (Gateway-Token) | Auth fuer OpenClaw |
 
 ## Bekannte Einschraenkungen

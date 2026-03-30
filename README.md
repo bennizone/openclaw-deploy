@@ -169,7 +169,7 @@ openclaw-deploy/
 ├── README.md              # Diese Datei
 ├── .claude/commands/      # 10 Slash-Commands (Agenten)
 ├── config/                # Config-Templates + Versions
-├── plugins/               # 4 OpenClaw Plugins (Source)
+├── plugins/               # 3 OpenClaw Plugins (Source)
 ├── services/              # Extractor + Home LLM
 ├── setup/                 # Setup-Scripts + systemd
 ├── agents/                # Agent-Workspace-Templates

@@ -126,7 +126,7 @@ Classify via Ollama (~250ms, num_predict: 5)
       "ttsVoice": "KatjaNeural",
       "routingEnabled": true,
       "routingModel": "ministral-3-32k:3b",
-      "ollamaUrl": "http://10.83.1.110:11434",
+      "ollamaUrl": "http://<GPU_SERVER_IP>:11434",
       "haConversationAgent": "conversation.ministral_3_3b"
     }
   }
@@ -136,7 +136,7 @@ Classify via Ollama (~250ms, num_predict: 5)
 ### HA Einstellungen
 - `select.openclaw_assistant_active_model` muss auf `openclaw/household` stehen
 - HA Conversation Agents verfügbar: `conversation.ministral_3_3b`, `conversation.minimax_m2_5`, `conversation.lfm2`
-- Ollama Server: `http://10.83.1.110:11434` mit `ministral-3-32k:3b` (3.8B Q4_K_M) + `bge-m3` (Embeddings)
+- Ollama Server: `http://<GPU_SERVER_IP>:11434` mit `ministral-3-32k:3b` (3.8B Q4_K_M) + `bge-m3` (Embeddings)
 
 ### Plugin-Dateien
 ```

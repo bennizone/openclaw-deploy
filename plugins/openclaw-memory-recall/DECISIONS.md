@@ -44,7 +44,7 @@ fuer alle Agenten relevant. Persoenliches bleibt getrennt.
     "enabled": true,
     "config": {
       "qdrantUrl": "http://localhost:6333",
-      "embedUrl": "http://10.83.1.110:8081",
+      "embedUrl": "http://<GPU_SERVER_IP>:8081",
       "embedFallbackUrl": "http://localhost:8081",
       "embeddingModel": "bge-m3",
       "topK": 5
@@ -54,7 +54,7 @@ fuer alle Agenten relevant. Persoenliches bleibt getrennt.
 ```
 
 ## Embeddings
-- GPU: bge-m3 Q8_0 via llama-server (10.83.1.110:8081, OpenAI `/v1/embeddings`)
+- GPU: bge-m3 Q8_0 via llama-server (<GPU_SERVER_IP>:8081, OpenAI `/v1/embeddings`)
 - Fallback: bge-m3 Q8_0 via llama-server CPU (localhost:8081)
 - API-Format: OpenAI-kompatibel (`data[0].embedding`, 1024-dim)
 
