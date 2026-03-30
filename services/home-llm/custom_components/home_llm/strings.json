@@ -1,0 +1,38 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Home LLM einrichten",
+        "description": "Konfiguriere den Conversation Agent.",
+        "data": {
+          "llm_url": "LLM Server URL",
+          "llm_model": "LLM Modell",
+          "persona": "Persona (zusätzliche System-Prompt Anweisung)",
+          "qdrant_url": "Qdrant URL (Memory)",
+          "embed_url": "Embedding Server URL",
+          "retention_minutes": "Konversations-Timeout (Minuten)",
+          "top_k": "Max. Memory-Fakten pro Anfrage"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zum LLM-Server fehlgeschlagen"
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Home LLM Optionen",
+        "data": {
+          "llm_url": "LLM Server URL",
+          "llm_model": "LLM Modell",
+          "persona": "Persona (zusätzliche System-Prompt Anweisung)",
+          "qdrant_url": "Qdrant URL (Memory)",
+          "embed_url": "Embedding Server URL",
+          "retention_minutes": "Konversations-Timeout (Minuten)",
+          "top_k": "Max. Memory-Fakten pro Anfrage"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,49 @@
+{
+  "id": "openclaw-sonarr-radarr",
+  "name": "Sonarr & Radarr",
+  "description": "Search, add, and monitor movies and TV series via Sonarr and Radarr",
+  "version": "0.1.0",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "sonarrUrl": {
+        "type": "string",
+        "description": "Sonarr base URL"
+      },
+      "sonarrApiKey": {
+        "type": "string",
+        "description": "Sonarr API key"
+      },
+      "radarrUrl": {
+        "type": "string",
+        "description": "Radarr base URL"
+      },
+      "radarrApiKey": {
+        "type": "string",
+        "description": "Radarr API key"
+      },
+      "seriesQualityProfile": {
+        "type": "string",
+        "description": "Quality profile name for series"
+      },
+      "movieQualityProfile": {
+        "type": "string",
+        "description": "Quality profile name for movies"
+      },
+      "seriesRootFolder": {
+        "type": "string",
+        "description": "Override root folder path for series"
+      },
+      "movieRootFolder": {
+        "type": "string",
+        "description": "Override root folder path for movies"
+      }
+    },
+    "required": ["sonarrUrl", "sonarrApiKey", "radarrUrl", "radarrApiKey"]
+  },
+  "uiHints": {
+    "sonarrApiKey": { "sensitive": true },
+    "radarrApiKey": { "sensitive": true }
+  }
+}

@@ -1,0 +1,15 @@
+[Unit]
+Description=llama.cpp Embedding Server (bge-m3)
+After=network.target
+
+[Service]
+ExecStart=/home/GPUUSER/llama.cpp/build/bin/llama-server \
+  --model /home/GPUUSER/models/bge-m3-q8_0.gguf \
+  --embedding --pooling cls \
+  --port 8081 --host 0.0.0.0 \
+  --ctx-size 2048 --threads 4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

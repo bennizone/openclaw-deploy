@@ -1,0 +1,14 @@
+[Unit]
+Description=OpenClaw Memory Extractor
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/extractor
+EnvironmentFile=%h/extractor/.env
+ExecStart=/usr/bin/node %h/extractor/dist/index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=default.target

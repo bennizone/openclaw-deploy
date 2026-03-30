@@ -1,0 +1,32 @@
+{
+  "openclaw": "2026.3.24",
+  "node": "24",
+  "qdrant": "latest",
+  "llamaCpp": "latest",
+  "models": {
+    "bge-m3": {
+      "file": "bge-m3-q8_0.gguf",
+      "size": "634MB",
+      "url": "https://huggingface.co/ggml-org/bge-m3-Q8_0-GGUF",
+      "dimension": 1024
+    },
+    "qwen": {
+      "file": "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf",
+      "size": "5.63GB",
+      "url": "https://huggingface.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF",
+      "parameters": {
+        "contextWindow": 98304,
+        "maxTokens": 8192,
+        "kvCacheQuant": "q4_0",
+        "parallel": 2,
+        "reasoningBudget": 1024
+      }
+    }
+  },
+  "plugins": {
+    "openclaw-ha-voice": "0.1.0",
+    "openclaw-memory-recall": "0.1.0",
+    "openclaw-sonarr-radarr": "0.1.0",
+    "openclaw-homeassistant": "0.1.1"
+  }
+}

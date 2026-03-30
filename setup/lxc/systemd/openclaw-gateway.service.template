@@ -1,0 +1,25 @@
+[Unit]
+Description=OpenClaw Gateway
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+ExecStart=/usr/bin/node %h/.npm-global/lib/node_modules/openclaw/dist/index.js gateway --port 18789
+Restart=always
+RestartSec=5
+TimeoutStopSec=30
+TimeoutStartSec=30
+SuccessExitStatus=0 143
+KillMode=control-group
+Environment=HOME=%h
+Environment=TMPDIR=/tmp
+Environment=PATH=/usr/bin:%h/.local/bin:%h/.npm-global/bin:%h/bin:%h/.volta/bin:%h/.asdf/shims:%h/.bun/bin:%h/.nvm/current/bin:%h/.fnm/current/bin:%h/.local/share/pnpm:/usr/local/bin:/bin
+Environment=OPENCLAW_GATEWAY_PORT=18789
+Environment=OPENCLAW_SYSTEMD_UNIT=openclaw-gateway.service
+Environment=OPENCLAW_SERVICE_MARKER=openclaw
+Environment=OPENCLAW_SERVICE_KIND=gateway
+Environment=NODE_COMPILE_CACHE=/var/tmp/openclaw-compile-cache
+Environment=OPENCLAW_NO_RESPAWN=1
+
+[Install]
+WantedBy=default.target

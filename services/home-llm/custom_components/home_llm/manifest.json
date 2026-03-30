@@ -1,0 +1,13 @@
+{
+  "domain": "home_llm",
+  "name": "Home LLM",
+  "version": "2.0.0",
+  "documentation": "https://github.com/benni/home-llm",
+  "dependencies": ["conversation"],
+  "after_dependencies": ["assist_pipeline", "intent"],
+  "config_flow": true,
+  "integration_type": "service",
+  "iot_class": "local_polling",
+  "codeowners": ["@benni"],
+  "requirements": ["aiohttp>=3.9.0"]
+}

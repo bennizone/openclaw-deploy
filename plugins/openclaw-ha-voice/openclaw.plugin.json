@@ -1,0 +1,63 @@
+{
+  "id": "openclaw-ha-voice",
+  "name": "HA Voice (STT/TTS)",
+  "description": "Voice message support via Home Assistant Cloud — STT for incoming audio, TTS replies for voice conversations",
+  "version": "0.1.0",
+  "entry": "./dist/index.js",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "url": {
+        "type": "string",
+        "description": "Home Assistant base URL (e.g. https://homeassistant.local:8123)"
+      },
+      "token": {
+        "type": "string",
+        "description": "Long-Lived Access Token from HA profile"
+      },
+      "sttProvider": {
+        "type": "string",
+        "default": "stt.home_assistant_cloud",
+        "description": "HA STT provider entity ID"
+      },
+      "ttsEngine": {
+        "type": "string",
+        "default": "tts.home_assistant_cloud",
+        "description": "HA TTS engine entity ID"
+      },
+      "language": {
+        "type": "string",
+        "default": "de-DE",
+        "description": "Language code for STT and TTS"
+      },
+      "ttsVoice": {
+        "type": "string",
+        "default": "KatjaNeural",
+        "description": "TTS voice name (Azure Neural voice)"
+      },
+      "routingEnabled": {
+        "type": "boolean",
+        "default": true,
+        "description": "Enable Tier 2 smart-home routing via local Ollama"
+      },
+      "routingModel": {
+        "type": "string",
+        "default": "ministral-3-32k:3b",
+        "description": "Ollama model for Tier 2 routing"
+      },
+      "ollamaUrl": {
+        "type": "string",
+        "default": "http://localhost:11434",
+        "description": "Ollama API base URL"
+      },
+      "haConversationAgent": {
+        "type": "string",
+        "default": "conversation.ministral_3_3b",
+        "description": "HA conversation agent entity ID for device control"
+      }
+    },
+    "required": ["url", "token"]
+  },
+  "tools": []
+}

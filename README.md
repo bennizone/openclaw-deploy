@@ -1,0 +1,182 @@
+# OpenClaw Deploy
+
+Reproduzierbares Setup fuer einen kompletten OpenClaw Smart-Home-Stack mit Claude Code als interaktivem Setup-Assistenten.
+
+## Was wird aufgesetzt?
+
+- **OpenClaw Gateway** — Multi-Agent Smart-Home-Assistent (WhatsApp, Matrix, HA Voice)
+- **GPU-Server** — Lokales LLM (Qwen 3.5 9B) + Embeddings (bge-m3) via llama.cpp
+- **Memory-System** — Qdrant Vektordatenbank + automatische Fakten-Extraktion
+- **Home Assistant Integration** — Sprachassistent als HA Conversation Agent
+- **4 Plugins** — HA Voice, Memory Recall, Sonarr/Radarr, Home Assistant Steuerung
+
+## Voraussetzungen
+
+- **Proxmox-Server** (oder anderer Hypervisor fuer LXC/VM)
+- **GPU-Server** — Ubuntu >= 24.04 LTS, NVIDIA GPU mit min. 8 GB VRAM
+- **Home Assistant** — Optional, fuer Sprachassistent-Integration
+- **MiniMax API-Key** — Fuer das primaere LLM ([minimax.io](https://www.minimax.io))
+- **Anthropic Account** — Fuer Claude Code Auth (Pro/Max)
+
+## Installation
+
+### 1. LXC erstellen
+
+Auf dem Proxmox-Host ausfuehren (Werte anpassen!):
+
+```bash
+mode=generated \
+  var_cpu="3" \
+  var_ram="8192" \
+  var_disk="16" \
+  var_hostname="openclaw" \
+  var_net="static" \
+  var_gateway="192.168.1.1" \
+  var_net="192.168.1.99/24" \
+  var_ssh="yes" \
+  var_nesting="1" \
+  var_pw="CHANGEME" \
+  bash -c "$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/ct/docker.sh)"
+```
+
+> Generator: https://community-scripts.org/generator?script=docker
+
+### 2. User einrichten
+
+Als `root` im LXC:
+
+```bash
+# User anlegen
+adduser openclaw
+usermod -aG sudo,docker openclaw
+
+# Passwordless sudo
+echo "openclaw ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/openclaw
+chmod 440 /etc/sudoers.d/openclaw
+
+# WICHTIG: Damit systemd Services ohne Login starten
+loginctl enable-linger openclaw
+```
+
+### 3. Claude Code + Git installieren
+
+Als `openclaw` User:
+
+```bash
+su - openclaw
+
+# Node.js 24
+curl -fsSL https://fnm.vercel.app/install | bash
+source ~/.bashrc
+fnm install 24
+fnm default 24
+
+# npm global prefix
+mkdir -p ~/.npm-global
+npm config set prefix ~/.npm-global
+echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc
+source ~/.bashrc
+
+# Claude Code
+npm install -g @anthropic-ai/claude-code
+
+# Git
+sudo apt install -y git
+```
+
+### 4. Claude Code authentifizieren
+
+```bash
+claude
+# Auth-Prozess im Browser durchfuehren
+# Danach: /exit
+```
+
+### 5. Repo klonen
+
+```bash
+git clone https://github.com/<dein-user>/openclaw-deploy.git
+cd openclaw-deploy
+```
+
+### 6. Setup starten
+
+```bash
+claude
+```
+
+Dann im Claude Code:
+
+```
+/onboard
+```
+
+Claude Code fuehrt dich durch das komplette Setup:
+- Interview (GPU-Server IP, API-Keys, Channels, Agent-Namen)
+- GPU-Server einrichten (NVIDIA, llama.cpp, Modelle)
+- OpenClaw + Plugins installieren
+- Memory-System aufsetzen
+- Channels einrichten (WhatsApp, Matrix, ...)
+- Home Assistant Integration (optional)
+
+## Nach dem Setup
+
+### Hilfe
+
+```
+/helper    # Ueberblick, was wo laeuft
+```
+
+### Services pruefen
+
+```bash
+systemctl --user status openclaw-gateway
+systemctl --user status openclaw-extractor
+systemctl --user status llama-embed-fallback
+docker ps  # Qdrant
+```
+
+### Logs
+
+```bash
+journalctl --user -u openclaw-gateway.service -f
+```
+
+### Verfuegbare Claude Code Commands
+
+| Command | Beschreibung |
+|---------|-------------|
+| `/onboard` | Komplett-Setup |
+| `/helper` | System-Ueberblick + Hilfe |
+| `/coder` | Code schreiben/aendern |
+| `/openclaw-expert` | Tiefes OpenClaw-Wissen |
+| `/openclaw-skill-creator` | Neue Skills erstellen |
+| `/docker-admin` | Docker/Qdrant verwalten |
+| `/gpu-server-admin` | GPU-Server verwalten |
+| `/reviewer` | Code-Review |
+| `/tester` | Tests + Health-Checks |
+| `/docs` | Dokumentation pflegen |
+
+## Projektstruktur
+
+```
+openclaw-deploy/
+├── CLAUDE.md              # Claude Code Systemwissen
+├── README.md              # Diese Datei
+├── .claude/commands/      # 10 Slash-Commands (Agenten)
+├── config/                # Config-Templates + Versions
+├── plugins/               # 4 OpenClaw Plugins (Source)
+├── services/              # Extractor + Home LLM
+├── setup/                 # Setup-Scripts + systemd
+├── agents/                # Agent-Workspace-Templates
+├── troubleshooting/       # Bekannte Probleme + Loesungen
+└── docs/                  # Architektur + Anleitungen
+```
+
+## Sicherheit
+
+- Secrets werden NIE in Git gespeichert
+- `openclaw.json` ist im Betrieb schreibgeschuetzt (chmod 444)
+- OpenClaw kann sich nicht selbst administrieren
+- Claude Code ist der einzige Config-Editor
+- API-Keys liegen in `~/.openclaw/.env` (von OpenClaw auto-gelesen)

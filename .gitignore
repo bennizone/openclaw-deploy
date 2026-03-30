@@ -1,0 +1,38 @@
+# Secrets
+.secrets.env
+config/secrets.env
+**/.env
+!**/.env.template
+
+# Node
+**/node_modules/
+**/dist/
+
+# Models (too large for git)
+models/
+*.gguf
+
+# Build artifacts
+*.db
+*.db-shm
+*.db-wal
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code session data
+.claude/session-env/
+.claude/history.jsonl
+.claude/.credentials.json
+.claude/tasks/
+.claude/plans/
+
+# OpenClaw runtime
+.openclaw/
+completions/
+sessions/
+media/
+
+# Compiled
+*.js.map

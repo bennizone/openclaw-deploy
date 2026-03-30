@@ -1,0 +1,14 @@
+[Unit]
+Description=llama.cpp Embedding Fallback (bge-m3 CPU)
+
+[Service]
+ExecStart=%h/llama.cpp/build/bin/llama-server \
+  --model %h/models/bge-m3-q8_0.gguf \
+  --embedding --pooling cls \
+  --port 8081 --host 127.0.0.1 \
+  --ctx-size 2048 --threads 4
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target
