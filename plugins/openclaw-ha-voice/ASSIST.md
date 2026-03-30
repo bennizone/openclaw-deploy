@@ -104,7 +104,7 @@ Classify via Ollama (~250ms, num_predict: 5)
 ```json
 {
   "models.providers.ha-cloud-stt": {
-    "baseUrl": "https://haos.home.benni.zone",
+    "baseUrl": "https://<HA_URL>",
     "apiKey": "ha-voice-internal",  // Dummy für requireApiKey()
     "models": []
   },
@@ -118,7 +118,7 @@ Classify via Ollama (~250ms, num_predict: 5)
   "plugins.entries.openclaw-ha-voice": {
     "enabled": true,
     "config": {
-      "url": "https://haos.home.benni.zone",
+      "url": "https://<HA_URL>",
       "token": "<HA_LONG_LIVED_TOKEN>",
       "sttProvider": "stt.home_assistant_cloud",
       "ttsEngine": "tts.home_assistant_cloud",

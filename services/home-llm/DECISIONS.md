@@ -106,14 +106,14 @@ User (Voice PE) → HA Assist Pipeline → home_llm (conversation.py)
 cd ~/home_llm && python3 -m py_compile custom_components/home_llm/conversation.py
 
 # Deploy
-scp -r ~/home_llm/custom_components/home_llm root@haos.home.benni.zone:/config/custom_components/
+scp -r ~/home_llm/custom_components/home_llm root@<HA_URL>:/config/custom_components/
 
 # HA Restart (Backup vorher!)
-curl -s -X POST "https://haos.home.benni.zone/api/services/homeassistant/restart" \
+curl -s -X POST "https://<HA_URL>/api/services/homeassistant/restart" \
   -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json"
 
 # Test
-curl -s "https://haos.home.benni.zone/api/conversation/process" \
+curl -s "https://<HA_URL>/api/conversation/process" \
   -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json" \
   -d '{"text":"Test","agent_id":"conversation.home_llm","language":"de"}'
 ```

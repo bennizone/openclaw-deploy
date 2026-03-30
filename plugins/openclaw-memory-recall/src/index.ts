@@ -41,11 +41,12 @@ interface QdrantSearchResult {
 }
 
 // Agent → which collections to search
-const AGENT_COLLECTIONS: Record<string, string[]> = {
-  benni: ['memories_benni', 'memories_household'],
-  domi: ['memories_domi', 'memories_household'],
-  household: ['memories_household'],
-};
+// Dynamisch: persoenliche Agents suchen in eigener Collection + household
+// Der household-Agent sucht NUR in memories_household
+function getAgentCollections(agentId: string): string[] {
+  if (agentId === 'household') return ['memories_household'];
+  return [`memories_${agentId}`, 'memories_household'];
+}
 
 function extractLastUserText(messages: Message[]): string | null {
   for (let i = messages.length - 1; i >= 0; i--) {
@@ -165,10 +166,10 @@ export default {
       const cx = ctx as Record<string, unknown>;
 
       // Get agent ID
-      const agentId = (cx.agentId ?? ev.agentId ?? 'benni') as string;
+      const agentId = (cx.agentId ?? ev.agentId ?? 'default') as string;
 
-      const collections = AGENT_COLLECTIONS[agentId];
-      if (!collections) return;
+      const collections = getAgentCollections(agentId);
+      if (!collections.length) return;
 
       // Get user text — event.prompt has the current input
       let userText: string | null = null;

@@ -49,7 +49,7 @@ function loadAgentIds(): string[] {
   } catch {
     // fallback below
   }
-  return ['benni', 'domi', 'household'];
+  throw new Error('No agent IDs found. Set AGENT_IDS env var or ensure openclaw.json exists with agents.list');
 }
 
 // Load agent display names from openclaw.json
