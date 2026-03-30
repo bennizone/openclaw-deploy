@@ -50,7 +50,6 @@ Gibt dem Agent ein `web_search` Tool.
 - Braucht einen MiniMax Coding Plan (nicht nur API-Key)
 - `uvx` muss mit vollem Pfad angegeben werden (systemd hat reduzierten PATH)
 - **Offizielle MCP-Anleitung:** https://platform.minimax.io/docs/token-plan/mcp-guide
-- MiniMax Coding Plan Referral (10% Rabatt): https://platform.minimax.io/subscribe/coding-plan?code=DbXJTRClnb&source=link
 
 ## Image Understanding (Built-in)
 
