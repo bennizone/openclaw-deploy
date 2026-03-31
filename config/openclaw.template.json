@@ -56,6 +56,7 @@
   },
   "agents": {
     "defaults": {
+      "userTimezone": "Europe/Berlin",
       "model": {
         "primary": "minimax/MiniMax-M2.7",
         "fallbacks": ["llama/Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M"]
