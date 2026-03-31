@@ -45,7 +45,7 @@ Offene Punkte, nach Prioritaet sortiert.
 
 ### Plugin `openclaw-sonarr-radarr` entfernen
 - Plugin-Code liegt noch im Repo unter `plugins/openclaw-sonarr-radarr/` als Rollback-Referenz
-- Kann geloescht werden sobald die MCP-Migration stabil laeuft (nach ein paar Tagen Betrieb)
+- Ab 2026-04-07 loeschen, wenn MCP-Migration stabil laeuft
 
 ## Erledigt (2026-03-31)
 
