@@ -20,7 +20,7 @@
 ### Architektur-Entscheidungen
 
 - **Alle 3 Agents nutzen Stage-2-Architektur in HA:** Qwen lokal (schnell, Smart Home) mit OpenClaw-Delegation (MiniMax M2.7) fuer Wissensfragen. Nicht nur household.
-- **WhatsApp uebersprungen** — Handy erst abends verfuegbar, wird nachgeholt.
+- **WhatsApp nachgeholt** — Erfolgreich verlinkt (s. Eintrag 2026-03-31 unten).
 - **HA-Skill (ClaWHub) uebersprungen** — optional, spaeter nachinstallierbar.
 - **Sonarr/Radarr Plugin aktiviert** — URLs: sonarr.home.benni.zone, radarr.home.benni.zone
 
@@ -211,3 +211,24 @@ Web-Search-Proxy (DDG+MiniMax parallel, volle Redundanz).
 - UmlautAdaptarr hilft beim Download-Matching, nicht bei der API-Suche
 - Library-Alternative-Titles sind der schnellste Weg fuer deutsche Titel (kein
   externer Call noetig)
+
+## 2026-03-31: WhatsApp-Channel verlinkt
+
+### Kontext
+WhatsApp war beim initialen Onboarding uebersprungen worden (Handy nicht verfuegbar).
+Jetzt nachgeholt — alle Channels (Matrix + WhatsApp) sind aktiv.
+
+### Setup
+- `openclaw channels login --channel whatsapp` in separatem Terminal ausgefuehrt
+- Plugin-Quelle: "Use local plugin path" (mitgelieferte Version)
+- QR-Code gescannt, Pairing erfolgreich
+- DM-Policy: allowlist (Benni + Domi Nummern aus Config)
+
+### Gelernte Lektionen
+- **Interaktive Befehle nicht via Claude Code** — Pfeiltasten werden als History-
+  Navigation abgefangen, interaktive Menues sind nicht bedienbar. Immer separates
+  Terminal verwenden.
+- **Error 515 ist harmlos** — WhatsApp verlangt nach QR-Pairing einen Restart
+  (Code 515). Die Credentials werden trotzdem gespeichert. `openclaw channels status`
+  zeigt "linked, running, connected" wenn es geklappt hat.
+- **Onboarding-Phase "channels" abgeschlossen** — deploy-state.json aktualisiert
