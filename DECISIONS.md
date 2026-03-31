@@ -125,11 +125,20 @@ Formate: m4a, aac, mp3, webm, 3gp.
 **Vorbedingung:** `ffmpeg` muss installiert sein (ist im bootstrap.sh, fehlte
 aber auf dem LXC weil es vor dem Bootstrap-Fix eingerichtet wurde).
 
-### MiniMax MCP-Server entfernt (redundant)
-`minimax-search` MCP-Server (`minimax-coding-plan-mcp` via uvx) war kaputt
-(uvx nicht installiert) und redundant: OpenClaw hat eingebaute `web_search` +
-`web_fetch` Tools bei `tools.profile = "full"`. MiniMax M2.7 hat native Vision
-(ersetzt `understand_image` Tool). MCP-Sektion aus Config und Template entfernt.
+### MiniMax MCP-Server wieder eingebaut
+`minimax-search` MCP-Server (`minimax-coding-plan-mcp` via uvx) wurde zunaechst
+entfernt (uvx fehlte), jetzt wieder eingebaut. Bietet `web_search` + `understand_image`.
+
+**Namenskonflikt:** MCP `web_search` kollidiert mit eingebautem `web_search` (DuckDuckGo).
+OpenClaw skippt das MCP-Tool. Aktuell: eingebauter DuckDuckGo-Search bleibt aktiv.
+MCP `understand_image` funktioniert (kein Namenskonflikt).
+
+**Image Understanding — zweistufig:**
+- MiniMax M2.7 (primaer): Vision nativ — Bilder werden inline als Image-Content-Block geschickt
+- Qwen 3.5 9B (Fallback): Text-only — nutzt `understand_image` MCP-Tool (→ MiniMax API)
+- Config-Aenderung: `"input": ["text", "image"]` im MiniMax-Modell aktiviert
+
+**Vorbedingung:** `uv`/`uvx` muss installiert sein (`curl -LsSf https://astral.sh/uv/install.sh | sh`)
 
 ### TTS nur WhatsApp (offen)
 TTS-Reply ist nur fuer WhatsApp implementiert (`channelId !== "whatsapp"` → return).

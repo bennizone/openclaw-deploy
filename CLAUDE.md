@@ -95,6 +95,14 @@ Proxmox / Bare-Metal
 | Chat (persoenlich) | MiniMax M2.7 (API) | Qwen 3.5 9B (GPU-Server) |
 | HA Voice (Household) | Qwen 3.5 9B (GPU-Server) | MiniMax M2.7 |
 | Embeddings | bge-m3 (GPU-Server:8081) | bge-m3 CPU (localhost:8081) |
+| Vision/Bilder | MiniMax M2.7 nativ (inline) | understand_image MCP → MiniMax API |
+| Web-Suche | web_search (DuckDuckGo, eingebaut) | web_fetch (URL-Abruf) |
+
+### MiniMax MCP (Token-Plan)
+
+MiniMax MCP-Server (`minimax-coding-plan-mcp`) laeuft via `uvx` und bietet:
+- **`understand_image`** — Bildanalyse ueber MiniMax API (aktiv, Qwen-Fallback fuer Vision)
+- **`web_search`** — uebersprungen wegen Namenskonflikt mit eingebautem Tool
 
 ## Netzwerk-Ports
 

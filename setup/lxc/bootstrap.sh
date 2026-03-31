@@ -82,6 +82,15 @@ else
   echo "[OK] huggingface-cli installiert"
 fi
 
+# 11. uv/uvx (fuer MiniMax MCP-Server)
+if su - openclaw -c "command -v uvx" &>/dev/null; then
+  echo "[OK] uv/uvx bereits installiert"
+else
+  echo "[...] Installiere uv/uvx"
+  su - openclaw -c 'curl -LsSf https://astral.sh/uv/install.sh | sh'
+  echo "[OK] uv/uvx installiert"
+fi
+
 echo ""
 echo "=== Bootstrap abgeschlossen ==="
 echo ""

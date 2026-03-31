@@ -25,12 +25,10 @@ Offene Punkte, nach Prioritaet sortiert.
 - Agent "domi" hat Bootstrap noch nicht durchlaufen
 - BOOTSTRAP.md + SOUL.md sind vorbereitet, startet automatisch bei erster Nachricht
 
-### Web-Search verifizieren + MCP-Entscheidung
-- MiniMax MCP (`minimax-coding-plan-mcp`) wurde entfernt weil es kaputt war (uvx fehlte)
-- Eingebaute `web_search`/`web_fetch` Tools (DuckDuckGo Fallback) scheinen zu funktionieren
-- **Verifizieren:** THN eine Frage stellen die Web-Suche erfordert, Logs pruefen
-- Falls eingebaute Suche nicht reicht: MCP wieder einbauen (`uv` installieren + Config)
-- MCP wieder einbauen: `"minimax-search": {"command": "uvx", "args": ["minimax-coding-plan-mcp"], "env": {"MINIMAX_API_KEY": "${MINIMAX_API_KEY}", "MINIMAX_API_HOST": "https://api.minimax.io"}}`
+### Web-Search: MiniMax MCP web_search Namenskonflikt
+- MiniMax MCP `web_search` wird von OpenClaw uebersprungen (Namenskonflikt mit eingebautem DuckDuckGo `web_search`)
+- OpenClaw hat kein Tool-Renaming fuer MCP-Tools
+- **Optionen:** (1) DuckDuckGo behalten (aktuell), (2) `tools.deny: ["web_search"]` + MiniMax-MCP uebernimmt, (3) Auf OpenClaw-Update mit MCP-Prefix-Support warten
 - Optional: Brave/Tavily API-Key fuer bessere Ergebnisse statt DuckDuckGo
 
 ## Erledigt (2026-03-31)
@@ -39,7 +37,9 @@ Offene Punkte, nach Prioritaet sortiert.
 - [x] Agent-Identitaet gefixt (Bootstrap-Interview, THN lebt)
 - [x] CJK-Filter auf message_sending (vor Channel-Send)
 - [x] STT gefixt (m4a → ogg/opus via ffmpeg)
-- [x] MiniMax MCP entfernt (redundant)
+- [x] MiniMax MCP wieder eingebaut (uvx installiert, understand_image aktiv, web_search Namenskonflikt offen)
+- [x] Image Understanding aktiviert (MiniMax Vision nativ + understand_image MCP als Qwen-Fallback)
+- [x] Web-Search verifiziert (DuckDuckGo funktioniert, Bitcoin-Kurs-Test erfolgreich)
 - [x] de_DE.UTF-8 Locale
 - [x] ffmpeg installiert
 - [x] Bootstrap-Doku + Session-Management-Doku

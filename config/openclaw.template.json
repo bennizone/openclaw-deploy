@@ -20,7 +20,8 @@
             "name": "MiniMax M2.7",
             "reasoning": true,
             "input": [
-              "text"
+              "text",
+              "image"
             ],
             "cost": {
               "input": 0.3,
@@ -207,7 +208,16 @@
     }
   },
   "mcp": {
-    "servers": {}
+    "servers": {
+      "minimax-search": {
+        "command": "/home/openclaw/.local/bin/uvx",
+        "args": ["minimax-coding-plan-mcp", "-y"],
+        "env": {
+          "MINIMAX_API_KEY": "${MINIMAX_API_KEY}",
+          "MINIMAX_API_HOST": "https://api.minimax.io"
+        }
+      }
+    }
   },
   "skills": {
     "entries": {}
