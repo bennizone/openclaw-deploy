@@ -30,3 +30,24 @@
 - MiniMax Key: sk-cp Typ (Chatbot Pro), nutzt native API, nicht OpenAI-kompatibel
 - Qdrant Collections: memories_benni, memories_domi, memories_household (1024d, Cosine + bm25/idf)
 - Plugins: ha-voice, memory-recall, sonarr-radarr (alle in plugins.allow)
+
+## 2026-03-31: Matrix-Channel (Conduit) eingebunden
+
+### Kontext
+WhatsApp-Zugang nicht verfuegbar, Matrix als alternativer Channel eingerichtet.
+Bestehender Conduit-Server (nicht Synapse) auf matrix.benni.zone.
+
+### Entscheidungen
+- **Bot-User `@openclaw:matrix.benni.zone`** auf Conduit angelegt (Registration kurz geoeffnet)
+- **DM-Policy: allowlist** — nur `@benni:matrix.benni.zone` darf DMs senden
+- **Binding: peer-basiert** — DMs von benni → Agent "benni"
+- **Doku erstellt** (`docs/matrix-conduit-setup.md`) — Komplettanleitung fuer Conduit + OpenClaw, da sich das Vorgehen deutlich von Synapse unterscheidet und mehrere nicht-offensichtliche Fallstricke existieren
+
+### Gelernte Lektionen (in CLAUDE.md als #9-#11 aufgenommen)
+- Matrix nutzt verschachteltes `dm: { policy, allowFrom }`, nicht top-level `dmPolicy` wie WhatsApp
+- Bindings brauchen `peer: { kind, id }`, nicht `from`
+- Conduit akzeptiert kein leeres `{}` beim Room-Join (braucht `{"reason":""}`)
+- Conduit auto-join funktioniert nicht zuverlaessig — Invites manuell akzeptieren
+
+### Offener Punkt
+- Agent "benni" identifiziert sich als "Benni" (= Name des Users). Bootstrap-Interview noch nicht durchgefuehrt, in dem der Agent seine eigene Identitaet bekommt.

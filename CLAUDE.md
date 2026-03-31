@@ -203,6 +203,9 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 6. **loginctl enable-linger** — Pflicht, sonst starten Services nicht nach Reboot
 7. **tools.profile = "full"** — Andere Profile filtern Plugin-Tools still weg
 8. **plugins.slots.memory = "none"** — Eigenes Memory-System (Qdrant + Extractor)
+9. **Matrix-Channel: `dm: {}` statt `dmPolicy`** — Matrix nutzt verschachteltes Schema, WhatsApp-Style Keys crashen den Gateway
+10. **Matrix-Binding: `peer` statt `from`** — `"peer": { "kind": "direct", "id": "@user:server" }`, nicht `"from"`
+11. **Conduit Join braucht `{"reason":""}`** — Leeres `{}` wird mit M_BAD_JSON abgewiesen
 
 ## Slash-Commands
 
