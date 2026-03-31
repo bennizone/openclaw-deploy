@@ -233,7 +233,8 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 10. **Matrix-Binding: `peer` statt `from`** — `"peer": { "kind": "direct", "id": "@user:server" }`, nicht `"from"`
 11. **Conduit Join braucht `{"reason":""}`** — Leeres `{}` wird mit M_BAD_JSON abgewiesen
 12. **Bootstrap-Anweisung IN SOUL.md** — MiniMax ignoriert spaeter injizierte Dateien; kritische Anweisungen muessen in SOUL.md stehen
-13. **Sessions loeschen bei Bootstrap-Reset** — Alte History verhindert frischen Start; `rm ~/.openclaw/agents/<id>/sessions/*`
+13. **Sessions loeschen NUR bei Bootstrap-Reset** — JSONL-Sessions sind produktive Konversationsdaten und Quelle fuer den Memory-Extractor. NIEMALS im laufenden Betrieb loeschen! Nur bei Erst-Einrichtung (Bootstrap) eines neuen Agents.
+14. **agents.defaults.userTimezone setzen** — Ohne `"userTimezone": "Europe/Berlin"` injiziert OpenClaw KEIN Datum/Uhrzeit in den System-Prompt. Agent kennt dann weder Datum noch Tageszeit.
 
 ## Slash-Commands
 
