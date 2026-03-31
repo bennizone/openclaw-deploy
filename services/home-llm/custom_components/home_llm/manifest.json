@@ -1,7 +1,7 @@
 {
   "domain": "home_llm",
   "name": "Home LLM",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "documentation": "https://github.com/bennizone/openclaw-deploy/tree/main/services/home-llm",
   "dependencies": ["conversation"],
   "after_dependencies": ["assist_pipeline", "intent"],

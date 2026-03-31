@@ -8,8 +8,10 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 
 from .const import (
+    CONF_AGENT_ID,
     CONF_OPENCLAW_URL,
     CONF_OPENCLAW_API_KEY,
+    DEFAULT_AGENT_ID,
     DEFAULT_OPENCLAW_URL,
     DEFAULT_OPENCLAW_API_KEY,
 )
@@ -27,6 +29,11 @@ async def async_migrate_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         new_options.setdefault(CONF_OPENCLAW_URL, DEFAULT_OPENCLAW_URL)
         new_options.setdefault(CONF_OPENCLAW_API_KEY, DEFAULT_OPENCLAW_API_KEY)
         hass.config_entries.async_update_entry(entry, options=new_options, version=4)
+    if entry.version < 5:
+        _LOGGER.info("Migrating home_llm config entry from version %s to 5", entry.version)
+        new_options = {**entry.options}
+        new_options.setdefault(CONF_AGENT_ID, DEFAULT_AGENT_ID)
+        hass.config_entries.async_update_entry(entry, options=new_options, version=5)
     return True
 
 

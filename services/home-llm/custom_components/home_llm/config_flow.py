@@ -9,6 +9,7 @@ from homeassistant.core import callback
 
 from .const import (
     DOMAIN,
+    CONF_AGENT_ID,
     CONF_PERSONA,
     CONF_QDRANT_URL,
     CONF_EMBED_URL,
@@ -18,6 +19,7 @@ from .const import (
     CONF_LLM_MODEL,
     CONF_OPENCLAW_URL,
     CONF_OPENCLAW_API_KEY,
+    DEFAULT_AGENT_ID,
     DEFAULT_PERSONA,
     DEFAULT_QDRANT_URL,
     DEFAULT_EMBED_URL,
@@ -46,7 +48,7 @@ async def _validate_llm(llm_url: str) -> bool:
 class HomeLLMConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Home LLM."""
 
-    VERSION = 4
+    VERSION = 5
 
     async def async_step_user(self, user_input=None):
         errors = {}
@@ -55,10 +57,12 @@ class HomeLLMConfigFlow(ConfigFlow, domain=DOMAIN):
             llm_url = user_input.get(CONF_LLM_URL, DEFAULT_LLM_URL)
 
             if await _validate_llm(llm_url):
+                agent_id = user_input.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
                 return self.async_create_entry(
-                    title="Home LLM",
+                    title=f"Home LLM ({agent_id})",
                     data={},
                     options={
+                        CONF_AGENT_ID: agent_id,
                         CONF_LLM_URL: llm_url,
                         CONF_LLM_MODEL: user_input.get(CONF_LLM_MODEL, DEFAULT_LLM_MODEL),
                         CONF_PERSONA: user_input.get(CONF_PERSONA, DEFAULT_PERSONA),
@@ -76,6 +80,7 @@ class HomeLLMConfigFlow(ConfigFlow, domain=DOMAIN):
             step_id="user",
             data_schema=vol.Schema(
                 {
+                    vol.Optional(CONF_AGENT_ID, default=DEFAULT_AGENT_ID): str,
                     vol.Optional(CONF_LLM_URL, default=DEFAULT_LLM_URL): str,
                     vol.Optional(CONF_LLM_MODEL, default=DEFAULT_LLM_MODEL): str,
                     vol.Optional(CONF_PERSONA, default=DEFAULT_PERSONA): str,
@@ -110,6 +115,7 @@ class HomeLLMOptionsFlow(OptionsFlow):
             step_id="init",
             data_schema=vol.Schema(
                 {
+                    vol.Optional(CONF_AGENT_ID, default=opts.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)): str,
                     vol.Optional(CONF_LLM_URL, default=opts.get(CONF_LLM_URL, DEFAULT_LLM_URL)): str,
                     vol.Optional(CONF_LLM_MODEL, default=opts.get(CONF_LLM_MODEL, DEFAULT_LLM_MODEL)): str,
                     vol.Optional(CONF_PERSONA, default=opts.get(CONF_PERSONA, DEFAULT_PERSONA)): str,

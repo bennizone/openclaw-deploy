@@ -20,10 +20,12 @@ DEFAULT_LLM_URL = "http://localhost:8080"
 DEFAULT_LLM_MODEL = "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M"
 
 EMBEDDING_MODEL = "bge-m3"
-QDRANT_COLLECTION = "memories_household"
 EMBEDDING_DIM = 1024
 
 MAX_HISTORY_MESSAGES = 20
+
+CONF_AGENT_ID = "agent_id"
+DEFAULT_AGENT_ID = "household"
 
 CONF_OPENCLAW_URL = "openclaw_url"
 CONF_OPENCLAW_API_KEY = "openclaw_api_key"

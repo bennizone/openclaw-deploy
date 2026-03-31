@@ -16,6 +16,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
     DOMAIN,
+    CONF_AGENT_ID,
     CONF_PERSONA,
     CONF_QDRANT_URL,
     CONF_EMBED_URL,
@@ -25,6 +26,7 @@ from .const import (
     CONF_LLM_MODEL,
     CONF_OPENCLAW_URL,
     CONF_OPENCLAW_API_KEY,
+    DEFAULT_AGENT_ID,
     DEFAULT_PERSONA,
     DEFAULT_QDRANT_URL,
     DEFAULT_EMBED_URL,
@@ -35,7 +37,6 @@ from .const import (
     DEFAULT_OPENCLAW_URL,
     DEFAULT_OPENCLAW_API_KEY,
     EMBEDDING_MODEL,
-    QDRANT_COLLECTION,
     MAX_HISTORY_MESSAGES,
     OPENCLAW_INTENT_PREFIX,
 )
@@ -56,7 +57,6 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
     """Home LLM conversation agent with memory recall."""
 
     _attr_has_entity_name = True
-    _attr_name = "Home LLM"
     _attr_should_poll = False
 
     def __init__(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
@@ -64,7 +64,17 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         self.hass = hass
         self.entry = entry
         self._attr_unique_id = entry.entry_id
+        agent_id = entry.options.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
+        self._attr_name = f"Home LLM ({agent_id})"
         self._buffers: dict[str, list[tuple[float, str, str]]] = {}
+
+    @property
+    def _agent_id(self) -> str:
+        return self.entry.options.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
+
+    @property
+    def _qdrant_collection(self) -> str:
+        return f"memories_{self._agent_id}"
 
     @property
     def supported_languages(self) -> list[str]:
@@ -278,7 +288,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
-                    f"{self._qdrant_url}/collections/{QDRANT_COLLECTION}/points/search",
+                    f"{self._qdrant_url}/collections/{self._qdrant_collection}/points/search",
                     json={
                         "vector": vector,
                         "limit": self._top_k,
@@ -306,7 +316,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                         return ""
 
                     lines = "\n".join(f"- {f}" for f in facts)
-                    return "Bekannte Fakten über den Haushalt (aus Memory):\n" + lines
+                    return f"Bekannte Fakten ({self._agent_id}, aus Memory):\n" + lines
         except (aiohttp.ClientError, TimeoutError, Exception) as err:
             _LOGGER.debug("Qdrant search failed: %s", err)
             return ""
@@ -365,7 +375,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                     f"{self._openclaw_url}/v1/chat/completions",
                     headers=headers,
                     json={
-                        "model": "openclaw/household",
+                        "model": f"openclaw/{self._agent_id}",
                         "messages": [{"role": "user", "content": query}],
                     },
                     timeout=aiohttp.ClientTimeout(total=60),

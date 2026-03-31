@@ -3,15 +3,18 @@
     "step": {
       "user": {
         "title": "Home LLM einrichten",
-        "description": "Konfiguriere den Conversation Agent.",
+        "description": "Konfiguriere den Conversation Agent. Jede Instanz wird einem OpenClaw-Agenten zugeordnet.",
         "data": {
+          "agent_id": "OpenClaw Agent-ID (z.B. household, benni, domi)",
           "llm_url": "LLM Server URL",
           "llm_model": "LLM Modell",
           "persona": "Persona (zusätzliche System-Prompt Anweisung)",
           "qdrant_url": "Qdrant URL (Memory)",
           "embed_url": "Embedding Server URL",
           "retention_minutes": "Konversations-Timeout (Minuten)",
-          "top_k": "Max. Memory-Fakten pro Anfrage"
+          "top_k": "Max. Memory-Fakten pro Anfrage",
+          "openclaw_url": "OpenClaw Gateway URL",
+          "openclaw_api_key": "OpenClaw API-Key"
         }
       }
     },
@@ -24,13 +27,16 @@
       "init": {
         "title": "Home LLM Optionen",
         "data": {
+          "agent_id": "OpenClaw Agent-ID (z.B. household, benni, domi)",
           "llm_url": "LLM Server URL",
           "llm_model": "LLM Modell",
           "persona": "Persona (zusätzliche System-Prompt Anweisung)",
           "qdrant_url": "Qdrant URL (Memory)",
           "embed_url": "Embedding Server URL",
           "retention_minutes": "Konversations-Timeout (Minuten)",
-          "top_k": "Max. Memory-Fakten pro Anfrage"
+          "top_k": "Max. Memory-Fakten pro Anfrage",
+          "openclaw_url": "OpenClaw Gateway URL",
+          "openclaw_api_key": "OpenClaw API-Key"
         }
       }
     }
