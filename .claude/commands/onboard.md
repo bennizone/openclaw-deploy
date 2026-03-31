@@ -24,6 +24,25 @@ Format: Siehe CLAUDE.md Abschnitt "Onboarding-Erkennung".
 
 Am Ende: `"onboarding_complete": true` setzen.
 
+## Pre-Flight Checks (VOR Phase 0 ausfuehren!)
+
+Bevor das Interview beginnt, pruefe auf dem LXC ob alle Abhaengigkeiten da sind:
+
+```bash
+echo "=== Pre-Flight ===" \
+  && command -v cmake > /dev/null && echo "[OK] cmake" || echo "[FAIL] cmake fehlt" \
+  && command -v g++ > /dev/null && echo "[OK] g++" || echo "[FAIL] g++ fehlt" \
+  && command -v pip3 > /dev/null && echo "[OK] pip3" || echo "[FAIL] pip3 fehlt" \
+  && command -v ffmpeg > /dev/null && echo "[OK] ffmpeg" || echo "[FAIL] ffmpeg fehlt" \
+  && command -v git > /dev/null && echo "[OK] git" || echo "[FAIL] git fehlt" \
+  && node --version 2>/dev/null && echo "[OK] node" || echo "[FAIL] node fehlt" \
+  && command -v huggingface-cli > /dev/null && echo "[OK] huggingface-cli" || echo "[FAIL] huggingface-cli fehlt" \
+  && loginctl show-user openclaw 2>/dev/null | grep -q "Linger=yes" && echo "[OK] linger" || echo "[FAIL] linger nicht aktiv"
+```
+
+Falls etwas fehlt: `sudo bash setup/lxc/bootstrap.sh` ausfuehren.
+Falls alles OK: Weiter mit Phase 0.
+
 ## Phase 0: Interview
 
 Begruessung und Datensammlung. Frage nacheinander:
@@ -49,6 +68,11 @@ Nach dem Interview:
   ssh-copy-id -i ~/.ssh/id_ed25519.pub <USER>@<GPU_IP>
   ```
 - User ausfuehren lassen, dann SSH-Verbindung testen
+- **SSH-Patterns fuer spaeter merken:**
+  - GPU-Server: `ssh <USER>@<GPU_IP>` (Standard-Port 22)
+  - Home Assistant (HAOS): `ssh root@<HA_HOST> -p 22222` (SSH & Web Terminal Add-on noetig!)
+  - Falls HA-Integration gewuenscht: SSH-Key auch auf HA kopieren:
+    `ssh-copy-id -i ~/.ssh/id_ed25519.pub -p 22222 root@<HA_HOST>`
 - Phase "interview" als done markieren
 
 ## Phase 1: GPU-Server Setup
@@ -57,11 +81,23 @@ Ueber SSH auf dem GPU-Server:
 1. `setup/gpu-server/detect-nvidia.sh` — NVIDIA erkennen + Treiber
 2. `setup/gpu-server/build-llama-cpp.sh` — llama.cpp mit CUDA bauen
 3. `setup/gpu-server/download-models.sh` — Modelle laden
+   - Das Script nutzt `huggingface-cli` fuer grosse Downloads.
+   - Falls `huggingface-cli` auf dem GPU-Server nicht installiert ist:
+     `ssh <USER>@<GPU_IP> "pip3 install huggingface_hub[cli]"`
 4. systemd Services deployen aus `setup/gpu-server/systemd/`
    - Pfade in den Templates an den tatsaechlichen User anpassen (GPUUSER ersetzen)
+   - **Chat-Template:** Die Service-Unit nutzt `--jinja`, d.h. llama-server liest
+     das Chat-Template direkt aus der GGUF-Datei. Kein separates Template-File noetig.
+   - **threads-batch** wird dynamisch berechnet: `nproc - 2` (min. 2).
+     threads=1 reicht fuer Inference (GPU), threads-batch fuer Prompt-Processing (CPU-parallel).
 5. Services starten + Health-Check:
    - `curl http://<GPU_IP>:8080/health` (Chat)
    - `curl http://<GPU_IP>:8081/health` (Embedding)
+   - **Erwartete Startzeiten:**
+     - llama-chat (Qwen 9B, CUDA): 15-30 Sekunden
+     - llama-embed (bge-m3, CUDA): 5-10 Sekunden
+   - Falls Health-Check nach 60s fehlschlaegt:
+     `ssh <USER>@<GPU_IP> "journalctl --user -u llama-chat -n 50"`
 6. Phase "gpu_server" als done markieren
 
 ## Phase 2: LXC Setup
@@ -76,6 +112,11 @@ Lokal auf dem OpenClaw-Container:
    - Gateway-Token generieren: `openssl rand -hex 24`
 5. `loginctl enable-linger` pruefen (KRITISCH!)
 6. Gateway starten + Health-Check
+   - **Erwartete Startzeiten (LXC):**
+     - Qdrant (Docker): 5-10 Sekunden
+     - llama-embed-fallback (CPU bge-m3): 30-60 Sekunden (laedt 634MB Modell in RAM)
+     - OpenClaw Gateway: 3-5 Sekunden
+   - Falls ein Service nicht startet: `journalctl --user -u <service-name> -n 50`
 7. Phase "lxc_setup" als done markieren
 
 ## Phase 3: Plugins
@@ -105,11 +146,25 @@ Lokal auf dem OpenClaw-Container:
 
 ## Phase 5: Memory-System
 
-1. Qdrant Collections anlegen (per API):
-   - `memories_<agentId>` fuer jeden persoenlichen Agent
-   - `memories_household` fuer den Household-Agent
-   - Vektor-Dimension: 1024 (bge-m3!)
-   - Schema: dense (1024, Cosine) + bm25 (sparse, idf)
+1. Qdrant Collections anlegen — fuer JEDEN Agent eine eigene Collection:
+   ```bash
+   # Fuer jeden Agent (Namen aus dem Interview):
+   for AGENT in <agent1> <agent2> household; do
+     curl -X PUT "http://localhost:6333/collections/memories_${AGENT}" \
+       -H "Content-Type: application/json" \
+       -d '{
+         "vectors": {
+           "dense": { "size": 1024, "distance": "Cosine" }
+         },
+         "sparse_vectors": {
+           "bm25": { "modifier": "idf" }
+         }
+       }'
+     echo " → memories_${AGENT} erstellt"
+   done
+   ```
+   **KRITISCH:** Dimension MUSS 1024 sein (bge-m3). NICHT 1536!
+   Pruefen: `curl -s http://localhost:6333/collections | jq '.result.collections[].name'`
 2. Extractor deployen:
    - `services/extractor/` nach `~/extractor/` kopieren
    - `npm install && npm run build`
@@ -125,7 +180,14 @@ Lokal auf dem OpenClaw-Container:
 
 Den User durch das Channel-Setup begleiten:
 - **WhatsApp:** `openclaw channels setup whatsapp` — QR-Code scannen anleiten
-- **Matrix:** Token + Homeserver konfigurieren
+- **Matrix (Conduit):** Komplette Anleitung in `docs/matrix-conduit-setup.md`. Kurzfassung:
+  1. SSH auf Matrix-Server, Bot-User auf Conduit anlegen (Registration kurz oeffnen)
+  2. `openclaw channels add --channel matrix --homeserver <URL> --access-token <TOKEN>`
+  3. In `openclaw.json` manuell ergaenzen: `autoJoin`, `dm.policy`, `dm.allowFrom`
+     (Achtung: Matrix nutzt verschachteltes `dm: {}`, NICHT top-level `dmPolicy`!)
+  4. Binding mit `peer: { kind: "direct", id: "@user:server" }` hinzufuegen
+  5. Gateway neustarten, DM starten, Invite manuell akzeptieren (Conduit auto-join bug)
+- **Matrix (Synapse):** Gleiche OpenClaw-Config, aber User ueber Synapse Admin-API anlegen
 - **Telegram:** BotFather-Anleitung
 - Allowlists konfigurieren
 - Test-Nachricht senden lassen
@@ -134,12 +196,69 @@ Den User durch das Channel-Setup begleiten:
 ## Phase 7: HA-Integration (optional)
 
 Falls der User Home Assistant hat:
-1. `services/home-llm/` Component vorbereiten
-2. Per SCP zu HA deployen (User durch SSH-Zugang begleiten)
-3. HA Config Flow durchlaufen
-4. OpenClaw chatCompletions Endpoint testen
-5. Conversation Agent in HA aktivieren
-6. Phase "ha_integration" als done markieren (oder `"skipped": true` wenn nicht gewuenscht)
+
+1. **SSH-Zugang zu HA pruefen:**
+   - HAOS nutzt SSH auf Port **22222** (nicht 22!) — braucht das "SSH & Web Terminal" Add-on
+   - Test: `ssh -p 22222 root@<HA_HOST> "ha core info"`
+   - Falls kein SSH: HA REST API mit Long-Lived Token als Fallback
+
+2. **HA Backup erstellen (PFLICHT vor jedem Deploy!):**
+   ```bash
+   # Via SSH (bevorzugt):
+   ssh -p 22222 root@<HA_HOST> "ha backups new --name pre-openclaw-$(date +%Y%m%d)"
+   # Pruefen:
+   ssh -p 22222 root@<HA_HOST> "ha backups list" | tail -5
+
+   # Via REST API (Alternative):
+   curl -X POST "https://<HA_URL>/api/services/backup/create" \
+     -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json"
+   ```
+
+3. **Component vorbereiten:**
+   - `services/home-llm/` Dateien pruefen
+   - Python Syntax-Check: `python3 -m py_compile services/home-llm/custom_components/home_llm/conversation.py`
+
+4. **Deploy (pycache loeschen ist WICHTIG!):**
+   ```bash
+   # pycache loeschen (sonst laedt HA gecachten alten Code!)
+   find services/home-llm/custom_components/home_llm -name '__pycache__' -type d -exec rm -rf {} + 2>/dev/null || true
+
+   # Kopieren via SCP
+   scp -P 22222 -r services/home-llm/custom_components/home_llm root@<HA_HOST>:/config/custom_components/
+   ```
+   **Alternativ:** Das Script `setup/lxc/deploy-home-llm.sh` macht Backup + Deploy + Restart automatisch:
+   ```bash
+   bash setup/lxc/deploy-home-llm.sh <HA_HOST> 22222 "$HA_TOKEN"
+   ```
+
+5. **HA Core neustarten:**
+   ```bash
+   # Via SSH:
+   ssh -p 22222 root@<HA_HOST> "ha core restart"
+   # Via API:
+   curl -X POST "https://<HA_URL>/api/services/homeassistant/restart" \
+     -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json"
+   ```
+   **Erwartete Dauer:** HA Core Restart dauert 30-90 Sekunden.
+
+6. **Config Flow in HA UI durchlaufen:**
+   Settings > Devices & Services > Add Integration > "Home LLM"
+   Parameter:
+   - LLM URL: `http://<GPU_IP>:8080`
+   - Embed URL: `http://<GPU_IP>:8081`
+   - Qdrant URL: `http://<LXC_IP>:6333`
+   - OpenClaw URL: `http://<LXC_IP>:18789`
+   - Agent ID: `household`
+   - OpenClaw API Key: Gateway-Token aus `~/.openclaw/.env`
+
+7. **Test:**
+   ```bash
+   curl -s "https://<HA_URL>/api/conversation/process" \
+     -H "Authorization: Bearer $HA_TOKEN" -H "Content-Type: application/json" \
+     -d '{"text":"Hallo","agent_id":"conversation.home_llm","language":"de"}'
+   ```
+
+8. Phase "ha_integration" als done markieren (oder `"skipped": true` wenn nicht gewuenscht)
 
 ## Phase 8: Abschluss
 

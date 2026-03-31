@@ -3,15 +3,24 @@ Description=llama.cpp Chat Server (Qwen 3.5 9B)
 After=network.target
 
 [Service]
+# threads-batch wird dynamisch berechnet: CPU-Kerne - 2
+# (1 Kern fuer Inference-Thread, 1 Reserve fuer OS)
+# Minimum: 2
+ExecStartPre=/bin/bash -c 'CORES=$(nproc); TB=$((CORES > 4 ? CORES - 2 : 2)); echo "THREADS_BATCH=$TB" > /tmp/llama-chat-env'
+EnvironmentFile=/tmp/llama-chat-env
 ExecStart=/home/GPUUSER/llama.cpp/build/bin/llama-server \
   --model /home/GPUUSER/models/Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf \
   --port 8080 --host 0.0.0.0 \
-  --ctx-size 98304 \
-  --n-gpu-layers 99 \
+  --ctx-size 196608 \
+  --n-predict 8192 \
+  --n-gpu-layers 999 \
   --parallel 2 \
   --cache-type-k q4_0 --cache-type-v q4_0 \
-  --reasoning-budget 1024 \
-  --chat-template-file /home/GPUUSER/llama.cpp/chat-template.jinja
+  --flash-attn auto \
+  --jinja \
+  --threads 1 \
+  --threads-batch ${THREADS_BATCH} \
+  --reasoning-budget 1024
 Restart=always
 RestartSec=5
 

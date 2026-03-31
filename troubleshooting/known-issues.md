@@ -35,6 +35,15 @@
 | before_dispatch feuert nicht | Hook feuert NUR fuer chatCompletions | Fuer WhatsApp: before_model_resolve oder before_prompt_build nutzen |
 | Doppelte Memory-Injection | Hook feuert mehrmals | Idempotenz-Check im Hook implementieren |
 
+## Claude Code / Setup
+
+| Problem | Ursache | Loesung |
+|---------|---------|---------|
+| Claude Code Installer schlaegt fehl | `curl ... \| sh` statt `\| bash` | Immer `curl -fsSL https://claude.ai/install.sh \| bash` verwenden |
+| HuggingFace Download fehlschlaegt | Grosse Dateien (>1GB) brechen per curl ab | `huggingface-cli download` verwenden (in bootstrap.sh vorinstalliert) |
+| Fehlende Build-Tools bei llama.cpp | bootstrap.sh nicht als root ausgefuehrt | `sudo bash setup/lxc/bootstrap.sh` ausfuehren |
+| HA Deploy schlaegt fehl | pycache nicht geloescht, SSH-Port falsch | pycache vor SCP loeschen, HAOS nutzt Port 22222 |
+
 ## Node / npm
 
 | Problem | Ursache | Loesung |

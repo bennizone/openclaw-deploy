@@ -17,6 +17,7 @@ Reproduzierbares Setup fuer einen kompletten OpenClaw Smart-Home-Stack mit Claud
 - **Home Assistant** — Optional, fuer Sprachassistent-Integration
 - **MiniMax API-Key** — Fuer das primaere LLM ([minimax.io](https://www.minimax.io))
 - **Anthropic Account** — Fuer Claude Code Auth (Pro/Max)
+- **Auf dem LXC** werden ausserdem benoetigt: `python3-pip`, `ffmpeg`, `build-essential`, `cmake` (das `bootstrap.sh` Script installiert alles automatisch)
 
 ## Installation
 
@@ -78,7 +79,7 @@ echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> ~/.bashrc
 source ~/.bashrc
 
 # Claude Code (NICHT per npm — native Installer verwenden!)
-curl -fsSL https://claude.ai/install.sh | sh
+curl -fsSL https://claude.ai/install.sh | bash
 
 # Git
 sudo apt install -y git
@@ -95,6 +96,12 @@ claude
 # Auth-Prozess im Browser durchfuehren
 # Danach: /exit
 ```
+
+> **Tipp fuer das Onboarding:** Claude Code kann mit `claude --dangerously-skip-permissions`
+> gestartet werden, um Bestaetigungsdialoge zu ueberspringen. Das spart erheblich Zeit,
+> da das Setup viele Dateisystem- und Netzwerk-Operationen ausfuehrt.
+> **Achtung:** Nur verwenden wenn das Repo aus einer vertrauenswuerdigen Quelle stammt.
+> Nach dem Setup normal ohne dieses Flag arbeiten.
 
 ### 5. Repo klonen
 

@@ -7,6 +7,15 @@ LLAMA_DIR="${LLAMA_DIR:-$HOME/llama.cpp}"
 
 echo "=== llama.cpp Embedding Fallback (CPU) ==="
 
+# 0. Voraussetzungen pruefen
+for dep in cmake g++ make; do
+  if ! command -v $dep &>/dev/null; then
+    echo "[FAIL] '$dep' nicht gefunden. Bitte zuerst bootstrap.sh ausfuehren oder:"
+    echo "       sudo apt install -y build-essential cmake"
+    exit 1
+  fi
+done
+
 # 1. llama.cpp klonen/updaten
 if [ -d "$LLAMA_DIR" ]; then
   echo "[OK] llama.cpp bereits vorhanden"

@@ -22,12 +22,18 @@ if ! command -v nvcc &>/dev/null; then
 fi
 
 # Build-Tools pruefen
-for tool in cmake g++ git; do
+for tool in cmake g++ git make; do
   if ! command -v $tool &>/dev/null; then
     echo "[...] Installiere $tool"
     sudo apt-get install -y -qq $tool
   fi
 done
+
+# Python3 + pip (fuer huggingface-cli in download-models.sh)
+if ! command -v python3 &>/dev/null || ! command -v pip3 &>/dev/null; then
+  echo "[...] Installiere python3-pip"
+  sudo apt-get install -y -qq python3-pip
+fi
 
 # 2. Klonen/Updaten
 if [ -d "$LLAMA_DIR" ]; then

@@ -27,7 +27,7 @@ Dies passiert im `before_model_resolve` Hook.
 - Besonderheit: CJK Language Bleeding → Sanitizer aktiv
 
 ### Qwen 3.5 9B Opus-Distilled v2 (Q4_K_M)
-- Context: 98.304 Tokens (2 Slots à 49.152)
+- Context: 196.608 Tokens gesamt (2 Slots à 98.304)
 - Max Output: 8.192 Tokens
 - KV-Cache: Q4_0 (spart ~1.5 GB VRAM vs F16)
 - Parallel: 2 Slots

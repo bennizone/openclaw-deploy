@@ -8,14 +8,17 @@
       "file": "bge-m3-q8_0.gguf",
       "size": "634MB",
       "url": "https://huggingface.co/compilade/bge-m3-GGUF/resolve/main/bge-m3-q8_0.gguf",
+      "hfDownload": "huggingface-cli download compilade/bge-m3-GGUF bge-m3-q8_0.gguf --local-dir ~/models",
       "dimension": 1024
     },
     "qwen": {
       "file": "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf",
       "size": "5.63GB",
       "url": "https://huggingface.co/Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF",
+      "hfDownload": "huggingface-cli download Jackrong/Qwen3.5-9B-Claude-4.6-Opus-Reasoning-Distilled-v2-GGUF Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf --local-dir ~/models",
       "parameters": {
-        "contextWindow": 98304,
+        "contextWindow": 196608,
+        "contextPerSlot": 98304,
         "maxTokens": 8192,
         "kvCacheQuant": "q4_0",
         "parallel": 2,

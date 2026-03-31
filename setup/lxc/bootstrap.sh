@@ -65,12 +65,29 @@ else
   echo "[OK] Build-Essentials installiert"
 fi
 
+# 9. Python3 pip + ffmpeg
+if command -v pip3 &>/dev/null && command -v ffmpeg &>/dev/null; then
+  echo "[OK] python3-pip + ffmpeg bereits installiert"
+else
+  apt-get update -qq && apt-get install -y -qq python3-pip python3-venv ffmpeg
+  echo "[OK] python3-pip + ffmpeg installiert"
+fi
+
+# 10. huggingface-cli (fuer Modell-Downloads von HuggingFace)
+if su - openclaw -c "command -v huggingface-cli" &>/dev/null; then
+  echo "[OK] huggingface-cli bereits installiert"
+else
+  echo "[...] Installiere huggingface-cli"
+  su - openclaw -c 'pip3 install --user "huggingface_hub[cli]"'
+  echo "[OK] huggingface-cli installiert"
+fi
+
 echo ""
 echo "=== Bootstrap abgeschlossen ==="
 echo ""
 echo "Naechste Schritte (als User 'openclaw'):"
 echo "  su - openclaw"
-echo "  curl -fsSL https://claude.ai/install.sh | sh"
+echo "  curl -fsSL https://claude.ai/install.sh | bash"
 echo "  claude    # Auth durchfuehren, dann /exit"
 echo "  git clone <dein-repo-url> ~/openclaw-deploy"
 echo "  cd ~/openclaw-deploy && claude"
