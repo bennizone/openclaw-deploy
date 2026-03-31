@@ -176,12 +176,29 @@ export function startWatch(): void {
 
     log('debug', 'watcher', `File changed: ${filePath}`);
 
-    // Check if we have a pending last turn — if new data arrived, process it with followup
+    // Process any pending held-back turns NOW — followup data has arrived
     for (const [key, pending] of pendingLastTurns.entries()) {
       if (key.startsWith(filePath + ':')) {
         clearTimeout(pending.timeout);
         pendingLastTurns.delete(key);
-        log('debug', 'watcher', `Followup arrived for turn ${pending.turnIndex}`);
+        log('debug', 'watcher', `Followup arrived, processing held turn ${pending.turnIndex}`);
+        // Re-parse file to get full context including new followup
+        try {
+          const state = getOffset(pending.filePath);
+          const byteOffset = state?.lastByteOffset ?? 0;
+          const startTurnIndex = state?.lastTurnIndex ? state.lastTurnIndex + 1 : 0;
+          const { turns, bytesRead } = parseFile(pending.filePath, byteOffset, startTurnIndex);
+          const turnIdx = turns.findIndex(t => t.turnIndex === pending.turnIndex);
+          if (turnIdx >= 0) {
+            const result = await processTurn(turns, turnIdx, pending.filePath, bytesRead);
+            if (result.written > 0) {
+              log('info', 'watcher', `[${agentId}] Held turn ${pending.turnIndex}: ${result.extracted} facts, ${result.written} written`);
+            }
+            setOffset(pending.filePath, bytesRead, pending.turnIndex);
+          }
+        } catch (err) {
+          log('error', 'watcher', `Error processing held turn: ${(err as Error).message}`);
+        }
       }
     }
 
