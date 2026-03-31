@@ -154,3 +154,60 @@ zukuenftige Tools (Sonarr/Radarr Migration geplant).
 TTS-Reply ist nur fuer WhatsApp implementiert (`channelId !== "whatsapp"` → return).
 Matrix-TTS braucht eigenen Pfad fuer Audio-Upload als Matrix-Media-Event.
 Wird spaeter umgebaut.
+
+## 2026-03-31: Sonarr/Radarr Plugin → Tool-Hub MCP migriert
+
+### Kontext
+Das Plugin `openclaw-sonarr-radarr` nutzte keine Hooks — reine Tool-Logik. Damit
+war es ideal fuer die Migration in den bestehenden Tool-Hub MCP Server
+(`services/openclaw-tools/`). Gleichzeitig drei bekannte Schwaechen behoben:
+
+1. **Deutsche Titel** — Suche nach "Die Simpsons" schlug fehl weil Sonarr/Radarr
+   Lookup-Endpoints nur den primaeren (englischen) Titel durchsuchen
+2. **Fehlende Details** — Fuer Episoden-Status brauchte THN 7 curl-Calls
+3. **Collection-Handling** — Funktionierte, war aber nicht proaktiv genug
+
+### Architektur-Entscheidung
+
+**Ein Tool-Hub statt separater MCP-Server.** Alle externen Tools (Web-Search,
+Vision, Sonarr/Radarr) laufen in einem MCP-Server. Plugins bleiben nur fuer
+Hook-basierte Funktionalitaet (ha-voice, memory-recall).
+
+### Neue/verbesserte Tools (7 Stueck, vorher 5)
+
+| Tool | Neu/Portiert | Aenderung |
+|------|--------------|-----------|
+| `arr_search` | Portiert | 3-stufige Suche: Direkt → Library-Alt-Titles → Web-Search TMDB-Aufloesung |
+| `arr_add_movie` | Portiert | Unveraendert |
+| `arr_add_series` | Portiert | Unveraendert |
+| `arr_series_detail` | **Neu** | Staffel-Uebersicht mit Downloaded/Missing/Monitored pro Staffel |
+| `arr_episode_list` | **Neu** | Episoden einer Staffel mit Download-Status |
+| `arr_calendar` | Portiert | Erweitert um Download-Queue Status |
+| `arr_add_collection` | Portiert | Unveraendert |
+
+### Deutsche-Titel-Aufloesung (3-stufig)
+
+1. **Direkt-Suche** bei Sonarr/Radarr (schneller Pfad fuer englische Titel)
+2. **Library-Alternative-Titles** — Sonarr/Radarr liefern `alternativeTitles` in
+   der Library-Response. Case-insensitive Match findet deutsche Titel fuer Serien/Filme
+   die schon in der Bibliothek sind
+3. **Web-Search → TMDB** — DDG+MiniMax suchen nach `"query site:themoviedb.org"`,
+   extrahieren den englischen Titel aus dem TMDB-Seitentitel, suchen erneut
+
+Stufe 2 ist schnell und kostenlos (lokaler API-Call). Stufe 3 nutzt den bestehenden
+Web-Search-Proxy (DDG+MiniMax parallel, volle Redundanz).
+
+### Config-Migration
+
+- MCP env vars: `SONARR_URL`, `SONARR_API_KEY`, `RADARR_URL`, `RADARR_API_KEY`,
+  `SONARR_QUALITY_PROFILE`, `RADARR_QUALITY_PROFILE`
+- Plugin `openclaw-sonarr-radarr` aus `plugins.allow` und `plugins.entries` entfernt
+- Plugin-Code bleibt im Repo als Rollback-Referenz
+
+### Gelernte Lektionen
+
+- Sonarr/Radarr Lookup-Endpoints durchsuchen alternative Titel NICHT (bekannte
+  Limitation: Radarr #3346, Sonarr #8070)
+- UmlautAdaptarr hilft beim Download-Matching, nicht bei der API-Suche
+- Library-Alternative-Titles sind der schnellste Weg fuer deutsche Titel (kein
+  externer Call noetig)

@@ -9,12 +9,7 @@ Offene Punkte, nach Prioritaet sortiert.
 - Matrix braucht eigenen Pfad: Audio generieren → als Matrix-Media-Event hochladen
 - Betrifft: `plugins/openclaw-ha-voice/src/index.ts` Abschnitt 6 (agent_end Hook)
 
-### Sonarr/Radarr Tools verbessern + in Tool-Hub migrieren
-- `arr_search` liefert nur Basis-Infos, keine Episoden-Details
-- THN musste sich fuer Scrubs-Anfrage durch 7 curl-Calls kaempfen um Episoden-Status zu bekommen
-- Neue Tools: `arr_series_detail` / `arr_episode_list` fuer detaillierte Abfragen
-- **Migration:** Plugin → Tool-Hub MCP (`services/openclaw-tools/`) — reine Tool-Logik ohne Hooks
-- Betrifft: `plugins/openclaw-sonarr-radarr/` → `services/openclaw-tools/src/tools/`
+### ~~Sonarr/Radarr Tools verbessern + in Tool-Hub migrieren~~ → Erledigt (2026-03-31)
 
 ### WhatsApp-Channel einrichten
 - Uebersprungen beim Onboarding (Handy nicht verfuegbar)
@@ -48,6 +43,10 @@ Offene Punkte, nach Prioritaet sortiert.
 - Betrifft: Agent-Workspace (SOUL.md Anweisung), neue Datei fuer Request-Liste
 
 
+### Plugin `openclaw-sonarr-radarr` entfernen
+- Plugin-Code liegt noch im Repo unter `plugins/openclaw-sonarr-radarr/` als Rollback-Referenz
+- Kann geloescht werden sobald die MCP-Migration stabil laeuft (nach ein paar Tagen Betrieb)
+
 ## Erledigt (2026-03-31)
 
 - [x] Matrix-Channel (Conduit) eingerichtet + dokumentiert
@@ -60,6 +59,7 @@ Offene Punkte, nach Prioritaet sortiert.
 - [x] Tool-Hub MCP Server (`services/openclaw-tools/`) — ersetzt separaten minimax-search MCP
 - [x] Web-Search Namenskonflikt geloest: Tool-Hub liefert `web_search` (DDG + MiniMax merged), built-in via `tools.deny` deaktiviert
 - [x] `understand_image` in Tool-Hub integriert (MiniMax VLM API, kein Python/uvx mehr noetig)
+- [x] Sonarr/Radarr: Plugin → Tool-Hub MCP migriert (7 Tools, 3-stufige deutsche Titelsuche, `arr_series_detail` + `arr_episode_list` neu)
 - [x] de_DE.UTF-8 Locale
 - [x] ffmpeg installiert
 - [x] Bootstrap-Doku + Session-Management-Doku

@@ -80,8 +80,8 @@ Proxmox / Bare-Metal
 
 | Verzeichnis | Was | Laeuft wo |
 |-------------|-----|-----------|
-| `plugins/` | 3 OpenClaw Plugins (Source) | LXC: ~/.openclaw/extensions/ |
-| `services/openclaw-tools/` | Tool-Hub MCP Server (Search, Vision) | LXC: MCP via Gateway |
+| `plugins/` | 2 OpenClaw Plugins (ha-voice, memory-recall) | LXC: ~/.openclaw/extensions/ |
+| `services/openclaw-tools/` | Tool-Hub MCP Server (Search, Vision, Sonarr/Radarr) | LXC: MCP via Gateway |
 | `services/extractor/` | Memory-Extractor Service | LXC: ~/extractor/ |
 | `services/home-llm/` | HA Custom Component | Home Assistant |
 | `setup/lxc/` | LXC Setup-Scripts + systemd | LXC |
@@ -106,7 +106,12 @@ Zentraler MCP-Server fuer alle externen Tools. Eingebautes `web_search` ist via
 
 - **`web_search`** — fragt DuckDuckGo + MiniMax Search parallel ab, merged + dedupliziert
 - **`understand_image`** — Bildanalyse ueber MiniMax VLM API (Qwen-Fallback fuer Vision)
-- Spaeter: Sonarr/Radarr Tools (Migration aus Plugin geplant)
+- **`arr_search`** — Suche in Sonarr/Radarr mit 3-stufiger deutscher Titelaufloesung
+- **`arr_add_movie`** / **`arr_add_series`** — Medien zur Bibliothek hinzufuegen
+- **`arr_series_detail`** — Staffel-Uebersicht mit Download-Status
+- **`arr_episode_list`** — Episoden einer Staffel mit Details
+- **`arr_calendar`** — Naechste Episoden/Filme + Download-Queue
+- **`arr_add_collection`** — Komplette Film-Collection hinzufuegen
 
 ## Netzwerk-Ports
 
