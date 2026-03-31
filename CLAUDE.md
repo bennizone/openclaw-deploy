@@ -81,6 +81,7 @@ Proxmox / Bare-Metal
 | Verzeichnis | Was | Laeuft wo |
 |-------------|-----|-----------|
 | `plugins/` | 3 OpenClaw Plugins (Source) | LXC: ~/.openclaw/extensions/ |
+| `services/openclaw-tools/` | Tool-Hub MCP Server (Search, Vision) | LXC: MCP via Gateway |
 | `services/extractor/` | Memory-Extractor Service | LXC: ~/extractor/ |
 | `services/home-llm/` | HA Custom Component | Home Assistant |
 | `setup/lxc/` | LXC Setup-Scripts + systemd | LXC |
@@ -95,14 +96,17 @@ Proxmox / Bare-Metal
 | Chat (persoenlich) | MiniMax M2.7 (API) | Qwen 3.5 9B (GPU-Server) |
 | HA Voice (Household) | Qwen 3.5 9B (GPU-Server) | MiniMax M2.7 |
 | Embeddings | bge-m3 (GPU-Server:8081) | bge-m3 CPU (localhost:8081) |
-| Vision/Bilder | MiniMax M2.7 nativ (inline) | understand_image MCP → MiniMax API |
-| Web-Suche | web_search (DuckDuckGo, eingebaut) | web_fetch (URL-Abruf) |
+| Vision/Bilder | MiniMax M2.7 nativ (inline) | understand_image Tool-Hub → MiniMax VLM API |
+| Web-Suche | web_search Tool-Hub (DDG + MiniMax merged) | web_fetch (URL-Abruf) |
 
-### MiniMax MCP (Token-Plan)
+### OpenClaw Tool-Hub MCP (`services/openclaw-tools/`)
 
-MiniMax MCP-Server (`minimax-coding-plan-mcp`) laeuft via `uvx` und bietet:
-- **`understand_image`** — Bildanalyse ueber MiniMax API (aktiv, Qwen-Fallback fuer Vision)
-- **`web_search`** — uebersprungen wegen Namenskonflikt mit eingebautem Tool
+Zentraler MCP-Server fuer alle externen Tools. Eingebautes `web_search` ist via
+`tools.deny` deaktiviert, der Tool-Hub uebernimmt.
+
+- **`web_search`** — fragt DuckDuckGo + MiniMax Search parallel ab, merged + dedupliziert
+- **`understand_image`** — Bildanalyse ueber MiniMax VLM API (Qwen-Fallback fuer Vision)
+- Spaeter: Sonarr/Radarr Tools (Migration aus Plugin geplant)
 
 ## Netzwerk-Ports
 

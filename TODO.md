@@ -9,12 +9,12 @@ Offene Punkte, nach Prioritaet sortiert.
 - Matrix braucht eigenen Pfad: Audio generieren → als Matrix-Media-Event hochladen
 - Betrifft: `plugins/openclaw-ha-voice/src/index.ts` Abschnitt 6 (agent_end Hook)
 
-### Sonarr/Radarr Tools verbessern
+### Sonarr/Radarr Tools verbessern + in Tool-Hub migrieren
 - `arr_search` liefert nur Basis-Infos, keine Episoden-Details
 - THN musste sich fuer Scrubs-Anfrage durch 7 curl-Calls kaempfen um Episoden-Status zu bekommen
-- Entweder: Plugin um `arr_series_detail` / `arr_episode_list` Tool erweitern
-- Oder: API-Key-Pfad + Sonarr-URL in TOOLS.md dokumentieren damit Agent direkt curlen kann
-- Betrifft: `plugins/openclaw-sonarr-radarr/`
+- Neue Tools: `arr_series_detail` / `arr_episode_list` fuer detaillierte Abfragen
+- **Migration:** Plugin → Tool-Hub MCP (`services/openclaw-tools/`) — reine Tool-Logik ohne Hooks
+- Betrifft: `plugins/openclaw-sonarr-radarr/` → `services/openclaw-tools/src/tools/`
 
 ### WhatsApp-Channel einrichten
 - Uebersprungen beim Onboarding (Handy nicht verfuegbar)
@@ -25,11 +25,28 @@ Offene Punkte, nach Prioritaet sortiert.
 - Agent "domi" hat Bootstrap noch nicht durchlaufen
 - BOOTSTRAP.md + SOUL.md sind vorbereitet, startet automatisch bei erster Nachricht
 
-### Web-Search: MiniMax MCP web_search Namenskonflikt
-- MiniMax MCP `web_search` wird von OpenClaw uebersprungen (Namenskonflikt mit eingebautem DuckDuckGo `web_search`)
-- OpenClaw hat kein Tool-Renaming fuer MCP-Tools
-- **Optionen:** (1) DuckDuckGo behalten (aktuell), (2) `tools.deny: ["web_search"]` + MiniMax-MCP uebernimmt, (3) Auf OpenClaw-Update mit MCP-Prefix-Support warten
-- Optional: Brave/Tavily API-Key fuer bessere Ergebnisse statt DuckDuckGo
+### Claude Code: Agenten besser nutzen
+- Claude Code hat spezialisierte Agents (`/coder`, `/reviewer`, `/tester`, `/docs`, etc.)
+- Diese werden aktuell zu wenig eingesetzt bei Administration und Entwicklung
+- Ziel: Workflow optimieren, Agents automatischer und haeufiger einsetzen
+- Betrifft: CLAUDE.md Agent-Auswahl, Pipeline-Regeln
+
+### Dream-Prozess: Effizienz-Selbstanalyse
+- Agent soll im Dream-Prozess eigene Sessions analysieren: wo wurden Tokens verschwendet?
+- Beispiel: Sonarr-Infos per 7 curl-Calls statt einem passenden Tool geholt
+- Erkannte Ineffizienzen → Notiz im Morgenbrief an Main-User (benni)
+- Vorschlag: "Effizienz steigern durch neues Tool/Skill X"
+- **Nur Main-User bekommt Vorschlaege** (nicht der Agent-User selbst)
+- Betrifft: Dream-System, Morgenbrief-Template, Agent-Workspace-Config
+
+### Agent Feature-Requests (Wunschliste)
+- Wenn ein Agent etwas nicht kann oder umstaendlich loesen muss:
+  → Agent fragt User: "Soll ich das auf die Wunschliste setzen?"
+- Requests landen in einer zentralen Liste (z.B. `REQUESTS.md` oder aehnlich)
+- Admin (Benni) kann in Claude Code die Liste einsehen und entscheiden:
+  → Auf TODO setzen? → Direkt implementieren? → Ablehnen?
+- Betrifft: Agent-Workspace (SOUL.md Anweisung), neue Datei fuer Request-Liste
+
 
 ## Erledigt (2026-03-31)
 
@@ -40,6 +57,9 @@ Offene Punkte, nach Prioritaet sortiert.
 - [x] MiniMax MCP wieder eingebaut (uvx installiert, understand_image aktiv, web_search Namenskonflikt offen)
 - [x] Image Understanding aktiviert (MiniMax Vision nativ + understand_image MCP als Qwen-Fallback)
 - [x] Web-Search verifiziert (DuckDuckGo funktioniert, Bitcoin-Kurs-Test erfolgreich)
+- [x] Tool-Hub MCP Server (`services/openclaw-tools/`) — ersetzt separaten minimax-search MCP
+- [x] Web-Search Namenskonflikt geloest: Tool-Hub liefert `web_search` (DDG + MiniMax merged), built-in via `tools.deny` deaktiviert
+- [x] `understand_image` in Tool-Hub integriert (MiniMax VLM API, kein Python/uvx mehr noetig)
 - [x] de_DE.UTF-8 Locale
 - [x] ffmpeg installiert
 - [x] Bootstrap-Doku + Session-Management-Doku

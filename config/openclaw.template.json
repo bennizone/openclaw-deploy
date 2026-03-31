@@ -96,6 +96,7 @@
   },
   "tools": {
     "profile": "full",
+    "deny": ["web_search"],
     "agentToAgent": {
       "enabled": true,
       "allow": [
@@ -209,9 +210,9 @@
   },
   "mcp": {
     "servers": {
-      "minimax-search": {
-        "command": "/home/openclaw/.local/bin/uvx",
-        "args": ["minimax-coding-plan-mcp", "-y"],
+      "openclaw-tools": {
+        "command": "/home/openclaw/.local/share/fnm/aliases/default/bin/node",
+        "args": ["/home/openclaw/openclaw-deploy/services/openclaw-tools/dist/index.js"],
         "env": {
           "MINIMAX_API_KEY": "${MINIMAX_API_KEY}",
           "MINIMAX_API_HOST": "https://api.minimax.io"
