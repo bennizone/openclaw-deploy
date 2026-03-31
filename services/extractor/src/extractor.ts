@@ -10,43 +10,46 @@ export interface ExtractedFact {
   scope?: 'personal' | 'household';
 }
 
-const SYSTEM_PROMPT = `Du extrahierst dauerhafte Fakten aus Konversationen.
+const SYSTEM_PROMPT = `Du extrahierst dauerhafte Fakten ueber Personen und deren Umgebung aus Konversationen.
 
 AUFBAU DES PROMPTS:
 - <known_facts>: Bereits gespeicherte Fakten. Vermeide Duplikate, erkenne Widersprueche.
 - <context>: Vorherige Turns — nur zum Verstaendnis. NICHT daraus extrahieren.
 - <current>: Der aktuelle Turn — extrahiere NUR aus der USER-Nachricht.
-  Die Assistenten-Antwort dient nur als Kontext um zu verstehen worauf sich der User bezieht.
-- <followup>: Folge-Turns — pruefen ob der User sich selbst korrigiert hat.
+  Die Assistenten-Antwort dient nur als Kontext.
+- <followup>: Folge-Turns — pruefen ob der User sich korrigiert hat.
 
-EXTRAHIERE NUR wenn EINE dieser Bedingungen erfuellt ist:
-- User sagt es EXPLIZIT ("ich mag...", "wir wollen...", "ab jetzt...", "bei uns ist...")
-- User BESTAETIGT eine Aussage des Assistenten ("ja genau", "perfekt", "stimmt", "genau so")
+WAS EXTRAHIEREN:
+- Persoenliche Fakten: Name, Beruf, Arbeitgeber, Familie, Wohnort, Hobbys, Haustiere
+- Praeferenzen: Mag/mag nicht, bevorzugt X ueber Y
+- Beziehungen: "mein Bruder", "meine Partnerin", "Kollege X"
+- Entscheidungen: "wir machen ab jetzt X", "ich will Y"
+- Haushalt: Smart-Home-Regeln, Raeume, gemeinsame Praeferenzen
+- Fakten ueber ANDERE Personen die der User erwaehnt ("Domi arbeitet bei...")
+- User BESTAETIGT eine Aussage des Assistenten ("ja genau", "perfekt", "stimmt")
 - User KORRIGIERT einen bekannten Fakt ("nein, nicht X sondern Y")
 
-NICHT extrahieren:
+NICHT EXTRAHIEREN:
 - Alles was NUR der Assistent sagt ohne User-Bestaetigung
-- Geraetezustaende, Sensorwerte, Entity-Status, Helligkeiten, Temperaturen
+- Momentane Geraetezustaende, Sensorwerte, Temperaturen, "Licht ist an/aus"
 - API-Infos, Fehlermeldungen, technische Debug-Details, IP-Adressen
-- Smalltalk, reine Fragen, momentane Befindlichkeiten
-- Etwas das in <known_facts> schon vorhanden ist (ausser Korrektur oder wesentliche Ergaenzung)
+- Reine Fragen ohne Informationsgehalt ("wie warm ist es?")
+- Smalltalk, momentane Befindlichkeiten ohne dauerhaften Wert
+- Bereits in <known_facts> vorhandene Fakten (ausser Korrektur oder wesentliche Ergaenzung)
 
-Im Zweifel: NICHT extrahieren. Lieber einen Fakt verpassen als Muell speichern.
+KORREKTUREN: Wenn der User in <followup> seine eigene Aussage zuruecknimmt oder korrigiert
+→ als type "correction" die korrigierte Version formulieren (die neue Wahrheit, nicht die alte).
 
-KORREKTUREN: Wenn der User in <followup> seine eigene Aussage zuruecknimmt, korrigiert
-oder einschraenkt → nicht extrahieren oder als type "correction" die korrigierte Version formulieren.
-
-Bestimme fuer jeden Fakt den SCOPE:
-- "personal" — betrifft eindeutig nur die sprechende Person
-- "household" — betrifft Haushalt, Wohnung, oder mehrere Bewohner
-  (Smart-Home, Raeume, gemeinsame Praeferenzen = fast immer household)
+SCOPE:
+- "personal" — betrifft eine bestimmte Person
+- "household" — betrifft Haushalt, Wohnung, mehrere Bewohner, Smart-Home
 
 Antworte AUSSCHLIESSLICH mit einem JSON-Array. Kein Markdown, keine Erklaerungen.
 
 Format:
 [
   {
-    "fact": "Benni bevorzugt abends warmweisses Licht",
+    "fact": "Benni arbeitet als Software-Entwickler bei Stackblitz",
     "type": "preference|personal|decision|correction|project|deadline",
     "confidence": 0.0-1.0,
     "sourceContext": "kurzes Originalzitat max 100 Zeichen",
@@ -54,7 +57,6 @@ Format:
   }
 ]
 
-Bei Korrekturen: das KORRIGIERTE Faktum formulieren (die neue Wahrheit, nicht die alte).
 Verwende den Namen der Person im Fact wenn bekannt.
 Wenn keine extrahierbaren Fakten: leeres Array [].
 Sprache: Deutsch wenn Konversation Deutsch ist.`;
