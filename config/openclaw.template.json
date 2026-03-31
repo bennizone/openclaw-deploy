@@ -207,16 +207,7 @@
     }
   },
   "mcp": {
-    "servers": {
-      "minimax-search": {
-        "command": "/home/openclaw/.local/bin/uvx",
-        "args": ["minimax-coding-plan-mcp"],
-        "env": {
-          "MINIMAX_API_KEY": "${MINIMAX_API_KEY}",
-          "MINIMAX_API_HOST": "https://api.minimax.io"
-        }
-      }
-    }
+    "servers": {}
   },
   "skills": {
     "entries": {}

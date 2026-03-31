@@ -110,3 +110,28 @@ Hook bleibt als Backup fuer die Session-History.
 `de_DE.UTF-8` Locale generiert und als System-Default gesetzt. War vorher nur
 `en_US.UTF-8`. Kein direkter Einfluss auf Umlaute (UTF-8 war schon korrekt),
 aber sauberer fuer ein deutsches System.
+
+## 2026-03-31: STT-Fix + MCP-Cleanup
+
+### STT kaputt bei Matrix-Sprachnachrichten
+Matrix sendet Audio als `audio/x-m4a`. Das ha-voice Plugin schickte die rohen
+m4a-Bytes als "ogg/opus" getarnt an HA Cloud STT → HA gab `result: success`
+aber leeren Text zurueck.
+
+**Fix:** Vor dem STT-Call wird nicht-ogg/wav Audio per `ffmpeg` zu ogg/opus
+konvertiert. Neue Funktion `audioToOggOpus()` in ffmpeg.ts. Unterstuetzte
+Formate: m4a, aac, mp3, webm, 3gp.
+
+**Vorbedingung:** `ffmpeg` muss installiert sein (ist im bootstrap.sh, fehlte
+aber auf dem LXC weil es vor dem Bootstrap-Fix eingerichtet wurde).
+
+### MiniMax MCP-Server entfernt (redundant)
+`minimax-search` MCP-Server (`minimax-coding-plan-mcp` via uvx) war kaputt
+(uvx nicht installiert) und redundant: OpenClaw hat eingebaute `web_search` +
+`web_fetch` Tools bei `tools.profile = "full"`. MiniMax M2.7 hat native Vision
+(ersetzt `understand_image` Tool). MCP-Sektion aus Config und Template entfernt.
+
+### TTS nur WhatsApp (offen)
+TTS-Reply ist nur fuer WhatsApp implementiert (`channelId !== "whatsapp"` → return).
+Matrix-TTS braucht eigenen Pfad fuer Audio-Upload als Matrix-Media-Event.
+Wird spaeter umgebaut.

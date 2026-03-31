@@ -1,6 +1,6 @@
 import { validateConfig } from "./config";
 import { HAVoiceClient } from "./ha-client";
-import { mp3ToOggOpus } from "./ffmpeg";
+import { mp3ToOggOpus, audioToOggOpus } from "./ffmpeg";
 import { sanitizeCjk, hasCjk } from "./sanitize";
 
 // ---------------------------------------------------------------------------
@@ -118,9 +118,30 @@ export default function init(api: PluginApi): void {
       const isOgg = mime.includes("ogg") || mime.includes("opus");
       const isWav = mime.includes("wav") || mime.includes("wave");
 
-      const result = await client.transcribe(req.buffer, {
-        format: isOgg ? "ogg" : isWav ? "wav" : "ogg",
-        codec: isOgg ? "opus" : isWav ? "pcm" : "opus",
+      // Convert non-ogg/wav audio (m4a, webm, mp4, etc.) to ogg/opus via ffmpeg
+      let audioBuffer = req.buffer;
+      let format: string;
+      let codec: string;
+      if (isOgg) {
+        format = "ogg"; codec = "opus";
+      } else if (isWav) {
+        format = "wav"; codec = "pcm";
+      } else {
+        // Determine input extension from mime type
+        const extMap: Record<string, string> = {
+          "audio/mp4": "m4a", "audio/x-m4a": "m4a", "audio/m4a": "m4a",
+          "audio/aac": "aac", "audio/mpeg": "mp3", "audio/mp3": "mp3",
+          "audio/webm": "webm", "audio/3gpp": "3gp",
+        };
+        const ext = extMap[mime] ?? "m4a";
+        log.info(`[ha-voice] STT: converting ${ext} → ogg/opus via ffmpeg`);
+        audioBuffer = await audioToOggOpus(req.buffer, ext);
+        format = "ogg"; codec = "opus";
+      }
+
+      const result = await client.transcribe(audioBuffer, {
+        format,
+        codec,
         language: req.language ?? config.language,
       });
 
