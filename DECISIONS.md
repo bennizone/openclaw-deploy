@@ -50,4 +50,19 @@ Bestehender Conduit-Server (nicht Synapse) auf matrix.benni.zone.
 - Conduit auto-join funktioniert nicht zuverlaessig — Invites manuell akzeptieren
 
 ### Offener Punkt
-- Agent "benni" identifiziert sich als "Benni" (= Name des Users). Bootstrap-Interview noch nicht durchgefuehrt, in dem der Agent seine eigene Identitaet bekommt.
+- ~~Agent "benni" identifiziert sich als "Benni"~~ → Gefixt, siehe naechsten Eintrag
+
+## 2026-03-31: Agent-Identitaet: Agent-ID ≠ Agent-Name
+
+### Problem
+Agent "benni" stellte sich als "Hallo, ich bin Benni" vor — verwechselte sich mit dem User.
+Ursache: Beim Onboarding wurde `{{AGENT_NAME}}` mit dem User-Namen befuellt.
+SOUL.md sagte "Ich bin Benni", IDENTITY.md hatte "Name: Benni".
+
+### Fix
+- **Templates** (`agents/templates/`): SOUL.md.template klargestellt — Agent beschreibt sich als
+  "Assistent von {{USER_NAME}}", eigener Name kommt erst im Bootstrap-Interview.
+  IDENTITY.md.template: Name-Feld als Platzhalter statt vorbelegt.
+- **Live-Workspaces** (`workspace-benni/`, `workspace-domi/`): SOUL.md und IDENTITY.md gefixt,
+  expliziter Hinweis "Ich bin NICHT <User>. <User> ist mein Mensch."
+- **Onboarding-Anleitung** (Phase 4): Warnung eingefuegt, dass Agent-ID ≠ Agent-Name ist.

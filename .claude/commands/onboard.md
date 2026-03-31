@@ -135,8 +135,14 @@ Lokal auf dem OpenClaw-Container:
 1. Workspaces erstellen: `~/.openclaw/workspace-<name>/`
 2. Fuer jeden persoenlichen Agent:
    - Templates kopieren (AGENTS.md, BOOTSTRAP.md, HEARTBEAT.md, TOOLS.md, MEMORY.md)
-   - SOUL.md.template mit Platzhaltern fuellen
-   - IDENTITY.md und USER.md werden spaeter vom Agent selbst im Bootstrap-Interview ausgefuellt
+   - SOUL.md.template mit Platzhaltern fuellen:
+     - `{{USER_NAME}}` = Name des Users (z.B. "Benni")
+     - `{{PERSONALITY_DESCRIPTION}}` = "(Wird im Bootstrap-Interview mit dem User gemeinsam definiert)"
+   - **WICHTIG — Agent-ID ist NICHT der Agent-Name!**
+     Die Agent-ID (z.B. "benni") ist nur ein technischer Identifier fuer Routing.
+     Der Agent bekommt seinen eigenen Namen erst im Bootstrap-Interview.
+     IDENTITY.md muss `Name: (wird im Bootstrap definiert)` haben, NICHT den User-Namen!
+   - USER.md mit User-Daten fuellen (Name, Timezone)
 3. Household-Agent:
    - Feste SOUL.md aus `agents/household/SOUL.md` kopieren
    - AGENTS.md kopieren, BOOTSTRAP.md NICHT kopieren (kein Interview noetig)
