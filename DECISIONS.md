@@ -66,3 +66,29 @@ SOUL.md sagte "Ich bin Benni", IDENTITY.md hatte "Name: Benni".
 - **Live-Workspaces** (`workspace-benni/`, `workspace-domi/`): SOUL.md und IDENTITY.md gefixt,
   expliziter Hinweis "Ich bin NICHT <User>. <User> ist mein Mensch."
 - **Onboarding-Anleitung** (Phase 4): Warnung eingefuegt, dass Agent-ID ≠ Agent-Name ist.
+
+### Zusaetzliches Problem: Bootstrap-Interview wurde nicht gestartet
+
+Agent antwortete nur "Hi" statt das Interview zu starten, obwohl BOOTSTRAP.md existierte.
+
+**Ursache 1:** MiniMax M2.7 priorisiert SOUL.md ueber spaeter injizierte Dateien (BOOTSTRAP.md).
+Die Bootstrap-Anweisung in BOOTSTRAP.md allein reichte nicht.
+
+**Ursache 2:** Alte Session-History — der Agent hatte bereits Turns in der Session und
+startete nicht "frisch".
+
+**Fix:**
+1. Bootstrap-Anweisung direkt in SOUL.md als ersten Abschnitt ("BOOTSTRAP-MODUS") eingefuegt,
+   nicht nur in BOOTSTRAP.md. SOUL.md wird von allen Modellen am staerksten respektiert.
+2. AGENTS.md: "First Run" Abschnitt durch harte Bootstrap-Erkennung ersetzt
+   (gleiche Logik wie Onboarding-Erkennung in CLAUDE.md: "mach NICHTS anderes").
+3. Sessions geloescht fuer frischen Start.
+4. BOOTSTRAP.md komplett auf Deutsch umgeschrieben mit klaren Prioritaets-Anweisungen.
+
+**Lektion:** Bei Workspace-Dateien zaehlt die Position im System-Prompt.
+SOUL.md wird als erstes gelesen und am staerksten gewichtet.
+Kritische Anweisungen gehoeren IN SOUL.md, nicht in spaetere Dateien.
+
+### Neue Dokumentation
+- `docs/agent-bootstrap.md` — Bootstrap-Prozess, Wiederholung, Fallstricke
+- `docs/session-management.md` — Sessions auflisten, loeschen, Cleanup

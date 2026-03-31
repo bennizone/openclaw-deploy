@@ -206,6 +206,8 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 9. **Matrix-Channel: `dm: {}` statt `dmPolicy`** — Matrix nutzt verschachteltes Schema, WhatsApp-Style Keys crashen den Gateway
 10. **Matrix-Binding: `peer` statt `from`** — `"peer": { "kind": "direct", "id": "@user:server" }`, nicht `"from"`
 11. **Conduit Join braucht `{"reason":""}`** — Leeres `{}` wird mit M_BAD_JSON abgewiesen
+12. **Bootstrap-Anweisung IN SOUL.md** — MiniMax ignoriert spaeter injizierte Dateien; kritische Anweisungen muessen in SOUL.md stehen
+13. **Sessions loeschen bei Bootstrap-Reset** — Alte History verhindert frischen Start; `rm ~/.openclaw/agents/<id>/sessions/*`
 
 ## Slash-Commands
 

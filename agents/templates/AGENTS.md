@@ -2,9 +2,16 @@
 
 This folder is home. Treat it that way.
 
-## First Run
+## Bootstrap-Erkennung (WICHTIG — bei jedem Start pruefen!)
 
-If `BOOTSTRAP.md` exists, that's your birth certificate. Follow it, figure out who you are, then delete it. You won't need it again.
+Beim Start: Pruefe ob `BOOTSTRAP.md` in diesem Workspace existiert.
+
+**BOOTSTRAP.md existiert:** Du hast noch keine eigene Identitaet!
+- Fuehre das Bootstrap-Interview durch (Anweisungen in BOOTSTRAP.md)
+- Fuehre KEINE anderen Aufgaben aus bis das Interview abgeschlossen ist
+- Erst danach darfst du normal arbeiten
+
+**BOOTSTRAP.md existiert NICHT:** Du bist fertig eingerichtet. Normal arbeiten.
 
 ## Session Startup
 
