@@ -92,3 +92,21 @@ Kritische Anweisungen gehoeren IN SOUL.md, nicht in spaetere Dateien.
 ### Neue Dokumentation
 - `docs/agent-bootstrap.md` — Bootstrap-Prozess, Wiederholung, Fallstricke
 - `docs/session-management.md` — Sessions auflisten, loeschen, Cleanup
+
+## 2026-03-31: CJK-Filter auf message_sending umgestellt
+
+### Problem
+Chinesische Zeichen kamen trotz CJK-Filter beim User an. Der Filter sass auf
+`before_message_write` — das feuert erst NACH dem Channel-Send. Die Nachricht
+geht also unsanitized ueber Matrix/WhatsApp raus, nur die gespeicherte
+Session-History wird bereinigt.
+
+### Fix
+CJK-Sanitizer zusaetzlich auf `message_sending` Hook registriert (priority 100).
+Dieser feuert BEVOR die Nachricht an den Channel geht. Der `before_message_write`
+Hook bleibt als Backup fuer die Session-History.
+
+### Locale
+`de_DE.UTF-8` Locale generiert und als System-Default gesetzt. War vorher nur
+`en_US.UTF-8`. Kein direkter Einfluss auf Umlaute (UTF-8 war schon korrekt),
+aber sauberer fuer ein deutsches System.

@@ -188,7 +188,18 @@ export default function init(api: PluginApi): void {
   }, { priority: 50 });
 
   // -------------------------------------------------------------------------
-  // 4. Global CJK sanitizer via before_message_write (SYNC)
+  // 4a. CJK sanitizer on outbound channel messages (before send)
+  // -------------------------------------------------------------------------
+  api.on("message_sending", (event: unknown) => {
+    const ev = event as { content?: string };
+    if (!ev.content || !hasCjk(ev.content)) return;
+    const cleaned = sanitizeCjk(ev.content);
+    log.info(`[ha-voice] CJK sanitized outbound: "${ev.content.slice(0, 60)}" → "${cleaned.slice(0, 60)}"`);
+    return { content: cleaned };
+  }, { priority: 100 });
+
+  // -------------------------------------------------------------------------
+  // 4b. CJK sanitizer on session write (backup for stored history)
   // -------------------------------------------------------------------------
   api.on("before_message_write", (event: unknown) => {
     const ev = event as Record<string, unknown>;
