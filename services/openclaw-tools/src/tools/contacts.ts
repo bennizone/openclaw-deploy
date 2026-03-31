@@ -44,6 +44,7 @@ function formatContactList(contacts: Contact[]): string {
       if (c.emails.length > 0) parts.push(`  📧 ${c.emails.join(", ")}`);
       if (c.phones.length > 0) parts.push(`  📞 ${c.phones.join(", ")}`);
       if (c.organization) parts.push(`  🏢 ${c.organization}`);
+      if (c.address) parts.push(`  📍 ${c.address}`);
       if (c.birthday) parts.push(`  🎂 ${c.birthday}`);
       parts.push(`  [${c.sourceLabel}]`);
       return parts.join("\n");
@@ -126,10 +127,11 @@ export function registerContacts(server: McpServer): void {
         email: z.string().optional().describe("E-Mail-Adresse"),
         phone: z.string().optional().describe("Telefonnummer"),
         organization: z.string().optional().describe("Firma / Organisation"),
+        address: z.string().optional().describe("Adresse (z.B. 'Musterstr. 1, 12345 Berlin')"),
         birthday: z.string().optional().describe("Geburtstag (YYYY-MM-DD)"),
       },
     },
-    async ({ agent_id, source_name, name, email, phone, organization, birthday }, extra) => {
+    async ({ agent_id, source_name, name, email, phone, organization, address, birthday }, extra) => {
       try {
         const agentId = resolveAgentId(agent_id, extra as { _meta?: Record<string, unknown> });
 
@@ -142,7 +144,7 @@ export function registerContacts(server: McpServer): void {
         if (!rs) return textResult(`Quelle "${source_name}" nicht verfügbar.`, true);
 
         const src = getOrCreateContactSource(rs);
-        const contact = await src.createContact(name, { email, phone, organization, birthday });
+        const contact = await src.createContact(name, { email, phone, organization, address, birthday });
 
         return textResult(
           `✅ Kontakt erstellt:\n${formatContactList([contact])}`
@@ -162,16 +164,17 @@ export function registerContacts(server: McpServer): void {
         "Aktualisiert einen bestehenden Kontakt anhand seiner UID. Benötigt Schreibzugriff.",
       inputSchema: {
         agent_id: agentIdParam,
-        source_name: z.string().describe("Quell-ID"),
-        contact_uid: z.string().describe("UID des Kontakts"),
+        source_name: z.string().describe("Quell-ID aus dem Suchergebnis (z.B. 'benni-hetzner', 'domi-icloud')"),
+        contact_uid: z.string().describe("UID des Kontakts (aus dem Suchergebnis)"),
         name: z.string().optional().describe("Neuer Name"),
         email: z.string().optional().describe("Neue E-Mail"),
         phone: z.string().optional().describe("Neue Telefonnummer"),
         organization: z.string().optional().describe("Neue Firma"),
+        address: z.string().optional().describe("Neue Adresse (z.B. 'Musterstr. 1, 12345 Berlin')"),
         birthday: z.string().optional().describe("Neuer Geburtstag (YYYY-MM-DD)"),
       },
     },
-    async ({ agent_id, source_name, contact_uid, name, email, phone, organization, birthday }, extra) => {
+    async ({ agent_id, source_name, contact_uid, name, email, phone, organization, address, birthday }, extra) => {
       try {
         const agentId = resolveAgentId(agent_id, extra as { _meta?: Record<string, unknown> });
 
@@ -189,6 +192,7 @@ export function registerContacts(server: McpServer): void {
           email,
           phone,
           organization,
+          address,
           birthday,
         });
 

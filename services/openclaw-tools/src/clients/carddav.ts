@@ -71,6 +71,32 @@ function parseBirthday(data: string): { date: string; hasYear: boolean } | null 
   return null;
 }
 
+/** Parse ADR field — format: PO;Ext;Street;City;Region;Postal;Country */
+function parseAddress(data: string): string | undefined {
+  const adr = vcardField(data, "ADR");
+  if (!adr) return undefined;
+  const parts = adr.split(";").map((p) => p.trim()).filter(Boolean);
+  return parts.join(", ") || undefined;
+}
+
+/** Format an address string into vCard ADR field: ;;Street;City;;Postal;Country */
+function formatAdr(address: string): string {
+  // Try to parse "Street, Postal City" or "Street, Postal City, Country"
+  const parts = address.split(",").map((p) => p.trim());
+  if (parts.length >= 2) {
+    const street = parts[0];
+    // Try to split "71063 Sindelfingen" into postal + city
+    const cityPart = parts[1];
+    const postalMatch = cityPart.match(/^(\d{4,5})\s+(.+)$/);
+    const postal = postalMatch ? postalMatch[1] : "";
+    const city = postalMatch ? postalMatch[2] : cityPart;
+    const country = parts[2] ?? "";
+    return `;;${street};${city};;${postal};${country}`;
+  }
+  // Fallback: put everything in street
+  return `;;${address};;;;`;
+}
+
 function parseContact(
   obj: DAVVCard,
   sourceLabel: string,
@@ -84,6 +110,7 @@ function parseContact(
   const emails = vcardFieldAll(data, "EMAIL");
   const phones = vcardFieldAll(data, "TEL");
   const org = vcardField(data, "ORG")?.replace(/;/g, ", ").replace(/, $/, "");
+  const adr = parseAddress(data);
   const bday = parseBirthday(data);
 
   return {
@@ -92,6 +119,7 @@ function parseContact(
     emails,
     phones,
     organization: org,
+    address: adr,
     birthday: bday?.date,
     sourceLabel,
     sourceId,
@@ -205,7 +233,7 @@ export class CardDavSource {
 
   async createContact(
     name: string,
-    opts: { email?: string; phone?: string; organization?: string; birthday?: string }
+    opts: { email?: string; phone?: string; organization?: string; address?: string; birthday?: string }
   ): Promise<Contact> {
     const books = await this.fetchAddressBooks();
     if (books.length === 0) throw new Error(`Kein Adressbuch in ${this.label} gefunden`);
@@ -225,6 +253,7 @@ export class CardDavSource {
     if (opts.email) lines.push(`EMAIL;TYPE=INTERNET:${opts.email}`);
     if (opts.phone) lines.push(`TEL;TYPE=CELL:${opts.phone}`);
     if (opts.organization) lines.push(`ORG:${opts.organization}`);
+    if (opts.address) lines.push(`ADR;TYPE=HOME:${formatAdr(opts.address)}`);
     if (opts.birthday) lines.push(`BDAY:${opts.birthday.replace(/-/g, "")}`);
     lines.push("END:VCARD");
 
@@ -244,6 +273,7 @@ export class CardDavSource {
       emails: opts.email ? [opts.email] : [],
       phones: opts.phone ? [opts.phone] : [],
       organization: opts.organization,
+      address: opts.address,
       birthday: opts.birthday,
       sourceLabel: this.label,
       sourceId: this.source.id,
@@ -252,7 +282,7 @@ export class CardDavSource {
 
   async updateContact(
     contactUid: string,
-    changes: { name?: string; email?: string; phone?: string; organization?: string; birthday?: string }
+    changes: { name?: string; email?: string; phone?: string; organization?: string; address?: string; birthday?: string }
   ): Promise<Contact> {
     const books = await this.fetchAddressBooks();
     const client = await this.connect();
@@ -292,6 +322,14 @@ export class CardDavSource {
           data = data.replace(/^ORG:.*$/m, `ORG:${changes.organization}`);
         } else {
           data = data.replace("END:VCARD", `ORG:${changes.organization}\r\nEND:VCARD`);
+        }
+      }
+      if (changes.address !== undefined) {
+        const adrVal = formatAdr(changes.address);
+        if (/^ADR/m.test(data)) {
+          data = data.replace(/^ADR[;:].*$/m, `ADR;TYPE=HOME:${adrVal}`);
+        } else {
+          data = data.replace("END:VCARD", `ADR;TYPE=HOME:${adrVal}\r\nEND:VCARD`);
         }
       }
       if (changes.birthday !== undefined) {

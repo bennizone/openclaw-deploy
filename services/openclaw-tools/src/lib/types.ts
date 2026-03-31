@@ -256,6 +256,7 @@ export interface Contact {
   emails: string[];
   phones: string[];
   organization?: string;
+  address?: string;
   birthday?: string;
   sourceLabel: string;
   sourceId: string;
