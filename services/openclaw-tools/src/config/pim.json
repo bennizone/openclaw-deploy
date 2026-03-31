@@ -1,0 +1,65 @@
+{
+  "timezone": "Europe/Berlin",
+  "calendarSources": {
+    "benni-hetzner": {
+      "type": "caldav",
+      "serverUrl": "https://webmail.your-server.de/rpc/principals/benjamin@hernadi.me/",
+      "credentialPrefix": "CALDAV_BENNI_HETZNER",
+      "label": "Benni (Hetzner)"
+    },
+    "benni-icloud": {
+      "type": "caldav",
+      "serverUrl": "https://caldav.icloud.com",
+      "credentialPrefix": "CALDAV_BENNI_ICLOUD",
+      "label": "Benni (iCloud)",
+      "calendarFilter": ["Familie"]
+    },
+    "domi-icloud": {
+      "type": "caldav",
+      "serverUrl": "https://caldav.icloud.com",
+      "credentialPrefix": "CALDAV_DOMI_ICLOUD",
+      "label": "Domi (iCloud)"
+    }
+  },
+  "contactSources": {
+    "benni-hetzner": {
+      "type": "carddav",
+      "serverUrl": "https://webmail.your-server.de/rpc/principals/benjamin@hernadi.me/",
+      "credentialPrefix": "CARDDAV_BENNI_HETZNER",
+      "label": "Benni (Hetzner)"
+    },
+    "domi-icloud": {
+      "type": "carddav",
+      "serverUrl": "https://contacts.icloud.com",
+      "credentialPrefix": "CARDDAV_DOMI_ICLOUD",
+      "label": "Domi (iCloud)"
+    }
+  },
+  "agentAccess": {
+    "benni": {
+      "calendars": [
+        { "source": "benni-hetzner", "access": "readwrite" },
+        { "source": "benni-icloud", "access": "readwrite" }
+      ],
+      "contacts": [
+        { "source": "benni-hetzner", "access": "readwrite" }
+      ]
+    },
+    "domi": {
+      "calendars": [
+        { "source": "domi-icloud", "access": "readwrite" },
+        { "source": "benni-hetzner", "access": "read" }
+      ],
+      "contacts": [
+        { "source": "domi-icloud", "access": "readwrite" },
+        { "source": "benni-hetzner", "access": "read" }
+      ]
+    },
+    "household": {
+      "calendars": [
+        { "source": "benni-icloud", "access": "read" }
+      ],
+      "contacts": []
+    }
+  }
+}

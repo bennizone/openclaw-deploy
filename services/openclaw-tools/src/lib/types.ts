@@ -195,3 +195,78 @@ export interface QueueResponse {
   totalRecords?: number;
   records: QueueRecord[];
 }
+
+// ---------------------------------------------------------------------------
+// PIM: CalDAV / CardDAV types
+// ---------------------------------------------------------------------------
+
+export type PimAccess = "read" | "readwrite";
+
+export interface PimSourceConfig {
+  type: "caldav" | "carddav";
+  serverUrl: string;
+  credentialPrefix: string;
+  label: string;
+  calendarFilter?: string[];
+}
+
+export interface PimAgentBinding {
+  source: string;
+  access: PimAccess;
+}
+
+export interface PimAgentAccess {
+  calendars: PimAgentBinding[];
+  contacts: PimAgentBinding[];
+}
+
+export interface PimConfig {
+  timezone: string;
+  calendarSources: Record<string, PimSourceConfig>;
+  contactSources: Record<string, PimSourceConfig>;
+  agentAccess: Record<string, PimAgentAccess>;
+}
+
+export interface ResolvedSource {
+  id: string;
+  config: PimSourceConfig;
+  access: PimAccess;
+  username: string;
+  password: string;
+}
+
+export interface CalendarEvent {
+  uid: string;
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+  location?: string;
+  description?: string;
+  sourceLabel: string;
+  sourceId: string;
+  calendarName: string;
+  url?: string;
+  etag?: string;
+}
+
+export interface Contact {
+  uid: string;
+  fullName: string;
+  emails: string[];
+  phones: string[];
+  organization?: string;
+  birthday?: string;
+  sourceLabel: string;
+  sourceId: string;
+  url?: string;
+  etag?: string;
+}
+
+export interface BirthdayEntry {
+  name: string;
+  date: string;
+  hasYear: boolean;
+  age?: number;
+  sourceLabel: string;
+}

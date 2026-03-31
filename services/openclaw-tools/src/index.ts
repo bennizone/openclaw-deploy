@@ -6,11 +6,13 @@ import { RadarrClient } from "./clients/radarr.js";
 import { registerWebSearch } from "./tools/web-search.js";
 import { registerUnderstandImage } from "./tools/understand-image.js";
 import { registerArr } from "./tools/arr.js";
+import { registerCalendar } from "./tools/calendar.js";
+import { registerContacts } from "./tools/contacts.js";
 
 const log = (msg: string) => process.stderr.write(`[openclaw-tools] ${msg}\n`);
 
 async function main(): Promise<void> {
-  log("Starting OpenClaw Tool-Hub MCP Server v1.1.0");
+  log("Starting OpenClaw Tool-Hub MCP Server v1.2.0");
 
   const minimax = new MiniMaxClient();
   const sonarr = new SonarrClient();
@@ -18,12 +20,14 @@ async function main(): Promise<void> {
 
   const server = new McpServer({
     name: "openclaw-tools",
-    version: "1.1.0",
+    version: "1.2.0",
   });
 
   registerWebSearch(server, minimax);
   registerUnderstandImage(server, minimax);
   registerArr(server, sonarr, radarr, minimax);
+  registerCalendar(server);
+  registerContacts(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

@@ -81,7 +81,7 @@ Proxmox / Bare-Metal
 | Verzeichnis | Was | Laeuft wo |
 |-------------|-----|-----------|
 | `plugins/` | 2 OpenClaw Plugins (ha-voice, memory-recall) | LXC: ~/.openclaw/extensions/ |
-| `services/openclaw-tools/` | Tool-Hub MCP Server (Search, Vision, Sonarr/Radarr) | LXC: MCP via Gateway |
+| `services/openclaw-tools/` | Tool-Hub MCP Server (Search, Vision, Sonarr/Radarr, Kalender, Kontakte) | LXC: MCP via Gateway |
 | `services/extractor/` | Memory-Extractor Service | LXC: ~/extractor/ |
 | `services/home-llm/` | HA Custom Component | Home Assistant |
 | `setup/lxc/` | LXC Setup-Scripts + systemd | LXC |
@@ -112,6 +112,15 @@ Zentraler MCP-Server fuer alle externen Tools. Eingebautes `web_search` ist via
 - **`arr_episode_list`** — Episoden einer Staffel mit Details
 - **`arr_calendar`** — Naechste Episoden/Filme + Download-Queue
 - **`arr_add_collection`** — Komplette Film-Collection hinzufuegen
+- **`calendar_events`** — Termine abrufen (Zeitraum, pro Agent gefiltert)
+- **`calendar_create`** / **`calendar_update`** / **`calendar_delete`** — Termine verwalten (braucht `readwrite`)
+- **`calendar_search`** — Freitext-Suche ueber Termine
+- **`contacts_search`** — Kontakte nach Name/Email/Telefon suchen
+- **`contacts_create`** / **`contacts_update`** — Kontakte verwalten (braucht `readwrite`)
+- **`contacts_birthdays`** — Anstehende Geburtstage (Kontakte + Kalender, dedupliziert)
+
+PIM-Tools sind **agentspezifisch**: `pim.json` definiert welcher Agent auf welche
+CalDAV/CardDAV-Quellen zugreifen darf (`read` oder `readwrite`).
 
 ## Netzwerk-Ports
 
