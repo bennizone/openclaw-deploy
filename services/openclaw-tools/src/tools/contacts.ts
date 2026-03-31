@@ -39,6 +39,8 @@ function formatContactList(contacts: Contact[]): string {
   return contacts
     .map((c) => {
       const parts = [`👤 ${c.fullName}`];
+      parts.push(`  UID: ${c.uid}`);
+      parts.push(`  Source: ${c.sourceId}`);
       if (c.emails.length > 0) parts.push(`  📧 ${c.emails.join(", ")}`);
       if (c.phones.length > 0) parts.push(`  📞 ${c.phones.join(", ")}`);
       if (c.organization) parts.push(`  🏢 ${c.organization}`);
@@ -119,7 +121,7 @@ export function registerContacts(server: McpServer): void {
         "Erstellt einen neuen Kontakt. Benötigt Schreibzugriff auf die Kontaktquelle.",
       inputSchema: {
         agent_id: agentIdParam,
-        source_name: z.string().describe("Quell-ID (z.B. 'benni-hetzner')"),
+        source_name: z.string().describe("Quell-ID aus dem Suchergebnis (Source-Feld, z.B. 'benni-hetzner', 'domi-icloud')"),
         name: z.string().describe("Vollständiger Name"),
         email: z.string().optional().describe("E-Mail-Adresse"),
         phone: z.string().optional().describe("Telefonnummer"),

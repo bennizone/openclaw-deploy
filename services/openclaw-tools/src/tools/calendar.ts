@@ -39,7 +39,7 @@ function formatEventList(events: CalendarEvent[]): string {
 
     const time = ev.allDay ? "Ganztägig" : ev.start.split(", ")[1] ?? ev.start;
     const loc = ev.location ? ` 📍 ${ev.location}` : "";
-    lines.push(`  [${ev.sourceLabel}/${ev.calendarName}] ${time} — ${ev.title}${loc}`);
+    lines.push(`  [${ev.sourceId}/${ev.calendarName}] ${time} — ${ev.title}${loc} (UID: ${ev.uid})`);
   }
 
   return lines.join("\n");
@@ -165,7 +165,7 @@ export function registerCalendar(server: McpServer): void {
         agent_id: agentIdParam,
         source_name: z
           .string()
-          .describe("Quell-ID (z.B. 'benni-hetzner', 'domi-icloud')"),
+          .describe("Quell-ID aus dem Suchergebnis (z.B. 'benni-hetzner', 'domi-icloud')"),
         calendar_name: z
           .string()
           .optional()
@@ -219,7 +219,7 @@ export function registerCalendar(server: McpServer): void {
         "Ändert einen bestehenden Termin anhand seiner UID. Benötigt Schreibzugriff.",
       inputSchema: {
         agent_id: agentIdParam,
-        source_name: z.string().describe("Quell-ID"),
+        source_name: z.string().describe("Quell-ID aus dem Suchergebnis (z.B. 'benni-hetzner', 'domi-icloud')"),
         event_uid: z.string().describe("UID des Termins"),
         calendar_name: z.string().optional().describe("Kalendername (zur Eingrenzung)"),
         title: z.string().optional().describe("Neuer Titel"),
@@ -271,7 +271,7 @@ export function registerCalendar(server: McpServer): void {
         "Löscht einen Termin anhand seiner UID. Benötigt Schreibzugriff.",
       inputSchema: {
         agent_id: agentIdParam,
-        source_name: z.string().describe("Quell-ID"),
+        source_name: z.string().describe("Quell-ID aus dem Suchergebnis (z.B. 'benni-hetzner', 'domi-icloud')"),
         event_uid: z.string().describe("UID des Termins"),
         calendar_name: z.string().optional().describe("Kalendername (zur Eingrenzung)"),
       },
