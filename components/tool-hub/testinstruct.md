@@ -82,6 +82,21 @@ curl -s http://localhost:18789/v1/chat/completions \
 - Erwartetes Ergebnis: Agent nutzt contacts_search, findet Kontakte mit Name Mueller
 - Bei Fehler: CardDAV-Credentials pruefen, pim.json pruefen
 
+### Test: Wetter
+```bash
+curl -s http://localhost:18789/v1/chat/completions \
+  -H "Authorization: Bearer $GATEWAY_AUTH_TOKEN" \
+  -H "Content-Type: application/json" \
+  -H "X-OpenClaw-Scopes: operator.write" \
+  -d '{
+    "model": "openclaw/default",
+    "messages": [{"role": "user", "content": "Wie ist das Wetter in Nuernberg?"}]
+  }'
+```
+- Erwartetes Ergebnis: Agent nutzt weather-Tool, liefert Temperatur, Wetterlage, Vorhersage
+- Daten kommen von Open-Meteo (kein API-Key noetig)
+- Bei Fehler: Open-Meteo Geocoding API pruefen (geocoding-api.open-meteo.com), Internet-Zugang
+
 ### Test: Bildanalyse
 ```bash
 curl -s http://localhost:18789/v1/chat/completions \

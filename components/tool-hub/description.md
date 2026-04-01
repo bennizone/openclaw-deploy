@@ -19,8 +19,9 @@ services/openclaw-tools/
 │   │   │                     #   arr_episode_list, arr_calendar, arr_add_collection
 │   │   ├── calendar.ts       # calendar_events, calendar_create, calendar_update,
 │   │   │                     #   calendar_delete, calendar_search
-│   │   └── contacts.ts       # contacts_search, contacts_create, contacts_update,
-│   │                         #   contacts_birthdays
+│   │   ├── contacts.ts       # contacts_search, contacts_create, contacts_update,
+│   │   │                     #   contacts_birthdays
+│   │   └── weather.ts        # weather (Open-Meteo: Geocoding + Forecast)
 │   ├── clients/
 │   │   ├── minimax.ts        # MiniMax API Client (Search + VLM)
 │   │   ├── duckduckgo.ts     # DuckDuckGo Scraper
@@ -51,7 +52,7 @@ services/openclaw-tools/
 - **Braucht:**
   - **gateway** — startet Tool-Hub als MCP-Kindprozess, leitet Tool-Calls weiter
   - **gpu-server** — nicht direkt, aber MiniMax API fuer web_search + understand_image
-  - Externe APIs: DuckDuckGo, MiniMax Search/VLM, Sonarr, Radarr, CalDAV/CardDAV-Server
+  - Externe APIs: DuckDuckGo, MiniMax Search/VLM, Sonarr, Radarr, CalDAV/CardDAV-Server, Open-Meteo (Wetter)
 - **Wird gebraucht von:**
   - **gateway** — stellt Tools fuer alle Agents bereit
   - **ha-integration** — HA-Voice nutzt Tools (Kalender, Medien) via Gateway

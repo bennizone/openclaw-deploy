@@ -8,26 +8,23 @@ und beantwortet deine Frage aus seiner Perspektive.
 
 1. **Komponente identifizieren:** Welcher Agent soll befragt werden?
    Verfuegbare Komponenten: `components/*/description.md`
-2. **Wissen laden:** Lies `components/<name>/description.md` und `components/<name>/decisions.md`
-3. **System-Prompt bauen:** Kombiniere description.md + decisions.md zu einem System-Prompt
-4. **Anfrage senden:**
+2. **Anfrage senden** via Helper-Script:
 
 ```bash
-TOKEN=$(jq -r '.gateway.auth.token' ~/.openclaw/openclaw.json 2>/dev/null)
+# Nur description.md als Kontext:
+scripts/consult-agent.sh <komponente> "<frage>"
 
-curl -s http://localhost:18789/v1/chat/completions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"model\": \"openclaw/default\",
-    \"messages\": [
-      {\"role\": \"system\", \"content\": \"<description.md + decisions.md Inhalt>\"},
-      {\"role\": \"user\", \"content\": \"<Die Frage>\"}
-    ]
-  }"
+# Mit decisions.md als zusaetzlichem Kontext:
+scripts/consult-agent.sh <komponente> "<frage>" --with-decisions
 ```
 
-5. **Antwort auswerten:** Ergebnis dem User oder Orchestrator zurueckgeben
+Das Script (`scripts/consult-agent.sh`) uebernimmt automatisch:
+- Token aus `~/.openclaw/.env` lesen
+- `description.md` (+ optional `decisions.md`) als System-Prompt laden
+- `X-OpenClaw-Scopes: operator.write` Header setzen
+- Antwort-Text extrahieren
+
+3. **Antwort auswerten:** Ergebnis dem User oder Orchestrator zurueckgeben
 
 ## Verwendung
 

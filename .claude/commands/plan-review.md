@@ -19,23 +19,14 @@ Perspektive machbar ist und was beachtet werden muss.
    - Was muss getestet werden?
 
 3. **Konsultationsrunde durchfuehren:**
-   Fuer jede betroffene Komponente `/consult` ausfuehren:
+   Fuer jede betroffene Komponente via Helper-Script befragen:
 
 ```bash
-TOKEN=$(jq -r '.gateway.auth.token' ~/.openclaw/openclaw.json 2>/dev/null)
-
-# Pro Komponente:
-curl -s http://localhost:18789/v1/chat/completions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"model\": \"openclaw/default\",
-    \"messages\": [
-      {\"role\": \"system\", \"content\": \"<description.md + decisions.md der Komponente>\"},
-      {\"role\": \"user\", \"content\": \"Geplante Aenderung: <Beschreibung>. Was muss in deinem Bereich beachtet werden? Gibt es Einschraenkungen oder Konflikte?\"}
-    ]
-  }"
+# Pro Komponente (mit decisions.md fuer vollen Kontext):
+scripts/consult-agent.sh <komponente> "Geplante Aenderung: <Beschreibung>. Was muss in deinem Bereich beachtet werden? Gibt es Einschraenkungen oder Konflikte?" --with-decisions
 ```
+
+Alle Komponenten-Konsultationen koennen parallel ausgefuehrt werden.
 
 4. **Ergebnis konsolidieren:**
    - Antworten aller Agenten zusammenfassen

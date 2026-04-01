@@ -8,6 +8,7 @@ import { registerUnderstandImage } from "./tools/understand-image.js";
 import { registerArr } from "./tools/arr.js";
 import { registerCalendar } from "./tools/calendar.js";
 import { registerContacts } from "./tools/contacts.js";
+import { registerWeather } from "./tools/weather.js";
 import { logToolCall, logToolResult, logToolError } from "./lib/debug-log.js";
 
 const log = (msg: string) => process.stderr.write(`[openclaw-tools] ${msg}\n`);
@@ -58,6 +59,7 @@ async function main(): Promise<void> {
   registerArr(server, sonarr, radarr, minimax);
   registerCalendar(server);
   registerContacts(server);
+  registerWeather(server);
 
   const transport = new StdioServerTransport();
   await server.connect(transport);

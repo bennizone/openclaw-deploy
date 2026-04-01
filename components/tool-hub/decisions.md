@@ -33,3 +33,20 @@ Tool-Aufrufe schwer zu debuggen ohne Logs.
 **Alternativen verworfen:**
 - Client-seitige RRULE-Expansion — unnoetig komplex, CalDAV-Server kann das nativ
 - Per-Tool manuelles Logging — fehleranfaellig, Logging-Wrapper in index.ts ist DRY
+
+## 2026-04-01 — Weather-Tool via Open-Meteo
+
+**Kontext:** Agents sollen Wetter abfragen koennen ohne web_search nutzen zu muessen.
+Erster Feature-Durchlauf nach neuem Orchestrator-Protokoll (D.2).
+
+**Entscheidung:**
+- Open-Meteo Geocoding API (Stadtname → Koordinaten) + Forecast API (Wetter + 7-Tage-Vorhersage)
+- Kein API-Key, keine .env-Aenderung, kein neuer Client-File (alles in weather.ts)
+- WMO-Code-Mapping auf deutsche Beschreibungen inline im Tool
+- Output als strukturierter Text (nicht JSON) — LLM kann direkt daraus formulieren
+- `language=de` fuer Geocoding, `timezone=auto` fuer lokale Zeiten
+
+**Alternativen verworfen:**
+- OpenWeatherMap — braucht API-Key, Free-Tier limitiert
+- Separater Client in `src/clients/openmeteo.ts` — Overkill, nur ein Tool nutzt die API
+- JSON-Output statt Text — LLM braucht kein strukturiertes JSON, Text ist natuerlicher

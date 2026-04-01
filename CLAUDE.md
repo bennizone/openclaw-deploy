@@ -118,6 +118,7 @@ Zentraler MCP-Server fuer alle externen Tools. Eingebautes `web_search` ist via
 - **`contacts_search`** — Kontakte nach Name/Email/Telefon suchen
 - **`contacts_create`** / **`contacts_update`** — Kontakte verwalten (braucht `readwrite`)
 - **`contacts_birthdays`** — Anstehende Geburtstage (Kontakte + Kalender, dedupliziert)
+- **`weather`** — Aktuelles Wetter + Vorhersage via Open-Meteo (Geocoding + Forecast, kein API-Key)
 
 PIM-Tools sind **agentspezifisch**: `pim.json` definiert welcher Agent auf welche
 CalDAV/CardDAV-Quellen zugreifen darf (`read` oder `readwrite`).
@@ -152,13 +153,13 @@ Konsultation (MiniMax) und Implementierung (Claude/coder).
 | Orchestrierung, Coding (`/coder`), Review (`/reviewer`) | Claude (Pro/Max) |
 | Konsultation, Tests, Protokoll, Routine | MiniMax (via chatCompletions) |
 
-Konsultation via:
+Konsultation via Helper-Script:
 ```bash
-curl -X POST http://localhost:18789/v1/chat/completions \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"model": "openclaw/default", "messages": [{"role": "system", "content": "<description.md + decisions.md>"}, {"role": "user", "content": "<Frage>"}]}'
+scripts/consult-agent.sh <komponente> "<frage>"
+scripts/consult-agent.sh <komponente> "<frage>" --with-decisions
 ```
+
+Das Script liest Token, description.md und Scopes-Header automatisch.
 
 ### Workflow bei neuen Features / Aenderungen
 
