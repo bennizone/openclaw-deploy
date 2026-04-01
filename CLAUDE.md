@@ -178,7 +178,9 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 7. Coding via `/coder` (Claude) — liest vorher `claude.md` der Komponente
 8. Build: `npm run build` / `openclaw plugins doctor`
 9. `/tester` liest `testinstruct.md`, fuehrt Tests aus
-10. `/reviewer` prueft — mechanische Findings (unused imports, falsche Kommentare, fehlende Error-Logs) sofort fixen, Rest auf TODO
+10. `/reviewer` prueft — listet Findings (mechanisch + Design)
+10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → Orchestrator delegiert an `/coder`
+10b. Design-Findings → User vorlegen
 11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
 12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
 13. Ship it: Commit + Deploy
