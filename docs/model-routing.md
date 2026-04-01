@@ -1,5 +1,8 @@
 # Modell-Routing
 
+> Fuer die Gesamt-Uebersicht aller Routing-Entscheidungen (Agent-Auswahl, Scopes, Hooks)
+> siehe [agent-routing.md](agent-routing.md). Diese Datei dokumentiert Modell-Details.
+
 ## Uebersicht
 
 | Agent-Typ | Primaer | Fallback | Warum |

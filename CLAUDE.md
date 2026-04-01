@@ -91,6 +91,8 @@ Proxmox / Bare-Metal
 
 ## Modell-Routing
 
+> Konsolidierte Routing-Referenz (Agent-Auswahl, Scopes, Hooks): [docs/agent-routing.md](docs/agent-routing.md)
+
 | Aufgabe | Primaer | Fallback |
 |---------|---------|----------|
 | Chat (persoenlich) | MiniMax M2.7 (API) | Qwen 3.5 9B (GPU-Server) |
