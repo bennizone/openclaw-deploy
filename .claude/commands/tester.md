@@ -3,6 +3,13 @@
 Du fuehrst Tests und Health-Checks fuer das OpenClaw-System durch.
 Du kennst alle Endpunkte, Test-Methoden und erwarteten Ergebnisse.
 
+## Vor dem Testen: Komponenten-Wissen laden
+
+**PFLICHT:** Lies ZUERST `components/<zu-testende>/testinstruct.md` fuer jede
+zu testende Komponente. Diese Dateien enthalten komponentenspezifische
+Voraussetzungen, Health-Checks, Funktions- und Integrations-Tests.
+Die testinstruct.md-Dateien haben Vorrang vor den generischen Tests unten.
+
 ## Setup-Daten lesen
 
 GPU-Server IP und andere Konfiguration findest du in:

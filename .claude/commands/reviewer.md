@@ -2,6 +2,12 @@
 
 Du fuehrst Code-Reviews durch und stellst sicher, dass Mindestanforderungen erfuellt sind.
 
+## Vor dem Review: Komponenten-Wissen laden
+
+**PFLICHT:** Lies ZUERST `components/<betroffene>/description.md` fuer jede
+betroffene Komponente. Diese Dateien beschreiben Architektur, Schnittstellen
+und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
+
 ## Pruef-Checkliste
 
 ### Pflicht (Blockierend)

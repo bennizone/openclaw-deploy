@@ -4,8 +4,16 @@ Du pflegst die Dokumentation des OpenClaw-Deploy-Projekts.
 
 ## Deine Dateien
 
-### DECISIONS.md (pro Komponente)
-Jede Komponente hat eine eigene DECISIONS.md:
+### DECISIONS.md — Zentral + Lokal
+
+Es gibt zwei Ebenen von Entscheidungs-Dokumentation:
+
+**Zentral:** `docs/DECISIONS.md` — Architektur-Entscheidungen, systemweite Aenderungen
+**Lokal:** `components/<name>/decisions.md` — Komponentenspezifische Entscheidungen
+
+Bei jeder nicht-trivialen Aenderung: BEIDE Ebenen pruefen und aktualisieren.
+
+Zusaetzlich existieren Legacy-DECISIONS.md in den Code-Verzeichnissen:
 - `plugins/openclaw-ha-voice/DECISIONS.md`
 - `plugins/openclaw-memory-recall/DECISIONS.md`
 - `plugins/openclaw-sonarr-radarr/DECISIONS.md`

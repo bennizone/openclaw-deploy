@@ -131,64 +131,63 @@ CalDAV/CardDAV-Quellen zugreifen darf (`read` oder `readwrite`).
 | 8080 | llama.cpp Chat | GPU-Server |
 | 8081 | llama.cpp Embedding | GPU-Server + LXC (Fallback) |
 
-## Automatische Agent-Nutzung (PFLICHT)
+## Orchestrator-Protokoll
 
-Claude Code waehlt automatisch den richtigen spezialisierten Agent basierend auf der Aufgabe.
-Der User muss die Agents NICHT manuell aufrufen.
+Claude Code ist der Orchestrator. Er schreibt keinen Code selbst,
+sondern koordiniert spezialisierte Komponenten-Agenten.
 
-### Agent-Auswahl nach Kontext
+### Agenten-Uebersicht
 
-| Situation | Agent | Modell |
-|-----------|-------|--------|
-| User will Code schreiben/aendern | `/coder` | Sonnet |
-| User fragt nach OpenClaw Config/Architektur | `/openclaw-expert` | Sonnet |
-| User will neuen Skill erstellen | `/openclaw-skill-creator` | Sonnet |
-| User hat Docker/Qdrant-Problem | `/docker-admin` | Haiku |
-| User hat GPU-Server-Problem | `/gpu-server-admin` | Haiku |
-| User fragt "was ist...", "wie geht...", "wo finde ich..." | `/helper` | Haiku |
-| Onboarding laeuft | `/onboard` | Sonnet |
+Lies `components/*/description.md` fuer eine aktuelle Uebersicht
+aller Komponenten, ihrer Faehigkeiten und Abhaengigkeiten.
 
-### Automatische Pipeline nach Code-Aenderungen (IMMER!)
+Lies `components/*/description.md` um zu entscheiden, welche
+Komponenten betroffen sind. Nutze den jeweiligen Agenten fuer
+Konsultation (MiniMax) und Implementierung (Claude/coder).
 
-Nach JEDER Code-Aenderung wird automatisch diese Pipeline durchlaufen:
+### Modell-Zuweisung
 
-```
-Code-Aenderung abgeschlossen
-  │
-  ├── 1. Build: `npm run build` (wenn Plugin/Service)
-  │
-  ├── 2. `/reviewer` (Sonnet) — Code-Review gegen Checkliste
-  │     └── Bei Problemen: Fix → zurueck zu 1.
-  │
-  ├── 3. `/tester` (Haiku) — Health-Checks + Tests
-  │     └── Bei Fehlern: Diagnose → Fix → zurueck zu 1.
-  │
-  ├── 4. Commit — Aenderungen committen mit aussagekraeftiger Message
-  │
-  └── 5. `/docs` (Haiku) — DECISIONS.md aktualisieren (wenn nicht-trivial)
+| Aufgabe | Modell |
+|---------|--------|
+| Orchestrierung, Coding (`/coder`), Review (`/reviewer`) | Claude (Pro/Max) |
+| Konsultation, Tests, Protokoll, Routine | MiniMax (via chatCompletions) |
+
+Konsultation via:
+```bash
+curl -X POST http://localhost:18789/v1/chat/completions \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"model": "openclaw/default", "messages": [{"role": "system", "content": "<description.md + decisions.md>"}, {"role": "user", "content": "<Frage>"}]}'
 ```
 
-Diese Pipeline ist NICHT optional. Claude Code fuehrt sie automatisch aus.
-Der User wird nur informiert, nicht gefragt (ausser bei Review-Problemen).
+### Workflow bei neuen Features / Aenderungen
+
+1. Ziel klaeren mit User
+2. Betroffene Komponenten identifizieren (`components/*/description.md` lesen)
+3. Plan-Entwurf mit Checkliste:
+   - [ ] Ziel definiert
+   - [ ] Nutzer/Zielgruppe
+   - [ ] Sicherheit
+   - [ ] Laufzeitumgebung
+   - [ ] Abhaengigkeiten
+   - [ ] Testbarkeit
+4. Konsultationsrunde: Betroffene Agenten via MiniMax befragen (`/consult`)
+5. Plan konsolidieren, Konflikte aufloesen
+6. User-Freigabe
+7. Coding via `/coder` (Claude) — liest vorher `claude.md` der Komponente
+8. Build: `npm run build` / `openclaw plugins doctor`
+9. `/tester` liest `testinstruct.md`, fuehrt Tests aus
+10. `/reviewer` prueft
+11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
+12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
+13. Ship it: Commit + Deploy
 
 ### Manuelle Aufrufe
 
 Der User kann jeden Agent auch direkt aufrufen — das ueberschreibt die automatische Auswahl.
 
-## Workflow-Regeln
-
-### Code-Aenderungen
-1. **Plan erstellen** und mit User besprechen
-2. **Freigabe** abwarten
-3. **Baseline-Commit** vor Aenderungen
-4. **Implementieren** — `/coder` (Sonnet)
-5. **Build** — `npm run build` / `openclaw plugins doctor`
-6. **Review** — `/reviewer` (Sonnet) automatisch
-7. **Test** — `/tester` (Haiku) automatisch
-8. **Commit** — automatisch
-9. **Dokumentieren** — `/docs` (Haiku) automatisch bei nicht-trivialen Aenderungen
-
 ### Mindestanforderungen
+
 - Code muss gebaut werden koennen (`npm run build`)
 - `openclaw plugins doctor` ohne Fehler
 - Keine Secrets im Code (alles ueber ENV/Config)
@@ -196,6 +195,7 @@ Der User kann jeden Agent auch direkt aufrufen — das ueberschreibt die automat
 - DECISIONS.md bei nicht-trivialen Entscheidungen
 
 ### Feature-Entfernung
+
 - **NIE** Features still entfernen
 - Immer: Gefahrenbeurteilung + explizite User-Bestaetigung
 - Dokumentieren was entfernt wurde und warum
@@ -250,6 +250,8 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 | `/reviewer` | Code-Review | Sonnet |
 | `/tester` | Tests + Checks | Haiku |
 | `/docs` | Dokumentation | Haiku |
+| `/consult` | Einzelnen Komponenten-Agent via MiniMax befragen | — |
+| `/plan-review` | Konsultationsrunde an betroffene Agenten | — |
 
 ## ENV-Substitution
 
