@@ -30,7 +30,10 @@ und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
 2. **Checkliste durchgehen:** Jeden Punkt pruefen
 3. **Ergebnis:** Klar kommunizieren was OK ist und was geaendert werden muss
 4. **Bei Problemen:** Konkrete Vorschlaege machen, nicht nur bemeckern
-5. **Findings auflisten:** Mechanische Findings (unused imports, falsche Kommentare, fehlende stderr-Ausgaben, Tippfehler) klar als "mechanisch" markieren. Design-Findings separat auflisten. NICHT selbst fixen — der Orchestrator delegiert Fixes an `/coder`.
+5. **Findings kategorisieren und auflisten.** NICHT selbst fixen — der Orchestrator entscheidet.
+   - **Mechanisch:** (unused imports, Tippfehler, fehlende stderr) — mit `[mechanisch]` markieren
+   - **Design-blockierend:** (Architektur, API-Bruch, Sicherheit) — mit `[BLOCKIEREND]` markieren, Workflow muss pausieren
+   - **Design-nicht-blockierend:** (Verbesserungsvorschlaege, Stilfragen) — mit `[TODO]` markieren, wird geparkt
 
 ## Kontext
 

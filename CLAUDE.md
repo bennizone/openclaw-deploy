@@ -180,10 +180,11 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 9. `/tester` liest `testinstruct.md`, fuehrt Tests aus
 10. `/reviewer` prueft — listet Findings (mechanisch + Design)
 10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → Orchestrator delegiert an `/coder`
-10b. Design-Findings → User vorlegen
+10b. Design-Findings die den Workflow BLOCKIEREN (Architektur, API-Bruch, Sicherheit) → SOFORT User-Input holen
+10c. Nicht-blockierende Design-Findings → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
 11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
 12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
-13. Ship it: Commit + Deploy
+13. Ship it: Commit + Deploy — Zusammenfassung zeigt geparkte Design-Findings aus 10c
 14. Reflection (optional): `/reflect` — MiniMax analysiert Session auf Token-Waste,
     Orchestrator ergaenzt, `/reviewer` prueft, User gibt frei. Skip mit "skip"
 
