@@ -30,6 +30,7 @@ und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
 2. **Checkliste durchgehen:** Jeden Punkt pruefen
 3. **Ergebnis:** Klar kommunizieren was OK ist und was geaendert werden muss
 4. **Bei Problemen:** Konkrete Vorschlaege machen, nicht nur bemeckern
+5. **Auto-Fix:** Mechanische Findings sofort anwenden (unused imports, falsche Kommentare, fehlende stderr-Ausgaben, Tippfehler). Nur Findings die eine Design-Entscheidung erfordern dem User vorlegen.
 
 ## Kontext
 

@@ -123,3 +123,16 @@ Wenn das Feature nicht klar ist, frage den User.
 
 Kurze Zusammenfassung: Was wurde gepatcht, welche Patterns gefunden.
 Kein Commit — das macht der User oder der uebergeordnete Workflow.
+
+### Schritt 10: Multi-Session-Aggregation (optional)
+
+Wenn >= 3 Sessions seit der letzten Aggregation unanalysiert sind,
+empfiehl dem User:
+
+```bash
+scripts/aggregate-sessions.sh
+```
+
+Das Script aggregiert Tool-Calls ueber alle Sessions, erkennt strukturelle
+Patterns (Errors >= 3x) und laesst MiniMax eine Meta-Analyse erstellen.
+Fuer gefilterte Analyse: `--since YYYY-MM-DD`.
