@@ -8,9 +8,10 @@ Ziel: Drei aufeinander aufbauende Phasen, die jeweils eigenstaendig Mehrwert lie
 
 ---
 
-## Phase F.1: Multi-Session-Aggregation
+## Phase F.1: Multi-Session-Aggregation ✅
 
 **Ziel:** Patterns ueber mehrere Sessions erkennen statt nur einzelne zu analysieren.
+**Status:** Abgeschlossen (2026-04-01). Bonus: Reviewer Auto-Fix im Workflow verankert, /reflect bezieht Reviewer-Findings ein.
 
 ### F.1.1 — workflow-patterns.md erweitern
 
@@ -58,9 +59,10 @@ In `.claude/commands/reflect.md` nach Schritt 9: Hinweis dass bei >= 3 unanalysi
 
 ---
 
-## Phase F.2: Learnings → Docs Flow
+## Phase F.2: Learnings → Docs Flow ✅
 
 **Ziel:** Patterns aus `workflow-patterns.md` fliessen zurueck in Komponenten-Docs und Checklisten.
+**Status:** Abgeschlossen (2026-04-01). Script, Resolution-Tracking, MiniMax-Fallback, Verifikation gegen 7 Patterns.
 
 ### F.2.1 — `scripts/learnings-to-docs.py` erstellen
 
