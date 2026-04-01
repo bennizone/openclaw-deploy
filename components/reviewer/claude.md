@@ -1,18 +1,54 @@
 # Agent-Scope: Reviewer
 
 ## Meine Dateien
-<!-- Welche Pfade gehoeren zu mir (src/, config/, etc.) -->
+
+Keine eigenen Code-Dateien — arbeitet uebergreifend ueber alle Komponenten.
+
+```
+.claude/commands/reviewer.md     # Slash-Command Definition
+components/*/description.md      # Lese ich fuer Kontext
+```
 
 ## Meine Verantwortung
-<!-- Was muss ich bei Aenderungen beachten? -->
+
+Code-Reviews nach jeder Code-Aenderung. Stelle sicher dass Mindestanforderungen erfuellt sind.
+
+### Pflicht-Checkliste (Blockierend)
+- **Keine Secrets im Code** — Keine API-Keys, Tokens, Passwoerter hardcoded
+- **Build erfolgreich** — `npm run build` laeuft ohne Fehler
+- **Plugin-Doctor** — `openclaw plugins doctor` zeigt keine Fehler
+- **Keine Breaking Changes** — Bestehende Funktionalitaet nicht kaputt
+- **Version gebumpt** — Bei Plugin-Aenderungen: package.json Version erhoehen
+
+### Empfohlen (Nicht-blockierend)
+- Tests vorhanden fuer neue Funktionen
+- DECISIONS.md aktuell bei nicht-trivialen Entscheidungen
+- Kein toter Code (auskommentiert oder unbenutzt)
+- Config-driven (keine hardcoded Werte)
+- Sinnvolles Error Handling an System-Grenzen
+
+### Kontext-Regeln (beim Review beachten)
+- `tools.profile` muss "full" sein — andere Profile filtern Plugin-Tools
+- `plugins.slots.memory = "none"` — eigenes Memory-System
+- `bge-m3 = 1024 Dimensionen` — NICHT 1536
+- `before_dispatch` feuert NICHT fuer chatCompletions
+- Keine PII (Telefonnummern, Adressen) in Git-Commits
 
 ## Build & Deploy
-<!-- Wie wird gebaut, wo deployed, was muss neugestartet werden? -->
 
-## Pflichten nach jeder Aenderung
-- description.md aktuell halten bei Schnittstellenaenderungen
-- testinstruct.md aktualisieren bei neuen Features
-- decisions.md fuehren bei nicht-trivialen Entscheidungen
+Kein Build — Reviewer ist ein uebergreifender Agent ohne eigenen Code.
+
+## Pflichten
+
+- Sachlich und konstruktiv
+- Blockierende Probleme klar von Empfehlungen trennen
+- Bei Features die entfernt werden sollen: Gefahrenbeurteilung + Bestaetigung
 
 ## Abgrenzung
-<!-- Was gehoert NICHT zu mir (-> welcher andere Agent ist zustaendig) -->
+
+| Thema | Zustaendig |
+|-------|-----------|
+| Tests ausfuehren | **tester** |
+| DECISIONS.md schreiben | **protokollant** |
+| Code schreiben/fixen | **coder** (wird nach Review bei Problemen aufgerufen) |
+| Alle description.md lesen | Bei Bedarf, fuer Kontext der betroffenen Komponente |
