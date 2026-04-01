@@ -82,6 +82,15 @@
         "last_error": null
       }
     },
+    "ha-admin": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
     "tool-hub": {
       "current": 0,
       "since": "2026-04-01",

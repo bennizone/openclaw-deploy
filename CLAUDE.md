@@ -263,6 +263,7 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 | `/openclaw-skill-creator` | Neue Skills | Sonnet |
 | `/docker-admin` | Qdrant/Docker | Haiku |
 | `/gpu-server-admin` | GPU-Server | Haiku |
+| `/ha-admin` | HA-Verwaltung | Sonnet |
 | `/reviewer` | Code-Review | Sonnet |
 | `/tester` | Tests + Checks | Haiku |
 | `/docs` | Dokumentation | Haiku |

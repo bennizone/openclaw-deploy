@@ -276,3 +276,47 @@ sofort an `/coder`, Pattern-History in `workflow-patterns.md`.
 - Patch-Vorschlaege sind deterministisch — Script liefert Zieldatei + Text
 - Self-Audit Violations in workflow-patterns.md fuer Cross-Session-Erkennung
 - Orchestrator-Instruktionen (CLAUDE.md, .claude/commands/*.md) verbessern sich ueber Zeit
+
+## 2026-04-01: Nachtschicht — Weather-Fix, Feature-Request-System, HA-Admin
+
+### Weather-Tool Bug Fix
+
+**Kontext:** `humidity` und `feels_like` im Weather-Tool lasen hardcoded
+Index `[0]` (Mitternacht) statt die aktuelle Stunde.
+
+**Entscheidung:** `current_weather.time` gegen `hourly.time[]` matchen.
+Fallback auf Index 0 bei keinem Match.
+
+**Begruendung:** Open-Meteo liefert beide Zeitstempel im gleichen lokalen
+Timezone-Format (`timezone=auto`), daher funktioniert direkter String-Vergleich.
+
+### Feature-Request-System + SOUL.md Admin-Hinweis
+
+**Kontext:** Agents (MiniMax) haben keine Beschraenkung Config zu aendern
+oder Features selbst zu bauen. User-Wuensche gehen verloren.
+
+**Entscheidung:** Drei neue SOUL.md Sektionen fuer alle Agents:
+1. **Antwortfokus** — Nur die gestellte Frage beantworten
+2. **Administration** — Kein Config-Zugriff, nur Claude Code darf
+3. **Feature-Requests** — Interview-Protokoll, Ablage in `feature-requests/`
+
+Household-Agent bekommt gekuerzte Voice-Variante (kein Interview,
+nur Redirect an Benni).
+
+**Alternativen:**
+- AGENTS.md statt SOUL.md — verworfen: MiniMax ignoriert spaeter injizierte
+  Dateien (Lektion #12)
+- Plugin-basierte Beschraenkung — verworfen: Prompt-Level reicht, kein
+  technischer Enforcement noetig
+
+### HA-Admin Komponenten-Agent
+
+**Kontext:** Bedarf an HA-Administration (Automationen, Wartung, Troubleshooting)
+aus Claude Code. Bestehender ha-integration Agent deckt nur home-llm Code ab.
+
+**Entscheidung:** Eigener Agent `ha-admin`, getrennt von `ha-integration`.
+Schutzliste fuer Entities die ha-integration braucht (sun.sun, zone.home,
+Assist Pipeline, conversation.home_llm).
+
+**Begruendung:** Komplett anderer Scope (HA von aussen via REST API vs.
+home-llm Python Code innerhalb HA). Scope-Vermischung vermieden.

@@ -70,6 +70,7 @@ interface ForecastResponse {
     windspeed: number;
     winddirection: number;
     weathercode: number;
+    time: string;
   };
   daily: {
     time: string[];
@@ -83,6 +84,7 @@ interface ForecastResponse {
     uv_index_max: number[];
   };
   hourly: {
+    time: string[];
     relative_humidity_2m: number[];
     apparent_temperature: number[];
   };
@@ -143,9 +145,13 @@ export function registerWeather(server: McpServer): void {
       const forecast = await fetchForecast(geo.latitude, geo.longitude, days);
       const cw = forecast.current_weather;
 
-      // Current humidity + feels-like from first hourly entry
-      const humidity = forecast.hourly.relative_humidity_2m?.[0] ?? null;
-      const feelsLike = forecast.hourly.apparent_temperature?.[0] ?? null;
+      // Find hourly index matching current weather time
+      const hourlyTimes = forecast.hourly.time ?? [];
+      let hourIndex = hourlyTimes.findIndex(t => t === cw.time);
+      if (hourIndex < 0) hourIndex = 0;
+
+      const humidity = forecast.hourly.relative_humidity_2m?.[hourIndex] ?? null;
+      const feelsLike = forecast.hourly.apparent_temperature?.[hourIndex] ?? null;
 
       const lines: string[] = [];
 
