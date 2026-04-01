@@ -232,3 +232,25 @@ Jetzt nachgeholt — alle Channels (Matrix + WhatsApp) sind aktiv.
   (Code 515). Die Credentials werden trotzdem gespeichert. `openclaw channels status`
   zeigt "linked, running, connected" wenn es geklappt hat.
 - **Onboarding-Phase "channels" abgeschlossen** — deploy-state.json aktualisiert
+
+## 2026-04-01: Phase F.3 — Stuetzraeder-Protokoll (Graduierte Autonomie)
+
+**Kontext:** Der Entwicklungsprozess hatte keine datengetriebene Basis fuer die
+Entscheidung, wann eine Komponente weniger Begleitung braucht. Alles wurde immer
+mit voller Freigabe behandelt — auch Routine-Operationen an stabilen Komponenten.
+
+**Entscheidung:** 4-stufiges Autonomie-Modell (Level 0–3) pro Komponente,
+gesteuert durch fehlerfreie Sessions in Folge. Progression wird vorgeschlagen,
+nie automatisch angewendet — der User entscheidet.
+
+**Alternativen:**
+- Zeitbasiert (z.B. "nach 2 Wochen Level hoch") — verworfen, weil Stabilitaet
+  nicht mit Alter korreliert
+- Binär (begleitet/autonom) — zu grob, keine Zwischenstufen
+
+**Konsequenzen:**
+- Alle 10 Komponenten starten bei Level 0 (vollstaendig begleitet)
+- `/reflect` traegt nach jeder Session Metriken ein (Schritt 8b)
+- Workflow Schritt 6 prueft Autonomie-Level vor Freigabe-Anfrage
+- Regression bei Fehlern verhindert falsches Sicherheitsgefuehl
+- Neue Dateien: `config/autonomy.json`, `scripts/autonomy-status.py`, `docs/stuetzraeder-protokoll.md`

@@ -174,7 +174,8 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
    - [ ] Testbarkeit
 4. Konsultationsrunde: Betroffene Agenten via MiniMax befragen (`/consult`)
 5. Plan konsolidieren, Konflikte aufloesen
-6. User-Freigabe
+6. User-Freigabe — bei Level 2+ Standard-Ops (read, write) ohne extra Freigabe
+   (Autonomie-Level pruefen: `python3 scripts/autonomy-status.py check <comp> <op>`)
 7. Coding via `/coder` (Claude) — liest vorher `claude.md` der Komponente
 8. Build: `npm run build` / `openclaw plugins doctor`
 9. `/tester` liest `testinstruct.md`, fuehrt Tests aus
@@ -187,6 +188,11 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 13. Ship it: Commit + Deploy — Zusammenfassung zeigt geparkte Design-Findings aus 10c
 14. Reflection (optional): `/reflect` — MiniMax analysiert Session auf Token-Waste,
     Orchestrator ergaenzt, `/reviewer` prueft, User gibt frei. Skip mit "skip"
+
+### Stuetzraeder-Protokoll (Graduierte Autonomie)
+
+Jede Komponente hat ein Autonomie-Level (0-3). Siehe `docs/stuetzraeder-protokoll.md`.
+Daten in `config/autonomy.json`. CLI: `python3 scripts/autonomy-status.py status|check|record|suggest-promotions`.
 
 ### Manuelle Aufrufe
 

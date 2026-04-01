@@ -129,6 +129,24 @@ Wenn ein Pattern schon existiert: `Anzahl` hochzaehlen statt Duplikat anlegen.
 
 Wenn das Feature nicht klar ist, frage den User.
 
+### Schritt 8b: Autonomie-Metriken aktualisieren
+
+Fuer jede betroffene Komponente der Session: Trage das Ergebnis ein.
+
+```bash
+# Erfolgreiche Session (keine Fehler bei dieser Komponente):
+python3 scripts/autonomy-status.py record <component>
+
+# Session mit Fehler:
+python3 scripts/autonomy-status.py record <component> --error
+
+# Kritischer Fehler (Config zerstoert, Datenverlust, etc.):
+python3 scripts/autonomy-status.py record <component> --error --critical
+```
+
+Wenn mehrere Komponenten betroffen waren, fuer jede einzeln aufrufen.
+Danach `suggest-promotions` pruefen und dem User zeigen falls es Vorschlaege gibt.
+
 ### Schritt 9: Zusammenfassung
 
 Kurze Zusammenfassung: Was wurde gepatcht, welche Patterns gefunden.

@@ -1,0 +1,104 @@
+{
+  "version": 1,
+  "levels": {
+    "gateway": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "gpu-server": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "ha-integration": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "memory-system": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "onboard": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "openclaw-skills": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "protokollant": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "reviewer": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "tester": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    },
+    "tool-hub": {
+      "current": 0,
+      "since": "2026-04-01",
+      "metrics": {
+        "sessions_total": 0,
+        "sessions_error_free": 0,
+        "last_error": null
+      }
+    }
+  },
+  "progression": {
+    "0→1": 3,
+    "1→2": 5,
+    "2→3": 10
+  },
+  "regression": {
+    "error": "drop_one",
+    "critical": "reset_to_0"
+  }
+}
