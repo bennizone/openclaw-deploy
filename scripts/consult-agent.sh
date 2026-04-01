@@ -18,7 +18,7 @@
 #   - Laedt description.md der Komponente als System-Prompt
 #   - Optional: haengt decisions.md an (--with-decisions)
 #   - Sendet an chatCompletions mit korrektem Scopes-Header
-#   - Timeout: 45 Sekunden (curl -m)
+#   - Timeout: 90 Sekunden (curl -m)
 
 set -euo pipefail
 
@@ -100,7 +100,7 @@ JSON_PAYLOAD=$(jq -n \
   }')
 
 # Request
-RESPONSE=$(curl -s -m 45 -X POST http://localhost:18789/v1/chat/completions \
+RESPONSE=$(curl -s -m 90 -X POST http://localhost:18789/v1/chat/completions \
   -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
   -H "X-OpenClaw-Scopes: operator.write" \
