@@ -254,3 +254,25 @@ nie automatisch angewendet — der User entscheidet.
 - Workflow Schritt 6 prueft Autonomie-Level vor Freigabe-Anfrage
 - Regression bei Fehlern verhindert falsches Sicherheitsgefuehl
 - Neue Dateien: `config/autonomy.json`, `scripts/autonomy-status.py`, `docs/stuetzraeder-protokoll.md`
+
+## 2026-04-01: Orchestrator Self-Audit in /reflect
+
+**Kontext:** Der Orchestrator hat in Sessions Code selbst editiert statt an `/coder`
+zu delegieren, und mechanische Reviewer-Findings selbst gefixt. Das wurde erst durch
+manuelles Review bemerkt — kein automatischer Check existierte.
+
+**Entscheidung:** Deterministisches Python-Script (`orchestrator-audit.py`) das
+JSONL-Sessions auf Workflow-Verletzungen prueft. Integriert in `/reflect` als
+Schritt 2b. Violations werden wie Reviewer-Autofix behandelt: mechanische Patches
+sofort an `/coder`, Pattern-History in `workflow-patterns.md`.
+
+**Alternativen:**
+- MiniMax-basierte Analyse — verworfen, Regeln sind klar genug fuer deterministische
+  Pruefung, spart Tokens und braucht keinen API-Call
+- Manuelle Review — verworfen, skaliert nicht und wird vergessen
+
+**Konsequenzen:**
+- 7 Violation-Typen (ORCH-EDIT, ORCH-FIX, SKIP-CONSULT/REVIEWER/TESTER/DOCS/DESCRIPTION)
+- Patch-Vorschlaege sind deterministisch — Script liefert Zieldatei + Text
+- Self-Audit Violations in workflow-patterns.md fuer Cross-Session-Erkennung
+- Orchestrator-Instruktionen (CLAUDE.md, .claude/commands/*.md) verbessern sich ueber Zeit

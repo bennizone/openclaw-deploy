@@ -67,6 +67,30 @@ der JSONL nach dem Review-Output. Fasse die Findings kompakt zusammen und haenge
 an die MiniMax-Anfrage an: "Reviewer hat gefunden: ...". So analysiert MiniMax auch
 die Ursache hinter den Findings (z.B. warum wurde ein unused import geschrieben?).
 
+### Schritt 2b: Orchestrator Self-Audit
+
+Pruefe ob der Orchestrator seinen eigenen Workflow eingehalten hat:
+
+```bash
+python3 scripts/orchestrator-audit.py "$JSONL_PATH"
+```
+
+Das Script erkennt deterministisch:
+- Hat der Orchestrator selbst Code editiert (statt /coder)?
+- Wurden Pflicht-Schritte uebersprungen (/consult, /reviewer, /tester, /docs)?
+- Hat der Orchestrator mechanische Findings selbst gefixt statt zu delegieren?
+- Wurde description.md vor Implementierung gelesen?
+
+**Wenn Violations gefunden — Autofix wie beim Reviewer:**
+- Alle Violation-Patches sind mechanisch (deterministische Textergaenzungen).
+  Sofort an `/coder` delegieren — NICHT auf die Patch-Tabelle schieben.
+  `/coder` wendet die Patches auf `CLAUDE.md` oder `.claude/commands/*.md` an.
+- Falls ein Patch nicht eindeutig ist (z.B. Zielstelle unklar): Als `[TODO]`
+  auf `docs/workflow-patterns.md` parken und in Schritt 9 (Zusammenfassung) anzeigen.
+- Blockierende Findings gibt es beim Self-Audit nicht.
+
+**Wenn keine Violations:** Melde "Orchestrator-Compliance: OK" und weiter.
+
 ### Schritt 3: Orchestrator ergaenzt
 
 Pruefe MiniMax-Ergebnisse:
@@ -89,7 +113,8 @@ Formatiere als Tabelle:
 | # | Quelle | Pattern | Betroffene Datei | Vorgeschlagener Patch |
 |---|--------|---------|-----------------|----------------------|
 | 1 | MiniMax | ...     | ...             | ...                  |
-| 2 | Orchestrator | ... | ...            | ...                  |
+| 2 | Self-Audit | ... | CLAUDE.md       | ...                  |
+| 3 | Orchestrator | ... | ...            | ...                  |
 ```
 
 ### Schritt 5: Review
@@ -111,9 +136,12 @@ Zeige Review-Ergebnis und frage:
 ### Schritt 7: Patches anwenden
 
 Fuer jeden genehmigten Patch:
-1. Ziel-Datei lesen (Checkliste, claude.md, etc.)
+1. Ziel-Datei lesen (Checkliste, claude.md, CLAUDE.md, .claude/commands/*.md, etc.)
 2. Patch an der richtigen Stelle einfuegen
 3. Sicherstellen dass kein Duplikat entsteht
+
+Self-Audit-Patches betreffen oft `CLAUDE.md` oder `.claude/commands/*.md` —
+die Orchestrator-Instruktionen selbst. So verbessert sich der Workflow ueber Zeit.
 
 ### Schritt 8: workflow-patterns.md aktualisieren
 
@@ -123,8 +151,11 @@ Trage die gefundenen Patterns in `docs/workflow-patterns.md` ein:
 | Datum | Feature | Pattern | Fix | Status | Anzahl |
 ```
 
-Auch Reviewer-Findings eintragen, wenn sie auf ein wiederkehrendes Muster hindeuten
-(z.B. "unused import" → Pattern: "Imports nicht aufgeraeumt nach Refactoring").
+Auch Reviewer-Findings und **Self-Audit Violations** eintragen:
+- Reviewer: z.B. "unused import" → Pattern: "Imports nicht aufgeraeumt nach Refactoring"
+- Self-Audit: z.B. "ORCH-EDIT" → Pattern: "Orchestrator editiert Code statt /coder"
+
+So erkennt `aggregate-sessions.sh` wiederkehrende Verstoesse ueber Sessions hinweg.
 Wenn ein Pattern schon existiert: `Anzahl` hochzaehlen statt Duplikat anlegen.
 
 Wenn das Feature nicht klar ist, frage den User.
