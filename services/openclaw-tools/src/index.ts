@@ -8,8 +8,38 @@ import { registerUnderstandImage } from "./tools/understand-image.js";
 import { registerArr } from "./tools/arr.js";
 import { registerCalendar } from "./tools/calendar.js";
 import { registerContacts } from "./tools/contacts.js";
+import { logToolCall, logToolResult, logToolError } from "./lib/debug-log.js";
 
 const log = (msg: string) => process.stderr.write(`[openclaw-tools] ${msg}\n`);
+
+/** Wrap McpServer.tool() to log all calls + results automatically. */
+function wrapWithLogging(server: McpServer): McpServer {
+  const origTool = server.tool.bind(server);
+  /* eslint-disable @typescript-eslint/no-explicit-any */
+  (server as any).tool = function (...regArgs: any[]) {
+    const handler = regArgs[regArgs.length - 1] as Function;
+    const toolName: string = regArgs[0];
+    regArgs[regArgs.length - 1] = async (input: any, extra: any) => {
+      logToolCall(toolName, (input ?? {}) as Record<string, unknown>);
+      const t0 = Date.now();
+      try {
+        const result = await handler(input, extra);
+        const text = result?.content
+          ?.map((c: any) => c.text ?? "")
+          .join("")
+          .slice(0, 1000) ?? "";
+        logToolResult(toolName, text, Date.now() - t0);
+        return result;
+      } catch (err) {
+        logToolError(toolName, err instanceof Error ? err.message : String(err), Date.now() - t0);
+        throw err;
+      }
+    };
+    return origTool.apply(server, regArgs as any);
+  };
+  /* eslint-enable @typescript-eslint/no-explicit-any */
+  return server;
+}
 
 async function main(): Promise<void> {
   log("Starting OpenClaw Tool-Hub MCP Server v1.2.0");
@@ -18,10 +48,10 @@ async function main(): Promise<void> {
   const sonarr = new SonarrClient();
   const radarr = new RadarrClient();
 
-  const server = new McpServer({
+  const server = wrapWithLogging(new McpServer({
     name: "openclaw-tools",
     version: "1.2.0",
-  });
+  }));
 
   registerWebSearch(server, minimax);
   registerUnderstandImage(server, minimax);

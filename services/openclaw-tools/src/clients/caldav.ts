@@ -156,6 +156,7 @@ export class CalDavSource {
         const objects = await client.fetchCalendarObjects({
           calendar: cal,
           timeRange: { start, end },
+          expand: true,
         });
         for (const obj of objects) {
           const ev = parseEvent(obj, this.label, this.source.id, calName);

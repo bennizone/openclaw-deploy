@@ -47,9 +47,14 @@ export function resolveAgentId(
   return id;
 }
 
-function resolveCredentials(prefix: string): { username: string; password: string } {
+function isPlaceholder(val: string): boolean {
+  return !val || /^HIER[_\s]|^TODO|^PLACEHOLDER|^xxx/i.test(val);
+}
+
+function resolveCredentials(prefix: string): { username: string; password: string } | null {
   const username = process.env[`${prefix}_USER`] ?? "";
   const password = process.env[`${prefix}_PASS`] ?? "";
+  if (isPlaceholder(username) || isPlaceholder(password)) return null;
   return { username, password };
 }
 
@@ -69,7 +74,7 @@ export function getCalendarSources(agentId: string): ResolvedSource[] {
         return null;
       }
       const creds = resolveCredentials(srcConfig.credentialPrefix);
-      if (!creds.username || !creds.password) {
+      if (!creds) {
         log(`Calendar source "${binding.source}" disabled (no credentials)`);
         return null;
       }
@@ -99,7 +104,7 @@ export function getContactSources(agentId: string): ResolvedSource[] {
         return null;
       }
       const creds = resolveCredentials(srcConfig.credentialPrefix);
-      if (!creds.username || !creds.password) {
+      if (!creds) {
         log(`Contact source "${binding.source}" disabled (no credentials)`);
         return null;
       }

@@ -41,6 +41,7 @@
           {
             "id": "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M",
             "name": "Qwen 3.5 9B Opus-Distilled v2",
+            "reasoning": true,
             "contextWindow": 98304,
             "maxTokens": 8192,
             "note": "GPU ctx-size=196608 mit parallel=2 ergibt 98304 pro Slot"

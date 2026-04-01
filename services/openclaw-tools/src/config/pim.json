@@ -3,7 +3,7 @@
   "calendarSources": {
     "benni-hetzner": {
       "type": "caldav",
-      "serverUrl": "https://webmail.your-server.de/rpc/principals/benjamin@hernadi.me/",
+      "serverUrl": "https://webmail.your-server.de/rpc/",
       "credentialPrefix": "CALDAV_BENNI_HETZNER",
       "label": "Benni (Hetzner)"
     },
@@ -24,7 +24,7 @@
   "contactSources": {
     "benni-hetzner": {
       "type": "carddav",
-      "serverUrl": "https://webmail.your-server.de/rpc/principals/benjamin@hernadi.me/",
+      "serverUrl": "https://webmail.your-server.de/rpc/",
       "credentialPrefix": "CARDDAV_BENNI_HETZNER",
       "label": "Benni (Hetzner)"
     },
