@@ -182,8 +182,8 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
 12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
 13. Ship it: Commit + Deploy
-14. Reflection (optional): `/reflect` — analysiert Session auf Token-Waste,
-    schlaegt Patches fuer Checklisten vor. Default: ja, skip mit "skip"
+14. Reflection (optional): `/reflect` — MiniMax analysiert Session auf Token-Waste,
+    Orchestrator ergaenzt, `/reviewer` prueft, User gibt frei. Skip mit "skip"
 
 ### Manuelle Aufrufe
 
