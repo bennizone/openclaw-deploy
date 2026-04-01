@@ -48,6 +48,7 @@ Finde:
 2) Wiederholte Reads gleicher Datei — warum nicht beim ersten Mal?
 3) Exploratorische Ketten (ls, grep, head) — was fehlte?
 4) Bekannte Fehler wiederholt — wo war es dokumentiert, warum nicht gelesen?
+5) Reviewer-Findings — was hat der Reviewer bemängelt und warum wurde es so gemacht?
 
 Fuer jedes Pattern: Schlage einen konkreten Patch vor.
 Falls du keinen Fix hast: Melde das Pattern trotzdem mit 'KEIN FIX'.
@@ -60,6 +61,11 @@ Format: 'In DATEI nach STELLE ergaenzen: TEXT'
 **Hinweis:** Sende NICHT die volle Tool-Call-Liste — MiniMax hat 45s Timeout.
 Stattdessen: Kompakte Zusammenfassung mit Statistik, Errors + Kontext (3 Calls davor/danach),
 und auffaellige Muster (wiederholte Reads, Grep-Ketten). Max ~3000 Zeichen.
+
+**Reviewer-Findings einbeziehen:** Wenn in der Session ein `/reviewer` lief, suche in
+der JSONL nach dem Review-Output. Fasse die Findings kompakt zusammen und haenge sie
+an die MiniMax-Anfrage an: "Reviewer hat gefunden: ...". So analysiert MiniMax auch
+die Ursache hinter den Findings (z.B. warum wurde ein unused import geschrieben?).
 
 ### Schritt 3: Orchestrator ergaenzt
 
@@ -114,8 +120,12 @@ Fuer jeden genehmigten Patch:
 Trage die gefundenen Patterns in `docs/workflow-patterns.md` ein:
 
 ```markdown
-| Datum | Feature | Pattern | Fix |
+| Datum | Feature | Pattern | Fix | Status | Anzahl |
 ```
+
+Auch Reviewer-Findings eintragen, wenn sie auf ein wiederkehrendes Muster hindeuten
+(z.B. "unused import" → Pattern: "Imports nicht aufgeraeumt nach Refactoring").
+Wenn ein Pattern schon existiert: `Anzahl` hochzaehlen statt Duplikat anlegen.
 
 Wenn das Feature nicht klar ist, frage den User.
 
