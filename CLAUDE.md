@@ -182,6 +182,8 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
 12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
 13. Ship it: Commit + Deploy
+14. Reflection (optional): `/reflect` — analysiert Session auf Token-Waste,
+    schlaegt Patches fuer Checklisten vor. Default: ja, skip mit "skip"
 
 ### Manuelle Aufrufe
 
@@ -253,6 +255,7 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 | `/docs` | Dokumentation | Haiku |
 | `/consult` | Einzelnen Komponenten-Agent via MiniMax befragen | — |
 | `/plan-review` | Konsultationsrunde an betroffene Agenten | — |
+| `/reflect` | Session Self-Reflection (Token-Waste Analyse) | — |
 
 ## ENV-Substitution
 
@@ -272,4 +275,5 @@ OpenClaw unterstuetzt `${VAR_NAME}` in openclaw.json:
 ~/extractor/.env                   # Extractor-Secrets
 ~/models/                          # GGUF Modell-Dateien (lokal)
 ~/.config/systemd/user/            # systemd User-Services
+~/.claude/projects/.../*.jsonl     # Claude Code Session-JSONLs (fuer /reflect)
 ```

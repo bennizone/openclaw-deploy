@@ -393,7 +393,7 @@ Ergebnis:
 
 ---
 
-## Phase A-D: Abgeschlossen
+## Phase A-E: Abgeschlossen
 
 | Session | Phase | Status | Ergebnis |
 |---------|-------|--------|----------|
@@ -401,10 +401,12 @@ Ergebnis:
 | 2 | B: Befuellung | ERLEDIGT | Alle MDs mit echtem Wissen befuellt |
 | 3 | C: Orchestrator + Commands | ERLEDIGT | CLAUDE.md + Slash-Commands angepasst |
 | 4 | D: Validierung + Wetter-MCP | ERLEDIGT | MiniMax getestet, Wetter-Tool live, Script verbessert |
+| 5 | E.1: Checklisten-Struktur | ERLEDIGT | claude.md entschlackt, operative Details in Checklisten |
+| 6 | E.2: Self-Reflection | ERLEDIGT | /reflect Command, Python-Extractor, workflow-patterns.md |
 
 ---
 
-## Ausfuehrungsphase E: Checklisten-Struktur + Self-Reflection
+## Ausfuehrungsphase E: Checklisten-Struktur + Self-Reflection (ERLEDIGT)
 
 ### Ziel
 
@@ -433,6 +435,15 @@ Siehe: `/home/openclaw/.claude/plans/curried-plotting-marble.md`
 
 Session-Log D.2: `docs/session-logs/2026-04-01-phase-d2-weather-tool.md`
 Roh-JSONL: `~/.claude/projects/-home-openclaw-openclaw-deploy/5c9f4bc3-ab0d-4093-a8dd-97f47436c045.jsonl`
+
+### E.2 Ergebnisse
+
+- **Extractor-Script:** `scripts/extract-session-calls.py` — 68 Calls extrahiert, 3 Errors gefunden
+- **MiniMax-Analyse:** 3 Patch-Vorschlaege geliefert (XDG, testinstruct, Edit-before-Read)
+- **Alle 4 D.2-Patterns bestaetigt:** In E.1-Checklisten bereits gefixt
+- **workflow-patterns.md:** 4 Eintraege aus D.2
+- **CLAUDE.md:** Schritt 14 (Reflection) + JSONL-Pfad + /reflect in Slash-Commands
+- **/reflect Command:** Vollstaendiger 7-Schritt-Workflow
 
 ### Handoff-Prompt fuer Phase E.1
 
