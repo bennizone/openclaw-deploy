@@ -53,6 +53,7 @@ setup/gpu-server/
   - **gateway** — Qwen 3.5 9B als Fallback-LLM
   - **ha-integration** — Qwen 3.5 9B als primaeres LLM fuer HA-Voice
   - **memory-system** — bge-m3 als primaerer Embedding-Server
+  - **openclaw-skills** — Qwen 3.5 9B fuer Smart Home Routing-Klassifikation
   - **tool-hub** — indirekt (ueber Gateway/Agents die Tools nutzen)
 
 ## Schnittstellen
