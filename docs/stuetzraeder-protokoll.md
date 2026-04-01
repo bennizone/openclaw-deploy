@@ -91,6 +91,9 @@ python3 scripts/autonomy-status.py record tool-hub --error --critical  # Kritisc
 
 # Promotions pruefen
 python3 scripts/autonomy-status.py suggest-promotions
+
+# Promotion anwenden (prueft Schwelle automatisch)
+python3 scripts/autonomy-status.py promote tool-hub
 ```
 
 ## Integration

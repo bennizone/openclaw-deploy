@@ -6,6 +6,7 @@ Subcommands:
     check COMP OP       Braucht diese Operation Freigabe?
     record COMP [--error [--critical]]  Session-Ergebnis eintragen
     suggest-promotions  Welche Komponenten koennten aufsteigen?
+    promote COMP        Komponente auf naechstes Level befoerdern
 
 Usage:
     python3 scripts/autonomy-status.py status
@@ -151,7 +152,40 @@ def cmd_suggest_promotions(data: dict) -> None:
     for comp, old, new, ef, thr in suggestions:
         print(f"{comp:<20} {old:>7} {new:>3} {ef:>10} {thr:>8}")
 
-    print(f"\nPromotion anwenden: Manuell Level in config/autonomy.json setzen oder per User-Freigabe.")
+    print(f"\nPromotion anwenden: python3 scripts/autonomy-status.py promote <komponente>")
+
+
+def cmd_promote(data: dict, component: str) -> None:
+    """Promote a component to the next autonomy level."""
+    if component not in data["levels"]:
+        print(f"Fehler: Komponente '{component}' nicht in autonomy.json.", file=sys.stderr)
+        sys.exit(1)
+
+    info = data["levels"][component]
+    level = info["current"]
+
+    if level >= 3:
+        print(f"{component}: Bereits auf Level 3 (Autonom) — kein weiterer Aufstieg moeglich.")
+        return
+
+    progression = data["progression"]
+    key = f"{level}\u2192{level + 1}"
+    threshold = progression.get(key, 999)
+    error_free = info["metrics"]["sessions_error_free"]
+
+    if error_free < threshold:
+        print(
+            f"{component}: Nicht bereit — {error_free}/{threshold} fehlerfreie Sessions "
+            f"fuer Level {level} → {level + 1}.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
+    old_level = level
+    info["current"] = level + 1
+    info["since"] = date.today().isoformat()
+    save_autonomy(data)
+    print(f"{component}: Level {old_level} → {info['current']} ({LEVEL_NAMES[info['current']]})")
 
 
 def main():
@@ -170,6 +204,9 @@ def main():
     p_record.add_argument("--critical", action="store_true", help="Kritischer Fehler (Reset auf 0)")
 
     sub.add_parser("suggest-promotions", help="Promotion-Vorschlaege")
+
+    p_promote = sub.add_parser("promote", help="Komponente auf naechstes Level befoerdern")
+    p_promote.add_argument("component")
 
     args = parser.parse_args()
 
@@ -190,6 +227,8 @@ def main():
         cmd_record(data, args.component, args.error, args.critical)
     elif args.command == "suggest-promotions":
         cmd_suggest_promotions(data)
+    elif args.command == "promote":
+        cmd_promote(data, args.component)
 
 
 if __name__ == "__main__":

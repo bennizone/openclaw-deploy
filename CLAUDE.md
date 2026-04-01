@@ -192,7 +192,7 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 ### Stuetzraeder-Protokoll (Graduierte Autonomie)
 
 Jede Komponente hat ein Autonomie-Level (0-3). Siehe `docs/stuetzraeder-protokoll.md`.
-Daten in `config/autonomy.json`. CLI: `python3 scripts/autonomy-status.py status|check|record|suggest-promotions`.
+Daten in `config/autonomy.json`. CLI: `python3 scripts/autonomy-status.py status|check|record|suggest-promotions|promote`.
 
 ### Manuelle Aufrufe
 
