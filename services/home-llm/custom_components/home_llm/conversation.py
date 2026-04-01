@@ -369,6 +369,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         headers = {}
         if self._openclaw_api_key:
             headers["Authorization"] = f"Bearer {self._openclaw_api_key}"
+        headers["X-OpenClaw-Scopes"] = "operator.write"
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
