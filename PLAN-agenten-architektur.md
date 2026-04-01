@@ -404,66 +404,81 @@ Ergebnis:
 
 ---
 
-## Ausfuehrungsphase E: Self-Reflection
+## Ausfuehrungsphase E: Checklisten-Struktur + Self-Reflection
 
 ### Ziel
 
-Nach jeder abgeschlossenen Aufgabe bekommt ein Agent (oder der Orchestrator)
-einen zweiten Call: "Was hast du gelernt? Was wuerdest du anders machen?"
-Ergebnis wird in decisions.md + Learnings-Datei persistiert.
+Zwei Teilphasen:
+- **E.1:** claude.md-Dateien entschlacken → Routing-Tabellen. Operative Details
+  in separate Checklisten-Dateien auslagern. Damit Reflection spaeter in die
+  richtigen Dateien schreiben kann.
+- **E.2:** Self-Reflection implementieren. MiniMax analysiert rohe Session-JSONLs
+  auf Token-Waste, Claude patcht die betroffenen Checklisten.
 
-### Voraussetzung
+### Entschiedene Fragen
 
-- Strukturierte Session-Logs als Input (erste Vorlage: `docs/session-logs/`)
-- Klar definiertes Reflection-Format (Fragen, Output-Schema)
-- Entscheidung: Wer reflektiert? (Orchestrator vs betroffener Agent vs eigener Reflection-Agent)
-- Entscheidung: Wo werden Learnings gespeichert? (decisions.md, eigene Datei, Memory)
+| Frage | Antwort | Begruendung |
+|-------|---------|-------------|
+| Wer reflektiert? | MiniMax analysiert, Claude patcht | MiniMax: guenstige Tokens + frische Augen. Claude: Schreibrechte + User-Dialog |
+| Welche Daten? | Rohes JSONL (via Python-Script aufbereitet) | Aufbereitete Protokolle verstecken genau den Waste den wir finden wollen |
+| Output-Format? | Konkrete Patch-Vorschlaege pro Checkliste | Keine Selbstbeweihraecherung, nur actionable Fixes |
+| Wo persistieren? | In die Checkliste wo die Info gefehlt hat | Nicht in eigene Reflection-Docs, sondern direkt ins Wissen |
+| Wann? | Semi-automatisch (Default nach Feature, skippbar) | `/reflect` als Schritt 13 im Workflow |
 
-### Offene Fragen (muessen vor Implementierung geklaert werden)
+### Detaillierter Plan
 
-1. **Wer reflektiert?**
-   - Option A: Orchestrator (Claude) analysiert eigene Session
-   - Option B: Betroffener Agent (MiniMax) bewertet seinen Beitrag
-   - Option C: Eigener "Reflection-Agent" der Sessions neutral analysiert
-
-2. **Welche Daten braucht der Reflection-Agent?**
-   - Aufbereitetes Session-Protokoll (wie docs/session-logs/) oder rohes JSONL?
-   - Nur Tool-Calls + Ergebnisse, oder auch User-Feedback?
-   - Diff der geaenderten Dateien?
-
-3. **Was ist das Output-Format?**
-   - Strukturierte Learnings (was hat funktioniert, was nicht, was aendern)
-   - Konkrete Action-Items (description.md anpassen, neues Memory, Workflow-Aenderung)
-   - Metriken (Fehlerrate, verschwendete Calls, Dauer)
-
-4. **Wo werden Learnings persistiert?**
-   - decisions.md der betroffenen Komponente
-   - Zentrales `docs/learnings/` Verzeichnis
-   - Claude Code Memory (fuer kuenftige Sessions)
-   - Kombination
-
-5. **Wann wird reflektiert?**
-   - Nach jedem Feature-Durchlauf (automatisch)
-   - Nur auf User-Request
-   - Beides (Default: automatisch, User kann skippen)
+Siehe: `/home/openclaw/.claude/plans/curried-plotting-marble.md`
 
 ### Echte Daten fuer Entwicklung
 
 Session-Log D.2: `docs/session-logs/2026-04-01-phase-d2-weather-tool.md`
 Roh-JSONL: `~/.claude/projects/-home-openclaw-openclaw-deploy/5c9f4bc3-ab0d-4093-a8dd-97f47436c045.jsonl`
 
-### Handoff-Prompt fuer Phase E
+### Handoff-Prompt fuer Phase E.1
 
 ```
 Lies die Datei /home/openclaw/openclaw-deploy/PLAN-agenten-architektur.md
-und fuehre "Ausfuehrungsphase E: Self-Reflection" aus.
+(Phase E) und den detaillierten Plan in
+/home/openclaw/.claude/plans/curried-plotting-marble.md (Phase E.1).
 
-Echte Session-Daten liegen in docs/session-logs/2026-04-01-phase-d2-weather-tool.md.
-Das JSONL der Session liegt unter ~/.claude/projects/-home-openclaw-openclaw-deploy/5c9f4bc3-ab0d-4093-a8dd-97f47436c045.jsonl.
+Fuehre "Phase E.1: Checklisten-Struktur" aus:
 
-Schritt 1: Lies das Session-Protokoll und die offenen Fragen im Plan.
-Schritt 2: Entwirf ein Reflection-Format (Fragen, Output-Schema, Persistierung).
-Schritt 3: Fuehre eine Test-Reflection auf die D.2-Session durch.
-Schritt 4: Bewerte das Ergebnis — ist das Format brauchbar? Anpassungen?
-Schritt 5: Implementiere den Workflow (Slash-Command, Automation, Persistierung).
+1. Lies ALLE betroffenen claude.md Dateien (tool-hub, gateway, openclaw-skills,
+   memory-system, gpu-server) um den aktuellen Inhalt zu verstehen.
+2. Lies die zugehoerigen description.md und testinstruct.md als Wissensquelle.
+3. Erstelle die Checklisten-Dateien pro Komponente gemaess Plan:
+   - tool-hub: deploy-checklist.md, new-tool-checklist.md
+   - gateway: config-change-checklist.md
+   - openclaw-skills: new-skill-checklist.md
+   - memory-system: troubleshoot-checklist.md
+   - gpu-server: model-swap-checklist.md
+4. Baue die claude.md Dateien um: Operative Details raus, Routing-Tabelle rein.
+   Behalte: Meine Dateien, Meine Verantwortung, Abgrenzung, Kritische Regeln (gateway).
+   Entferne: Build & Deploy, Pflichten nach Aenderung (leben jetzt in Checklisten).
+5. Stelle sicher dass KEIN operativer Hinweis verloren geht — alles was in claude.md
+   stand muss in einer Checkliste wiederzufinden sein.
+6. Committe das Ergebnis.
+```
+
+### Handoff-Prompt fuer Phase E.2
+
+```
+Lies die Datei /home/openclaw/openclaw-deploy/PLAN-agenten-architektur.md
+(Phase E) und den detaillierten Plan in
+/home/openclaw/.claude/plans/curried-plotting-marble.md (Phase E.2).
+
+Fuehre "Phase E.2: Self-Reflection" aus:
+
+Echte Session-Daten: ~/.claude/projects/-home-openclaw-openclaw-deploy/5c9f4bc3-ab0d-4093-a8dd-97f47436c045.jsonl
+
+1. Erstelle das Python-Extractor-Script (scripts/extract-session-calls.py):
+   Liest JSONL, extrahiert Tool-Calls mit Name/Input/Result/Error.
+2. Erstelle /reflect Slash-Command (.claude/commands/reflect.md):
+   Workflow: Script → MiniMax-Analyse → Claude-Patches → User-Review.
+3. Teste auf D.2-JSONL: Script ausfuehren, MiniMax via consult-agent.sh befragen,
+   pruefen ob die 4 bekannten Waste-Patterns gefunden werden.
+4. Erstelle docs/workflow-patterns.md mit D.2-Patterns.
+5. Erweitere CLAUDE.md: Workflow Schritt 13 (Reflection) + JSONL-Pfad.
+6. Aktualisiere PLAN-agenten-architektur.md: Phase E als erledigt.
+7. Committe das Ergebnis.
 ```

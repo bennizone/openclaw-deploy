@@ -31,29 +31,13 @@ Auf dem GPU-Server selbst:
 - VRAM-Management (beide Server muessen ins VRAM passen)
 - `config/versions.json` — Modell-Versionen und Parameter-Dokumentation
 
-## Build & Deploy
+## Checklisten (VOR der Aktion lesen!)
 
-```bash
-# llama.cpp bauen (auf GPU-Server via SSH)
-ssh <GPU_USER>@<GPU_SERVER_IP>
-bash ~/openclaw-deploy/setup/gpu-server/build-llama-cpp.sh
-
-# Modelle laden
-bash ~/openclaw-deploy/setup/gpu-server/download-models.sh
-
-# Services installieren + starten
-cp setup/gpu-server/systemd/llama-*.service.template ~/.config/systemd/user/
-# GPUUSER in den Dateien ersetzen
-systemctl --user daemon-reload
-systemctl --user enable --now llama-chat llama-embed
-```
-
-## Pflichten nach jeder Aenderung
-
-- description.md aktuell halten bei Modellwechsel oder Parameter-Aenderungen
-- testinstruct.md aktualisieren bei neuen Test-Szenarien
-- decisions.md fuehren bei Modell-Entscheidungen
-- `config/versions.json` synchron halten mit deployed Modellen
+| Wenn du...                          | Lies zuerst...                |
+|-------------------------------------|-------------------------------|
+| ein Modell tauschst / Parameter aenderst | `model-swap-checklist.md` |
+| Tests durchfuehrst                  | `testinstruct.md`             |
+| die Architektur verstehen willst    | `description.md`              |
 
 ## Abgrenzung
 

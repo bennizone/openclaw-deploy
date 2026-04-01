@@ -33,23 +33,14 @@ docs/creating-skills.md           # Anleitung: Neues Plugin erstellen
 - **Bootstrap-Anweisungen IN SOUL.md** — MiniMax ignoriert spaeter injizierte Dateien;
   kritische Anweisungen muessen in SOUL.md im Agent-Workspace stehen
 
-## Build & Deploy
+## Checklisten (VOR der Aktion lesen!)
 
-```bash
-cd ~/openclaw-deploy/plugins/openclaw-ha-voice/
-npm run build
-openclaw plugins doctor              # Muss fehlerfrei!
-systemctl --user restart openclaw-gateway
-curl -s http://localhost:18789/health
-```
-
-## Pflichten nach jeder Aenderung
-
-- description.md aktuell halten bei neuen Hooks oder Features
-- testinstruct.md aktualisieren bei neuen Test-Szenarien
-- decisions.md fuehren bei Plugin-Architektur-Entscheidungen
-- `openclaw plugins doctor` MUSS fehlerfrei sein
-- Version bumpen in `openclaw.plugin.json` + `package.json`
+| Wenn du...                          | Lies zuerst...                |
+|-------------------------------------|-------------------------------|
+| ein neues Plugin/Skill erstellst    | `new-skill-checklist.md`      |
+| deployst / Gateway neustartest      | `new-skill-checklist.md` (Deploy-Sektion) |
+| Tests durchfuehrst                  | `testinstruct.md`             |
+| die Architektur verstehen willst    | `description.md`              |
 
 ## Abgrenzung
 

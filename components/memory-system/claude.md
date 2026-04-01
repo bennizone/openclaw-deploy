@@ -46,30 +46,13 @@ plugins/openclaw-memory-recall/
 4. **plugins.slots.memory = "none"** — Eigenes System, nicht builtin
 5. **BM25 Tokenizer identisch halten** — Extractor und Recall muessen gleichen Code verwenden
 
-## Build & Deploy
+## Checklisten (VOR der Aktion lesen!)
 
-```bash
-# Extractor
-cd ~/openclaw-deploy/services/extractor/
-npm run build
-systemctl --user restart openclaw-extractor
-
-# Memory-Recall Plugin
-cd ~/openclaw-deploy/plugins/openclaw-memory-recall/
-npm run build
-# Plugin wird via Gateway deployed:
-systemctl --user restart openclaw-gateway
-
-# Qdrant (Docker)
-docker restart qdrant
-```
-
-## Pflichten nach jeder Aenderung
-
-- description.md aktuell halten bei Pipeline-Aenderungen
-- testinstruct.md aktualisieren bei neuen Test-Szenarien
-- decisions.md fuehren bei Aenderungen an Extraction/Recall-Logik
-- BM25 Tokenizer in BEIDEN Projekten synchron halten!
+| Wenn du...                          | Lies zuerst...                  |
+|-------------------------------------|---------------------------------|
+| Probleme diagnostizierst            | `troubleshoot-checklist.md`     |
+| Tests durchfuehrst                  | `testinstruct.md`               |
+| die Architektur verstehen willst    | `description.md`                |
 
 ## Abgrenzung
 

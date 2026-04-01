@@ -40,29 +40,13 @@ config/
 7. **Conduit: `{"reason":""}` bei Join** — Leeres `{}` = M_BAD_JSON
 8. **userTimezone setzen** — Ohne kein Datum/Uhrzeit im System-Prompt
 
-## Build & Deploy
+## Checklisten (VOR der Aktion lesen!)
 
-```bash
-# Config-Aenderungs-Protokoll (IMMER!)
-cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak
-# ... Aenderung vornehmen ...
-jq . < ~/.openclaw/openclaw.json > /dev/null   # Validieren
-diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
-systemctl --user restart openclaw-gateway
-curl -s http://localhost:18789/health           # Health-Check
-# Bei Fehler: cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json
-```
-
-Kein Build-Schritt noetig — Gateway ist eine fertige Binary.
-Config-Template im Repo (`config/openclaw.template.json`) bei strukturellen Aenderungen aktualisieren.
-
-## Pflichten nach jeder Aenderung
-
-- description.md aktuell halten bei neuen Config-Sections oder Schnittstellen
-- testinstruct.md aktualisieren bei neuen Test-Szenarien
-- decisions.md fuehren bei Config-Entscheidungen
-- `config/openclaw.template.json` synchron halten mit produktiver Config
-- `config/versions.json` aktualisieren bei Version-Updates
+| Wenn du...                          | Lies zuerst...                  |
+|-------------------------------------|---------------------------------|
+| Config aenderst / Gateway neustartest | `config-change-checklist.md`  |
+| Tests durchfuehrst                  | `testinstruct.md`               |
+| die Architektur verstehen willst    | `description.md`                |
 
 ## Abgrenzung
 

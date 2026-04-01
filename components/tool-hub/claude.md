@@ -25,27 +25,14 @@ services/openclaw-tools/
 - Ergebnis-Deduplizierung bei Multi-Source-Abfragen (Web-Suche)
 - Deutsche Titelaufloesung bei Medien-Suche (UmlautAdaptarr-Middleware hilft zusaetzlich)
 
-## Build & Deploy
+## Checklisten (VOR der Aktion lesen!)
 
-```bash
-cd ~/openclaw-deploy/services/openclaw-tools/
-npm run build          # tsc + config copy (rm -rf dist/config vor cp!)
-# Deploy = Gateway-Restart (Tool-Hub ist Kindprozess)
-systemctl --user restart openclaw-gateway
-# Verify
-curl -s http://localhost:18789/health
-```
-
-- Build-Output liegt in `dist/` — wird vom Gateway via stdio gestartet
-- `dist/config/` wird bei jedem Build frisch kopiert (stale-config Bug vermeiden)
-- Kein eigener systemd-Service — laeuft als Teil des Gateways
-
-## Pflichten nach jeder Aenderung
-
-- description.md aktuell halten bei neuen Tools oder geaenderten Schnittstellen
-- testinstruct.md aktualisieren bei neuen Tools (Test-Case hinzufuegen)
-- decisions.md fuehren bei nicht-trivialen Entscheidungen
-- pim.json dokumentieren wenn neue Quellen oder Agents hinzukommen
+| Wenn du...                       | Lies zuerst...              |
+|----------------------------------|-----------------------------|
+| ein neues Tool baust             | `new-tool-checklist.md`     |
+| deployst / Gateway neustartest   | `deploy-checklist.md`       |
+| E2E-Tests durchfuehrst          | `testinstruct.md`           |
+| die Architektur verstehen willst | `description.md`            |
 
 ## Abgrenzung
 
