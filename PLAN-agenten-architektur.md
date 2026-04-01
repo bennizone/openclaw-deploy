@@ -373,44 +373,97 @@ Test durchgefuehrt via `scripts/consult-agent.sh tool-hub "<Wetter-Frage>"`.
 MiniMax lieferte strukturierte, korrekte Antwort: Geocoding, weather.ts,
 Registrierung, kein API-Key. Keine Halluzinationen. Bewertung: Go.
 
-### D.2: Wetter-MCP nach neuem Workflow
+### D.2: Wetter-MCP nach neuem Workflow (ERLEDIGT)
 
-Kompletter Durchlauf:
-1. Ziel: Wetter-Tool (Open-Meteo, kein API-Key)
-2. Betroffene Komponenten: tool-hub, gateway, ha-integration
-3. Plan-Entwurf mit Checkliste
-4. Konsultationsrunde via `scripts/consult-agent.sh` (3 Agenten)
-5. User-Freigabe
-6. /coder implementiert (liest tool-hub/claude.md)
-7. Build: npm run build
-8. Tester: liest tool-hub/testinstruct.md + neuen weather-Test
-9. Reviewer
-10. Tool-Hub-Agent: testinstruct.md aktualisieren (weather-Test)
-11. Protokollant: DECISIONS.md
-12. Commit + Deploy (Gateway-Restart)
-13. E2E: "Wie ist das Wetter in Nuernberg?" via chatCompletions
+Kompletter Durchlauf nach Orchestrator-Protokoll (13 Schritte).
+Session-Protokoll: `docs/session-logs/2026-04-01-phase-d2-weather-tool.md`
 
-### Handoff-Prompt fuer Phase D
+Ergebnis:
+- weather-Tool live (Open-Meteo, kein API-Key)
+- 3 Konsultationen (tool-hub, gateway, ha-integration) — keine Konflikte
+- Build + Deploy + E2E-Test erfolgreich
+- Commits: f167087 (Feature), 3b3c521 (Script-Verbesserung)
+- Bekannter Bug: Hourly-Index 0 statt aktuelle Stunde (TODO)
 
-```
-Lies die Datei /home/openclaw/openclaw-deploy/PLAN-agenten-architektur.md
-und fuehre "Ausfuehrungsphase D: MiniMax-Validierung + Wetter-MCP" aus.
+### D.3: consult-agent.sh Verbesserungen (ERLEDIGT)
 
-Schritt 1: Fuehre den MiniMax-Agent-Test durch (D.1).
-Zeige mir das Ergebnis und bewerte es (Go/No-Go).
-Bei Go: Fuehre den kompletten Wetter-MCP Workflow durch (D.2)
-nach dem neuen Orchestrator-Protokoll.
-```
+- `--brief` Flag (kompakte Antworten, 5-8 Saetze)
+- `curl -m 45` Timeout
+- Commit: 3b3c521
 
 ---
 
-## Zusammenfassung: Session-Aufteilung
+## Phase A-D: Abgeschlossen
 
-| Session | Phase | Dauer (geschaetzt) | Ergebnis |
-|---------|-------|--------------------|----------|
-| 1 | A: Struktur anlegen | kurz | 10 Verzeichnisse, ~34 Dateien mit Schema-Skelett |
-| 2 | B: Befuellung | laenger | Alle MDs mit echtem Wissen befuellt |
-| 3 | C: Orchestrator + Commands | mittel | CLAUDE.md + Slash-Commands angepasst |
-| 4 | D: Validierung + Wetter-MCP | mittel | MiniMax getestet, Wetter-Tool live |
+| Session | Phase | Status | Ergebnis |
+|---------|-------|--------|----------|
+| 1 | A: Struktur anlegen | ERLEDIGT | 10 Verzeichnisse, ~34 Dateien mit Schema-Skelett |
+| 2 | B: Befuellung | ERLEDIGT | Alle MDs mit echtem Wissen befuellt |
+| 3 | C: Orchestrator + Commands | ERLEDIGT | CLAUDE.md + Slash-Commands angepasst |
+| 4 | D: Validierung + Wetter-MCP | ERLEDIGT | MiniMax getestet, Wetter-Tool live, Script verbessert |
 
-Jede Session startet frisch mit dem Handoff-Prompt und liest den Plan.
+---
+
+## Ausfuehrungsphase E: Self-Reflection
+
+### Ziel
+
+Nach jeder abgeschlossenen Aufgabe bekommt ein Agent (oder der Orchestrator)
+einen zweiten Call: "Was hast du gelernt? Was wuerdest du anders machen?"
+Ergebnis wird in decisions.md + Learnings-Datei persistiert.
+
+### Voraussetzung
+
+- Strukturierte Session-Logs als Input (erste Vorlage: `docs/session-logs/`)
+- Klar definiertes Reflection-Format (Fragen, Output-Schema)
+- Entscheidung: Wer reflektiert? (Orchestrator vs betroffener Agent vs eigener Reflection-Agent)
+- Entscheidung: Wo werden Learnings gespeichert? (decisions.md, eigene Datei, Memory)
+
+### Offene Fragen (muessen vor Implementierung geklaert werden)
+
+1. **Wer reflektiert?**
+   - Option A: Orchestrator (Claude) analysiert eigene Session
+   - Option B: Betroffener Agent (MiniMax) bewertet seinen Beitrag
+   - Option C: Eigener "Reflection-Agent" der Sessions neutral analysiert
+
+2. **Welche Daten braucht der Reflection-Agent?**
+   - Aufbereitetes Session-Protokoll (wie docs/session-logs/) oder rohes JSONL?
+   - Nur Tool-Calls + Ergebnisse, oder auch User-Feedback?
+   - Diff der geaenderten Dateien?
+
+3. **Was ist das Output-Format?**
+   - Strukturierte Learnings (was hat funktioniert, was nicht, was aendern)
+   - Konkrete Action-Items (description.md anpassen, neues Memory, Workflow-Aenderung)
+   - Metriken (Fehlerrate, verschwendete Calls, Dauer)
+
+4. **Wo werden Learnings persistiert?**
+   - decisions.md der betroffenen Komponente
+   - Zentrales `docs/learnings/` Verzeichnis
+   - Claude Code Memory (fuer kuenftige Sessions)
+   - Kombination
+
+5. **Wann wird reflektiert?**
+   - Nach jedem Feature-Durchlauf (automatisch)
+   - Nur auf User-Request
+   - Beides (Default: automatisch, User kann skippen)
+
+### Echte Daten fuer Entwicklung
+
+Session-Log D.2: `docs/session-logs/2026-04-01-phase-d2-weather-tool.md`
+Roh-JSONL: `~/.claude/projects/-home-openclaw-openclaw-deploy/5c9f4bc3-ab0d-4093-a8dd-97f47436c045.jsonl`
+
+### Handoff-Prompt fuer Phase E
+
+```
+Lies die Datei /home/openclaw/openclaw-deploy/PLAN-agenten-architektur.md
+und fuehre "Ausfuehrungsphase E: Self-Reflection" aus.
+
+Echte Session-Daten liegen in docs/session-logs/2026-04-01-phase-d2-weather-tool.md.
+Das JSONL der Session liegt unter ~/.claude/projects/-home-openclaw-openclaw-deploy/5c9f4bc3-ab0d-4093-a8dd-97f47436c045.jsonl.
+
+Schritt 1: Lies das Session-Protokoll und die offenen Fragen im Plan.
+Schritt 2: Entwirf ein Reflection-Format (Fragen, Output-Schema, Persistierung).
+Schritt 3: Fuehre eine Test-Reflection auf die D.2-Session durch.
+Schritt 4: Bewerte das Ergebnis — ist das Format brauchbar? Anpassungen?
+Schritt 5: Implementiere den Workflow (Slash-Command, Automation, Persistierung).
+```
