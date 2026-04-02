@@ -19,3 +19,5 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-02 | Nachtschicht | ORCH-EDIT: Nachtschicht-Doku direkt editiert | Doku-Dateien sind auch Code → /coder | offen | 2 |
 | 2026-04-02 | Nachtschicht | ORCH-FIX: Reviewer-Fixes (maintenance.sh, README) selbst gemacht | Wiederholt! CLAUDE.md Warnung existiert aber wird ignoriert | offen | 2 |
 | 2026-04-02 | Nachtschicht | git add dist/ versuchte .gitignore-Datei hinzuzufuegen | Vor git add pruefen ob Pfade in .gitignore stehen | offen | 1 |
+| 2026-04-02 | GPU-Onboarding | Sleep-Polling auf consult-agent Background-Task (3x sleep+cat) | run_in_background nutzen statt manuelles Polling | offen | 1 |
+| 2026-04-02 | GPU-Onboarding | docs/DECISIONS.md nicht gefunden (existiert nicht) | docs.md: Hinweis zur Existenzpruefung ergaenzt | geloest | 1 |

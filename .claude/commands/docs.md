@@ -11,6 +11,10 @@ Es gibt zwei Ebenen von Entscheidungs-Dokumentation:
 **Zentral:** `docs/DECISIONS.md` — Architektur-Entscheidungen, systemweite Aenderungen
 **Lokal:** `components/<name>/decisions.md` — Komponentenspezifische Entscheidungen
 
+**Hinweis:** Die zentrale `docs/DECISIONS.md` existiert ggf. noch nicht. Pruefe mit
+`ls docs/DECISIONS.md` ob sie vorhanden ist. Falls nicht: Nur die lokale
+`components/<name>/decisions.md` aktualisieren.
+
 Bei jeder nicht-trivialen Aenderung: BEIDE Ebenen pruefen und aktualisieren.
 
 Zusaetzlich existieren Legacy-DECISIONS.md in den Code-Verzeichnissen:
