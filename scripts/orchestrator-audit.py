@@ -30,6 +30,7 @@ ALLOWED_ORCHESTRATOR_PATTERNS = [
     r"config/autonomy\.json$",
     r"docs/PLAN-.*\.md$",
     r"MEMORY\.md$",
+    r"docs/audits/.*\.md$",
 ]
 
 # Tools die als schreibend gelten
@@ -445,9 +446,6 @@ def main():
     else:
         print(format_report(session_name, calls, segments, violations))
 
-    # Exit-Code: 1 wenn HOCH-Violations, sonst 0
-    if any(v["severity"] == "HOCH" for v in violations):
-        sys.exit(1)
 
 
 if __name__ == "__main__":

@@ -29,3 +29,6 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-02 | Prompt-Opt | Reviewer-Findings nicht auto-gefixt, User musste "alle fixen" sagen | CLAUDE.md 10a-10d: Mechanisch+eigene Entscheidungen sofort fixen | geloest | 1 |
 | 2026-04-02 | Prompt-Opt | orchestrator-audit.py erkennt consult-agent.sh nicht | Script: Bash-Calls mit consult-agent.sh als Konsultation erkennen | geloest | 1 |
 | 2026-04-02 | Prompt-Opt | consult-agent.sh Timeout bei langer Session-Analyse | TODO: Chunking oder kompaktere Zusammenfassung | offen | 1 |
+| 2026-04-02 | cleanup: exports | Konsultation an falsche Komponente (ha-integration statt openclaw-skills fuer Plugin-Fragen) | Vor Konsultation pruefen ob Agent den Datei-Scope hat | offen | 1 |
+| 2026-04-02 | cleanup: exports | orchestrator-audit.py erkennt Agent-basierte /reviewer und /tester nicht (nur Skill-Calls) | Script: Agent-Calls mit passender Description als Workflow-Schritt werten + Segment-Handling | offen | 1 |
+| 2026-04-02 | cleanup: exports | config-audit.py + orchestrator-audit.py exit 1 bricht parallel calls ab | Exit-Codes gefixt: 0 bei WARNs/Violations, nur Script-Fehler=non-zero | geloest | 1 |

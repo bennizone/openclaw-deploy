@@ -7,8 +7,7 @@ Usage:
     python3 scripts/config-audit.py [--json]
 
 Exit-Codes:
-    0 = Alles OK (nur OK/INFO)
-    1 = Warnungen gefunden
+    0 = Alles OK (OK/INFO/WARN)
     2 = Fehler gefunden
 """
 
@@ -250,8 +249,6 @@ def main():
     # Exit-Code
     if any(s == "FAIL" for s, _ in all_results):
         sys.exit(2)
-    elif any(s == "WARN" for s, _ in all_results):
-        sys.exit(1)
     else:
         sys.exit(0)
 
