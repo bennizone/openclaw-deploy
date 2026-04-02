@@ -68,8 +68,8 @@
       "current": 0,
       "since": "2026-04-01",
       "metrics": {
-        "sessions_total": 0,
-        "sessions_error_free": 0,
+        "sessions_total": 1,
+        "sessions_error_free": 1,
         "last_error": null
       }
     },
