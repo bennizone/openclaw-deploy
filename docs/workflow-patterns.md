@@ -16,3 +16,6 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-01 | Stuetzraeder+Audit | SKIP-CONSULT: Keine Konsultation vor Implementierung | CLAUDE.md Schritt 4 verstaerkt | geloest | 1 |
 | 2026-04-01 | Stuetzraeder+Audit | SKIP-TESTER: Kein /tester nach Implementierung | CLAUDE.md Schritt 9 verstaerkt | geloest | 1 |
 | 2026-04-01 | Stuetzraeder+Audit | SKIP-DESCRIPTION: description.md nicht gelesen | CLAUDE.md Schritt 2 verstaerkt | geloest | 1 |
+| 2026-04-02 | Nachtschicht | ORCH-EDIT: Nachtschicht-Doku direkt editiert | Doku-Dateien sind auch Code → /coder | offen | 2 |
+| 2026-04-02 | Nachtschicht | ORCH-FIX: Reviewer-Fixes (maintenance.sh, README) selbst gemacht | Wiederholt! CLAUDE.md Warnung existiert aber wird ignoriert | offen | 2 |
+| 2026-04-02 | Nachtschicht | git add dist/ versuchte .gitignore-Datei hinzuzufuegen | Vor git add pruefen ob Pfade in .gitignore stehen | offen | 1 |

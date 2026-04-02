@@ -8,17 +8,19 @@ Benni hat 12 Aufgaben uebergeben. Alle wurden analysiert, hier der Status.
 
 | # | Aufgabe | Status | Braucht Benni? |
 |---|---------|--------|----------------|
-| 1 | Cron "pairing required" (WS 1008) | Analysiert | JA — Scope-Aenderung |
-| 2 | Feature-Request-System | Umgesetzt | Nein |
-| 3 | SOUL.md Admin-Hinweis | Umgesetzt (mit #2) | Nein |
-| 4 | Fallback-Modell Praefix | Analysiert | JA — Praeferenz noetig |
-| 5 | Entwicklungsprozess optimieren | Bereits erledigt (F.1-F.3) | Nein |
-| 6 | HA-Admin Agent | Umgesetzt | Nein |
-| 7 | THN Wetter-Antwort Tuning | Umgesetzt | Nein |
-| 8 | Weather-Tool Hourly-Index Bug | Umgesetzt | Nein |
-| 9 | Audit-Agent | Analysiert | JA — Design-Entscheidungen |
-| 10 | Onboarding re-run | Analysiert | JA — Sicherheitsaspekte |
-| 11 | Maintenance-Mode | Umgesetzt | Nein |
+| 1 | Cron "pairing required" (WS 1008) | ERLEDIGT | Nein |
+| 2 | Feature-Request-System | ERLEDIGT | Nein |
+| 3 | SOUL.md Admin-Hinweis | ERLEDIGT (mit #2) | Nein |
+| 4 | Fallback-Modell Praefix | TODO — Plugin noetig | JA — braucht /coder |
+| 5 | Entwicklungsprozess optimieren | War bereits erledigt (F.1-F.3) | Nein |
+| 6 | HA-Admin Agent | ERLEDIGT | Nein |
+| 7 | THN Wetter-Antwort Tuning | ERLEDIGT | Nein |
+| 8 | Weather-Tool Hourly-Index Bug | ERLEDIGT | Nein |
+| 9 | Audit-Agent | TODO — Design steht | Nein (on-demand, interaktiv) |
+| 10 | Onboarding re-run | TODO — schrittweise | Nein |
+| 11 | Maintenance-Mode | ERLEDIGT | Nein |
+| 12 | README aktualisieren | ERLEDIGT | Nein |
+| 13 | LLM-Bench Tool | TODO — neu | Nein |
 
 ---
 
