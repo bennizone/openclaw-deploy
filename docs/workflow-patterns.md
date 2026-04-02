@@ -64,3 +64,6 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-02 | Token-Waste | skill-fragmentation | Mehrere coder-Skills fuer dasselbe File (Skill-Isolation) | offen | 1 |
 | 2026-04-02 | Token-Waste | consult-without-preflight | consult-agent.sh ohne Klärung von Zweck/Scope | offen | 1 |
 | 2026-04-02 | Token-Waste | exploratory-ls-cd-chain | ls + cd + cat Kette statt direkter Read mit existenz-Check | offen | 1 |
+| 2026-04-03 | Tokenfresser-Migration | ORCH-FIX nach Review (Kat.3-Hinweis selbst editiert) | Auch nicht-blockierende Findings an /coder delegieren | offen | 1 |
+| 2026-04-03 | Tokenfresser-Migration | Write+Read-Redundanz nach Datei-Erstellung | Write+Read Anti-Pattern: nach Write direkt weiterarbeiten | offen | 1 |
+| 2026-04-03 | Tokenfresser-Migration | Batch-Read statt sequentielle Einzel-Reads | Mehrere Dateien desselben Verzeichnisses zusammenfassen | offen | 1 |
