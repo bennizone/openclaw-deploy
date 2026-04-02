@@ -145,14 +145,10 @@
       ],
       "expected": {
         "must_tool_call": true,
-        "tool_name": "ha_call_service",
-        "args_must_contain": {
-          "domain": "light",
-          "service": "turn_on"
-        },
-        "args_entity_pattern": "light.*wohnzimmer",
-        "ha_executable": "HA muss mit domain=light, service=turn_on und einer entity_id die 'wohnzimmer' enthält das Licht schalten können.",
-        "note": "LLM muss einen validen ha_call_service Tool-Call produzieren den HA ausführen kann. Entity-ID muss zum Wohnzimmer passen (z.B. light.deckenlampe_wohnzimmer)."
+        "tool_name": "HassTurnOn",
+        "args_must_contain_any": ["name", "area"],
+        "args_value_pattern": "[Ww]ohnzimmer|[Dd]eckenlampe",
+        "note": "Natives Assist API Tool-Calling. LLM muss HassTurnOn mit name (friendly name) oder area aufrufen."
       }
     },
     {
@@ -160,18 +156,13 @@
       "category": "tool-call-validate",
       "mode": "with_tools",
       "messages": [
-        { "role": "user", "content": "Mach das Licht in der Küche heller" }
+        { "role": "user", "content": "Mach das Licht im Arbeitszimmer heller" }
       ],
       "expected": {
         "must_tool_call": true,
-        "tool_name": "ha_call_service",
-        "args_must_contain": {
-          "domain": "light",
-          "service": "turn_on"
-        },
-        "args_should_contain_any": ["brightness", "brightness_pct", "brightness_step_pct"],
-        "ha_executable": "HA braucht domain=light, service=turn_on mit brightness-Parameter. Küche hat keinen dedizierten light-Entity in mock_entities — LLM sollte entweder ha_render_template nutzen um Küchen-Lights zu finden, oder sagen dass es kein Licht in der Küche gibt.",
-        "note": "Schwieriger Test: Küche hat nur Bewegungsmelder (Temperatur), kein light-Entity. LLM muss entweder nachfragen oder korrekt area_entities prüfen."
+        "tool_name": "HassLightSet",
+        "args_should_contain": ["brightness"],
+        "note": "Relatives Kommando. LLM sieht aktuelle Brightness aus Entity-Kontext (50%) und soll einen höheren Wert setzen. Wenn Licht aus: soll zuerst einschalten (Prompt-Regel)."
       }
     },
     {
@@ -183,15 +174,24 @@
       ],
       "expected": {
         "must_tool_call": true,
-        "tool_name": "ha_call_service",
-        "args_must_contain": {
-          "domain": "climate",
-          "service": "set_temperature"
-        },
-        "args_should_contain": { "temperature": 20 },
-        "args_entity_pattern": "climate.*schlafzimmer",
-        "ha_executable": "HA braucht domain=climate, service=set_temperature, temperature=20 und eine climate-Entity fürs Schlafzimmer.",
-        "note": "Heizung Schlafzimmer ist in mock_entities als Soll-Temperatur 18°C gelistet. LLM soll auf 20 Grad ändern."
+        "tool_name": "HassClimateSetTemperature",
+        "args_should_contain": ["temperature"],
+        "args_value_check": { "temperature": 20 },
+        "note": "Absolutes Kommando. Heizung Schlafzimmer steht auf 18°C (mock_entities). LLM soll auf 20 ändern."
+      }
+    },
+    {
+      "name": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools",
+      "messages": [
+        { "role": "user", "content": "Mach das Licht im Wohnzimmer aus und im Arbeitszimmer an" }
+      ],
+      "expected": {
+        "must_tool_call": true,
+        "min_tool_calls": 2,
+        "expected_tools": ["HassTurnOff", "HassTurnOn"],
+        "note": "Multi-Device Test. LLM muss zwei Tool-Calls in einem Response generieren: Wohnzimmer aus + Arbeitszimmer an."
       }
     }
   ],
@@ -199,45 +199,62 @@
     {
       "type": "function",
       "function": {
-        "name": "ha_call_service",
-        "description": "Ruft einen Home Assistant Service auf (z.B. Licht schalten, Heizung einstellen)",
+        "name": "HassTurnOn",
+        "description": "Turn on a device",
         "parameters": {
           "type": "object",
           "properties": {
-            "domain": { "type": "string", "description": "HA Domain (z.B. light, climate, switch, automation)" },
-            "service": { "type": "string", "description": "Service-Name (z.B. turn_on, turn_off, set_temperature)" },
-            "entity_id": { "type": "string", "description": "Entity-ID (z.B. light.deckenlampe_wohnzimmer)" },
-            "data": { "type": "object", "description": "Zusätzliche Service-Daten (z.B. brightness, temperature)" }
-          },
-          "required": ["domain", "service", "entity_id"]
+            "name": { "type": "string", "description": "Device friendly name" },
+            "area": { "type": "string", "description": "Area name" },
+            "floor": { "type": "string", "description": "Floor name" }
+          }
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "ha_get_state",
-        "description": "Liest den aktuellen Status einer Home Assistant Entity",
+        "name": "HassTurnOff",
+        "description": "Turn off a device",
         "parameters": {
           "type": "object",
           "properties": {
-            "entity_id": { "type": "string", "description": "Entity-ID (z.B. light.wohnzimmer, sensor.temperatur)" }
-          },
-          "required": ["entity_id"]
+            "name": { "type": "string", "description": "Device friendly name" },
+            "area": { "type": "string", "description": "Area name" },
+            "floor": { "type": "string", "description": "Floor name" }
+          }
         }
       }
     },
     {
       "type": "function",
       "function": {
-        "name": "ha_render_template",
-        "description": "Rendert ein Home Assistant Jinja2-Template (z.B. um Entities in einem Raum zu finden)",
+        "name": "HassLightSet",
+        "description": "Set light attributes (brightness, color, temperature)",
         "parameters": {
           "type": "object",
           "properties": {
-            "template": { "type": "string", "description": "Jinja2-Template (z.B. {{ area_entities('wohnzimmer') | list }})" }
-          },
-          "required": ["template"]
+            "name": { "type": "string", "description": "Light friendly name" },
+            "area": { "type": "string", "description": "Area name" },
+            "brightness": { "type": "string", "description": "Brightness 0-100" },
+            "color": { "type": "string", "description": "Color name" },
+            "temperature": { "type": "string", "description": "Color temperature in Kelvin" }
+          }
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "HassClimateSetTemperature",
+        "description": "Set climate/thermostat target temperature",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "name": { "type": "string", "description": "Climate device friendly name" },
+            "area": { "type": "string", "description": "Area name" },
+            "temperature": { "type": "string", "description": "Target temperature" }
+          }
         }
       }
     }
