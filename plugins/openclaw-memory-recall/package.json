@@ -8,6 +8,7 @@
     ]
   },
   "dependencies": {
+    "@openclaw/bm25-tokenizer": "file:../../shared/bm25-tokenizer",
     "@sinclair/typebox": "^0.34.0",
     "typescript": "^6.0.2"
   }

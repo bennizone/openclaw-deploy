@@ -9,6 +9,7 @@
     "benchmark": "node dist/benchmark.js"
   },
   "dependencies": {
+    "@openclaw/bm25-tokenizer": "file:../../shared/bm25-tokenizer",
     "@qdrant/js-client-rest": "^1.14.0",
     "better-sqlite3": "^11.0.0",
     "chokidar": "^3.6.0",

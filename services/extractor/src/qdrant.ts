@@ -1,7 +1,7 @@
 import { QdrantClient } from '@qdrant/js-client-rest';
 import { v4 as uuidv4 } from 'uuid';
 import { config, log } from './config.js';
-import { textToSparse } from './bm25-tokenizer.js';
+import { textToSparse } from '@openclaw/bm25-tokenizer';
 
 let client: QdrantClient;
 

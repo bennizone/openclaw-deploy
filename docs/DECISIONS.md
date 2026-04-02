@@ -42,3 +42,26 @@ an MiniMax delegieren. Generische Funktion wird wiederverwendet, kein neuer Code
 
 **Konsequenzen:** Schwellenwert 6000 konsistent mit `consult-agent.sh MAX_QUESTION_LEN`.
 MiniMax-Findings sind Startpunkt, nicht Endergebnis (9B kann halluzinieren).
+
+## 2026-04-03 — Logging-Konvention: 3 Mechanismen bewusst beibehalten
+
+**Kontext:** Audit stellte 3 verschiedene Logging-Ansaetze fest.
+
+**Entscheidung:** Kein Vereinheitlichungsbedarf — jeder Mechanismus passt zum Kontext:
+- `process.stderr.write()` in MCP-Servern (openclaw-tools) — stdout ist fuer JSON-RPC reserviert
+- Structured Logger in services/extractor/ — langlebiger Service braucht Level + Timestamps
+- `console.log()` nur in Benchmark/Test-Dateien — akzeptabel fuer Entwickler-Tools
+
+**Begruendung:** Vereinheitlichung wuerde keinen Mehrwert bringen und im MCP-Fall sogar brechen.
+
+## 2026-04-03 — Plugin-Isolation: Bewusste Code-Trennung Plugin vs Service
+
+**Kontext:** Audit fand Duplikation: Sonarr/Radarr-Clients existieren als Plugin
+(openclaw-sonarr-radarr) und als Service-Clients (openclaw-tools/src/clients/).
+
+**Entscheidung:** Arr-Client-Code bleibt bewusst getrennt. Plugins sind eigenstaendige
+NPM-Pakete mit eigenen API-Abstraktionen; Services haben andere Anforderungen.
+Shared Dependencies wuerden Plugin-Isolation brechen und Deployment verkomplizieren.
+
+**Ausnahme:** Pure Utilities ohne externe Abhaengigkeiten (z.B. bm25-tokenizer)
+koennen als shared Package extrahiert werden (siehe shared/bm25-tokenizer/).

@@ -1,0 +1,8 @@
+{
+  "name": "@openclaw/bm25-tokenizer",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./index.ts"
+  }
+}

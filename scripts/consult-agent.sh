@@ -134,11 +134,11 @@ send_request() {
 
   local response content
   while [[ $retry -le $max_retries ]]; do
-    response=$(curl -s -m 90 -X POST http://localhost:18789/v1/chat/completions \
+    response=$(printf '%s' "$payload" | curl -s -m 90 -X POST http://localhost:18789/v1/chat/completions \
       -H "Authorization: Bearer $TOKEN" \
       -H "Content-Type: application/json" \
       -H "X-OpenClaw-Scopes: operator.write" \
-      -d "$payload" 2>/dev/null) || true
+      -d @- 2>/dev/null) || true
 
     local ok
     ok=$(echo "$response" | jq -r '.ok // empty' 2>/dev/null)
@@ -197,12 +197,16 @@ if [[ -z "$NO_CHUNK" && "$DATA_LEN" -gt "$MAX_QUESTION_LEN" ]]; then
   remaining="$DATA"
   while [[ ${#remaining} -gt $MAX_QUESTION_LEN ]]; do
     chunk="${remaining:0:$MAX_QUESTION_LEN}"
-    last_break=$(echo "$chunk" | grep -n '^$' | tail -1 | cut -d: -f1)
+    last_break=$(echo "$chunk" | grep -n '^$' | tail -1 | cut -d: -f1 || true)
     if [[ -n "$last_break" && "$last_break" -gt 5 ]]; then
       cut_pos=$(echo "$chunk" | head -n "$last_break" | wc -c)
     else
-      cut_pos=$(echo "$chunk" | grep -n '.' | tail -1 | cut -d: -f1)
-      cut_pos=$(echo "$chunk" | head -n "$cut_pos" | wc -c)
+      last_line=$(echo "$chunk" | grep -n '.' | tail -1 | cut -d: -f1 || true)
+      if [[ -n "$last_line" ]]; then
+        cut_pos=$(echo "$chunk" | head -n "$last_line" | wc -c)
+      else
+        cut_pos=${#chunk}
+      fi
     fi
     CHUNKS+=("${remaining:0:$cut_pos}")
     remaining="${remaining:$cut_pos}"

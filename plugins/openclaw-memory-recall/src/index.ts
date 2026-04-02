@@ -6,7 +6,7 @@
  * Each agent gets their personal facts + household facts.
  */
 
-import { textToSparse } from './bm25-tokenizer.js';
+import { textToSparse } from '@openclaw/bm25-tokenizer';
 
 interface PluginConfig {
   qdrantUrl: string;
