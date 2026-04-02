@@ -91,3 +91,33 @@ Model-String: `openclaw/household` (NICHT `current`).
 
 **Alternativen verworfen:**
 - Agent-ID im Model-String allein — kollidiert mit Model-Routing
+
+## 2026-04-02 — System-Prompt Optimierung: Sektionen, OPENCLAW, Format
+
+**Kontext:** Baseline-Bench zeigte 3 Schwaechen: OPENCLAW-Delegation nur 50% korrekt
+(Websuche nicht delegiert, Paris faelschlich delegiert), Format-Regeln ignoriert
+(°C, Markdown-Listen), kein Nachfragen bei mehrdeutigem Raum.
+
+**Entscheidung:**
+1. Prompt in Sektionen strukturiert (Format, Daten, Geraetesteuerung, OPENCLAW-Delegation)
+   statt flacher Regelliste — besser parsebar fuer 9B-Modell
+2. OPENCLAW: Antwort MUSS nur `OPENCLAW: <Anfrage>` sein, kein Text davor/danach.
+   Explizite Delegationsfaelle: Oeffnungszeiten, Restaurants, Produktsuche, Nachrichten,
+   Rezepte, Kalender, Medien-Bibliothek
+3. Allgemeinwissen (Geografie, Geschichte, Mathe) explizit als "selbst beantworten"
+4. Wetter NICHT in Delegationsliste — Wetter-Entitaeten im HA-Kontext verfuegbar
+5. 1 ICL-Beispielpaar (Burgerking→delegieren, Paris→selbst). Bewusst nur eins:
+   9B-Modelle fixieren sich bei mehreren Beispielen zu stark auf ICL-Pattern
+6. Format verschaerft: Fliesstext, max 1-2 Saetze, "Grad" statt "°C", "Prozent" statt "%"
+7. Nachfrage bei fehlender Raumangabe bei Geraetesteuerung
+
+**Bench-Ergebnis:** Delegation 50%→100%, Format 0%→100%, Allgemeinwissen 0%→100%.
+Edge-ambiguous bleibt 25% (Qwen delegiert Nachfrage faelschlich an OPENCLAW bei Budget 0+512).
+
+**Alternativen verworfen:**
+- Mehr ICL-Beispiele — Risiko dass 9B-Modell andere Kategorien verschlechtert
+- Wetter als Delegationsfall — Entitaeten bereits im Kontext, unnoetige Latenz
+- Drittes ICL-Beispiel fuer Mehrdeutigkeit — geparkt als TODO, erst beobachten
+
+**Konsequenzen:** Benchmark-Template (ha-conversations.json) synchronisiert.
+Edge-ambiguous bleibt offener TODO-Punkt.

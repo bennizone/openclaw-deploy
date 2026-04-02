@@ -27,7 +27,7 @@ User (Voice/Text) → HA Assist Pipeline → home_llm conversation.py
     ├── Exposed Entities + Areas (HA API)
     ├── Memory-Facts (Qdrant)
     ├── Persona
-    └── Anti-Halluzinations-Regeln
+    └── Regeln (Format, Daten, Geraetesteuerung, OPENCLAW-Delegation)
   → Qwen 3.5 9B via llama-server (GPU:8080)
   → Response-Check: "OPENCLAW:" Prefix?
     → Ja: HTTP POST an OpenClaw chatCompletions → Antwort zurueck
