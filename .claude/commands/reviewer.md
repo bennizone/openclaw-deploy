@@ -10,6 +10,13 @@ und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
 
 ## Pruef-Checkliste
 
+### Workflow-Checks (vor jedem Review)
+1. **CWD verifizieren:** `pwd && git rev-parse --show-toplevel` am Start jeder Session.
+2. **Immer absolute Pfade:** `git ls-files` immer mit Prefix `$(git rev-parse --show-toplevel)` oder cwd verifizieren.
+3. **Explorative Reads vermeiden:** Vor `cat <file>` immer erst `git ls-files <file>` pruefen ob Datei existiert.
+4. **Explorative Ketten vermeiden:** Erst spezifisch, dann breiter. Besser: `find . -name "*.ts" | head` statt `ls` + `cd` + `cat`.
+5. **Bekannte Fehler:** Wenn ein dokumentierter Fehler erneut auftritt, Info an User senden statt weiterzumachen.
+
 ### Pflicht (Blockierend)
 - [ ] **Keine Secrets im Code** — Keine API-Keys, Tokens, Passwoerter hardcoded
 - [ ] **Build erfolgreich** — `npm run build` laeuft ohne Fehler

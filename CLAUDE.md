@@ -61,6 +61,7 @@ Proxmox / Bare-Metal
 | `setup/gpu-server/` | GPU Setup-Scripts + systemd | GPU-Server |
 | `agents/` | Agent-Workspace-Templates | LXC: ~/.openclaw/workspace-*/ |
 | `config/` | Config-Templates + Versions | Generiert nach ~/.openclaw/ |
+| `scripts/` | consult-agent (MiniMax + Chunking), reflect-auto, orchestrator-audit, autonomy-status | LXC: Repo |
 
 ## Modell-Routing
 
@@ -107,6 +108,17 @@ scripts/consult-agent.sh <komponente> "<frage>" --with-decisions
 ```
 
 Das Script liest Token, description.md und Scopes-Header automatisch.
+
+Chunked Map-Reduce fuer grosse Datenmengen:
+```bash
+scripts/consult-agent.sh <komponente> "<map-prompt>" \
+  --input-file <daten.txt> \
+  --reduce-prompt "<konsolidierungs-prompt>" \
+  --delay 3 --overlap 5
+```
+
+Das Script chunkt die Datei automatisch, sendet Chunks parallel an MiniMax,
+und konsolidiert die Ergebnisse. Nutzen statt Claude fuer Analyse-Aufgaben.
 
 ### Workflow-Tracking (PFLICHT)
 

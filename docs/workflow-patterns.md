@@ -36,3 +36,31 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-02 | reviewer-doku | MiniMax-Konsultation liefert Wetter statt Reviewer-Kontext (9B-Halluzination) | Bekanntes 9B-Problem, kein Fix moeglich | offen | 1 |
 | 2026-04-02 | dead-code-cleanup | /reviewer git diff ohne '--' Separator → ambiguous argument | reviewer.md: '--' Separator Pflicht dokumentiert | geloest | 1 |
 | 2026-04-02 | dead-code-cleanup | Agent(Explore) statt Grep fuer Export-Suche (Ergebnis unzuverlaessig) | Grep bevorzugen fuer gezielte Symbol-Suchen | geloest | 1 |
+| 2026-04-02 | Token-Waste | autonomy-status.py Level-0 write-Check mehrfach ignoriert (Chunks 8,9,10,11,16) | MEMORY.md: Level-0 Constraint dokumentieren + autonomy-status.py HINWEIS | offen | 5 |
+| 2026-04-02 | Token-Waste | consult-agent.sh liefert falschen Agent-Kontext (Chunk 3) | consult-agent.sh: Explizite Agent-Config-Validierung | offen | 1 |
+| 2026-04-02 | Token-Waste | Skill-Launch verliert Parent-Kontext (Chunks 3,9,13) | MEMORY.md: Nach Skill-Launch Kontext nicht wiederverwendbar | offen | 3 |
+| 2026-04-02 | Token-Waste | TaskCreate-Kaskaden statt Batch (Chunks 7,14) | workflow.md: max 3 Tasks fuer triviale Jobs, Batch wenn moeglich | offen | 2 |
+| 2026-04-02 | Token-Waste | Working-Directory nicht initialisiert vor git ops (Chunk 11) | exec/SKILL.md: pwd + git rev-parse --show-toplevel VOR git diff/status | offen | 1 |
+| 2026-04-02 | Token-Waste | Glob+Read statt direkt Edit (Chunks 3,7) | common.sh: Edit direkt auf Datei, bei Missmatch Recovery | offen | 2 |
+| 2026-04-02 | Token-Waste | Busy-Wait auf Background-Task (3x sleep+cat, Chunk 5) | exec: yieldMs nutzen statt Background+Polling | offen | 1 |
+| 2026-04-02 | Token-Waste | consult-agent.sh fuer triviale "ist X unbenutzt?" (Chunks 6,8) | CLAUDE.md: Immer erst grep -r, dann ggf. consult | offen | 2 |
+| 2026-04-02 | Token-Waste | Grep-Retry bei "No matches found" (= gueltiges Ergebnis, Chunk 12) | grep.md: "No matches found" ist KEIN Fehler, kein Retry | offen | 1 |
+| 2026-04-02 | Token-Waste | tsc --noEmit "no output" nicht diagnostisch (Chunk 10) | build.sh: && echo "BUILD_OK" || echo "BUILD_FAILED:$?" | offen | 1 |
+| 2026-04-02 | Token-Waste | Doppelt-Bestaetigung nach Konsultation (Task 18+19, Chunk 8) | workflow.md: Nach Konsultation direkt zur Implementierung | offen | 1 |
+| 2026-04-02 | Token-Waste | Read vor full-overwrite Write ohne Praeservation (Chunk 17) | reflect-auto.sh: Read nur wenn Erhalt noetig | offen | 1 |
+| 2026-04-02 | Token-Waste | exploratorische ls+head+grep Ketten (Chunks 4,12) | orchestrator-audit.py --latest Flag | offen | 2 |
+| 2026-04-02 | Token-Waste | Read von unveränderter Datei (Chunks 3,9,13) | AGENTS.md: "File unchanged since last read" beachten | offen | 3 |
+| 2026-04-02 | Token-Waste | Script-Output via Zwischendatei+Read statt inline (Chunk 12) | extract-session-calls.py --reuse Flag | offen | 1 |
+| 2026-04-02 | Token-Waste | Kein Pre-Check ob Tasks bereits existieren (Chunk 14) | reviewer.md: project_master_todo.md VOR neuen Tasks auswerten | offen | 1 |
+| 2026-04-02 | Token-Waste | read-after-skill-launch | skills/coder/SKILL.md: Zieldatei VOR Skill-Launch lesen | offen | 1 |
+| 2026-04-02 | Token-Waste | redundant-grep | Grep-Ergebnis bekannt → direkt Read, nicht erneut Grep | offen | 1 |
+| 2026-04-02 | Token-Waste | glob-fuer-unused | Glob nur wenn Edit-Intention klar, nicht fuer Exploration | offen | 1 |
+| 2026-04-02 | Token-Waste | read-after-edit | Edit liefert aktualisierten Content — Read nur bei vollem Zustand | offen | 1 |
+| 2026-04-02 | Token-Waste | shell-ohne-doku | .claude/commands.md / testinstruct.md VOR Shell-Exploration pruefen | offen | 1 |
+| 2026-04-02 | Token-Waste | task-bewertung-fehlt | "Skip"/"Cleanup"/"Doku-only" Tasks → kein Edit/Build/Review | offen | 1 |
+| 2026-04-02 | Token-Waste | chained-commands-no-isolation | `&&` verkettet unabhaengige Ops, kein Fail-Fast | offen | 1 |
+| 2026-04-02 | Token-Waste | reflect-filename-confusion | Agent sucht reflect-result.md, Script erstellt es in OUTPUT_DIR | offen | 1 |
+| 2026-04-02 | Token-Waste | wc-head-chain | wc + head als 2 Calls statt nur head | offen | 1 |
+| 2026-04-02 | Token-Waste | skill-fragmentation | Mehrere coder-Skills fuer dasselbe File (Skill-Isolation) | offen | 1 |
+| 2026-04-02 | Token-Waste | consult-without-preflight | consult-agent.sh ohne Klärung von Zweck/Scope | offen | 1 |
+| 2026-04-02 | Token-Waste | exploratory-ls-cd-chain | ls + cd + cat Kette statt direkter Read mit existenz-Check | offen | 1 |

@@ -1,6 +1,7 @@
 # /reflect — Session Self-Reflection
 
 Analysiert eine Claude Code Session auf Token-Waste und schlaegt Patches fuer Checklisten vor.
+Die schwere Analyse laeuft via MiniMax (chunked), Claude reviewt nur das kompakte Ergebnis.
 
 ## Input
 
@@ -13,185 +14,69 @@ Wenn leer: Frage nach dem JSONL-Pfad. Tipp: JSONL-Sessions liegen unter
 
 | Rolle | Wer | Aufgabe |
 |-------|-----|---------|
-| Extraktion | Python-Script (lokal) | JSONL → Tool-Call-Liste, deterministisch |
-| Analyse + Fix-Vorschlaege | MiniMax (via consult-agent.sh) | Patterns finden, konkrete Patches vorschlagen |
-| Luecken fuellen | Orchestrator (Claude) | Wenn MiniMax keinen Fix hat → mit breiterem Ueberblick ergaenzen |
-| Review | `/reviewer` | Patches auf Seiteneffekte und Qualitaet pruefen |
+| Extraktion + Audit | Python-Scripts (lokal) | JSONL → Tool-Calls, Orchestrator-Audit |
+| Analyse + Patches | MiniMax (chunked via consult-agent.sh) | Patterns finden, Patches vorschlagen, konsolidieren |
+| Autonomie-Updates | Python-Script (lokal) | Metriken mechanisch aktualisieren |
+| Review + Luecken | Claude (Orchestrator) | Kompaktes Ergebnis bewerten, KEIN-FIX Patterns ergaenzen |
 | Freigabe | User | Finale Entscheidung was angewendet wird |
 
 ## Workflow
 
-### Schritt 1: Tool-Calls extrahieren
+### Schritt 1: reflect-auto.sh ausfuehren
 
 ```bash
-python3 scripts/extract-session-calls.py "$JSONL_PATH" --max-result-len 200
+scripts/reflect-auto.sh "$JSONL_PATH" --output-dir /tmp/reflect-current
 ```
 
-Speichere das Ergebnis. Zaehle: Total Calls, Errors, Tool-Verteilung.
+Das Script macht automatisch:
+1. Tool-Calls extrahieren (`extract-session-calls.py`)
+2. Orchestrator Self-Audit (`orchestrator-audit.py`)
+3. MiniMax-Analyse mit Chunking (`consult-agent.sh --input-file --reduce-prompt`)
+4. Autonomie-Metriken aktualisieren
+5. Ergebnis-Datei schreiben: `/tmp/reflect-current/reflect-result.md`
 
-### Schritt 2: MiniMax-Analyse
+**Warte bis das Script fertig ist.** Es dauert je nach Session-Groesse 1-5 Minuten.
 
-Sende eine kompakte Zusammenfassung an MiniMax via consult-agent.sh.
-Waehle die Komponente, deren Checklisten am staerksten betroffen sind.
-Wenn nicht klar: `tool-hub` als Default.
+### Schritt 2: Ergebnis lesen und bewerten
 
-MiniMax soll fuer jedes Pattern:
-- Das Problem beschreiben
-- Einen konkreten Fix vorschlagen: "In DATEI nach STELLE ergaenzen: TEXT"
-- Wenn kein Fix moeglich: Pattern trotzdem melden mit "KEIN FIX — braucht Orchestrator"
-
-```bash
-scripts/consult-agent.sh <komponente> "Analysiere diese Session auf Token-Waste.
-
-Finde:
-1) Fehlgeschlagene Calls — wo haette die Info stehen muessen?
-2) Wiederholte Reads gleicher Datei — warum nicht beim ersten Mal?
-3) Exploratorische Ketten (ls, grep, head) — was fehlte?
-4) Bekannte Fehler wiederholt — wo war es dokumentiert, warum nicht gelesen?
-5) Reviewer-Findings — was hat der Reviewer bemängelt und warum wurde es so gemacht?
-
-Fuer jedes Pattern: Schlage einen konkreten Patch vor.
-Falls du keinen Fix hast: Melde das Pattern trotzdem mit 'KEIN FIX'.
-Format: 'In DATEI nach STELLE ergaenzen: TEXT'
-
---- Kompakte Session-Zusammenfassung ---
-<hier die Zusammenfassung einfuegen>"
-```
-
-**Hinweis:** Sende NICHT die volle Tool-Call-Liste — MiniMax hat 45s Timeout.
-Stattdessen: Kompakte Zusammenfassung mit Statistik, Errors + Kontext (3 Calls davor/danach),
-und auffaellige Muster (wiederholte Reads, Grep-Ketten). Max ~3000 Zeichen.
-
-**Reviewer-Findings einbeziehen:** Wenn in der Session ein `/reviewer` lief, suche in
-der JSONL nach dem Review-Output. Fasse die Findings kompakt zusammen und haenge sie
-an die MiniMax-Anfrage an: "Reviewer hat gefunden: ...". So analysiert MiniMax auch
-die Ursache hinter den Findings (z.B. warum wurde ein unused import geschrieben?).
-
-### Schritt 2b: Orchestrator Self-Audit
-
-Pruefe ob der Orchestrator seinen eigenen Workflow eingehalten hat:
-
-```bash
-python3 scripts/orchestrator-audit.py "$JSONL_PATH"
-```
-
-Das Script erkennt deterministisch:
-- Hat der Orchestrator selbst Code editiert (statt /coder)?
-- Wurden Pflicht-Schritte uebersprungen (/consult, /reviewer, /tester, /docs)?
-- Hat der Orchestrator mechanische Findings selbst gefixt statt zu delegieren?
-- Wurde description.md vor Implementierung gelesen?
-
-**Wenn Violations gefunden — Autofix wie beim Reviewer:**
-- Alle Violation-Patches sind mechanisch (deterministische Textergaenzungen).
-  Sofort an `/coder` delegieren — NICHT auf die Patch-Tabelle schieben.
-  `/coder` wendet die Patches auf `CLAUDE.md` oder `.claude/commands/*.md` an.
-- Falls ein Patch nicht eindeutig ist (z.B. Zielstelle unklar): Als `[TODO]`
-  auf `docs/workflow-patterns.md` parken und in Schritt 9 (Zusammenfassung) anzeigen.
-- Blockierende Findings gibt es beim Self-Audit nicht.
-
-**Wenn keine Violations:** Melde "Orchestrator-Compliance: OK" und weiter.
-
-### Schritt 3: Orchestrator ergaenzt
-
-Pruefe MiniMax-Ergebnisse:
+Lies `/tmp/reflect-current/reflect-result.md` und pruefe:
 - Gibt es Patterns mit "KEIN FIX"? → Mit breiterem Projektueberblick ergaenzen
-- Fehlen offensichtliche Patterns die MiniMax uebersehen hat?
-- Sind die vorgeschlagenen Dateipfade korrekt? (Checklisten existieren?)
+- Hat MiniMax offensichtliche Patterns uebersehen?
+- Sind vorgeschlagene Dateipfade korrekt?
+- Self-Audit Violations: Patches korrekt?
 
-Ergaenze eigene Patch-Vorschlaege wo noetig.
-
-### Schritt 4: Alle Patches sammeln und praesentieren
+### Schritt 3: User-Freigabe
 
 Zeige dem User:
-1. **Statistik:** Total Calls, Errors, Waste-Rate
-2. **Gefundene Patterns:** Von MiniMax + Orchestrator
-3. **Patch-Vorschlaege:** Pro Checkliste/Datei
+1. **Statistik** (aus Ergebnis-Datei)
+2. **Patch-Tabelle** (aus MiniMax-Analyse)
+3. **Token-Bilanz** (MiniMax vs. Claude Verbrauch)
 
-Formatiere als Tabelle:
+Frage: "Welche Patches soll ich anwenden? (alle / nummern / skip)"
 
-```
-| # | Quelle | Pattern | Betroffene Datei | Vorgeschlagener Patch |
-|---|--------|---------|-----------------|----------------------|
-| 1 | MiniMax | ...     | ...             | ...                  |
-| 2 | Self-Audit | ... | CLAUDE.md       | ...                  |
-| 3 | Orchestrator | ... | ...            | ...                  |
-```
+### Schritt 4: Patches anwenden
 
-### Schritt 5: Review
+Fuer jeden genehmigten Patch via `/coder`:
+1. Ziel-Datei lesen
+2. Patch einfuegen (kein Duplikat)
+3. Self-Audit-Patches betreffen oft `CLAUDE.md` oder `.claude/commands/*.md`
 
-Rufe `/reviewer` auf mit den gesammelten Patches:
-- Sind Patches korrekt und sinnvoll?
-- Seiteneffekte? Duplikate?
-- Passt der Patch zur bestehenden Struktur der Ziel-Datei?
+### Schritt 5: workflow-patterns.md aktualisieren
 
-### Schritt 6: User-Freigabe
-
-Zeige Review-Ergebnis und frage:
-"Welche Patches soll ich anwenden? (alle / nummern / skip)"
-
-- **alle**: Alle Patches anwenden
-- **nummern** (z.B. "1,3"): Nur ausgewaehlte Patches
-- **skip**: Nichts aendern
-
-### Schritt 7: Patches anwenden
-
-Fuer jeden genehmigten Patch:
-1. Ziel-Datei lesen (Checkliste, claude.md, CLAUDE.md, .claude/commands/*.md, etc.)
-2. Patch an der richtigen Stelle einfuegen
-3. Sicherstellen dass kein Duplikat entsteht
-
-Self-Audit-Patches betreffen oft `CLAUDE.md` oder `.claude/commands/*.md` —
-die Orchestrator-Instruktionen selbst. So verbessert sich der Workflow ueber Zeit.
-
-### Schritt 8: workflow-patterns.md aktualisieren
-
-Trage die gefundenen Patterns in `docs/workflow-patterns.md` ein:
-
+Trage gefundene Patterns in `docs/workflow-patterns.md` ein:
 ```markdown
 | Datum | Feature | Pattern | Fix | Status | Anzahl |
 ```
-
-Auch Reviewer-Findings und **Self-Audit Violations** eintragen:
-- Reviewer: z.B. "unused import" → Pattern: "Imports nicht aufgeraeumt nach Refactoring"
-- Self-Audit: z.B. "ORCH-EDIT" → Pattern: "Orchestrator editiert Code statt /coder"
-
-So erkennt `aggregate-sessions.sh` wiederkehrende Verstoesse ueber Sessions hinweg.
 Wenn ein Pattern schon existiert: `Anzahl` hochzaehlen statt Duplikat anlegen.
 
-Wenn das Feature nicht klar ist, frage den User.
+### Schritt 6: Zusammenfassung
 
-### Schritt 8b: Autonomie-Metriken aktualisieren
-
-Fuer jede betroffene Komponente der Session: Trage das Ergebnis ein.
-
-```bash
-# Erfolgreiche Session (keine Fehler bei dieser Komponente):
-python3 scripts/autonomy-status.py record <component>
-
-# Session mit Fehler:
-python3 scripts/autonomy-status.py record <component> --error
-
-# Kritischer Fehler (Config zerstoert, Datenverlust, etc.):
-python3 scripts/autonomy-status.py record <component> --error --critical
-```
-
-Wenn mehrere Komponenten betroffen waren, fuer jede einzeln aufrufen.
-Danach `suggest-promotions` pruefen und dem User zeigen falls es Vorschlaege gibt.
-
-### Schritt 9: Zusammenfassung
-
-Kurze Zusammenfassung: Was wurde gepatcht, welche Patterns gefunden.
+Kurze Zusammenfassung: Was wurde gepatcht, welche Patterns gefunden, Token-Bilanz.
 Kein Commit — das macht der User oder der uebergeordnete Workflow.
 
-### Schritt 10: Multi-Session-Aggregation (optional)
+### Schritt 7: Multi-Session-Aggregation (optional)
 
-Wenn >= 3 Sessions seit der letzten Aggregation unanalysiert sind,
-empfiehl dem User:
-
+Wenn >= 3 Sessions seit der letzten Aggregation unanalysiert sind:
 ```bash
 scripts/aggregate-sessions.sh
 ```
-
-Das Script aggregiert Tool-Calls ueber alle Sessions, erkennt strukturelle
-Patterns (Errors >= 3x) und laesst MiniMax eine Meta-Analyse erstellen.
-Fuer gefilterte Analyse: `--since YYYY-MM-DD`.
