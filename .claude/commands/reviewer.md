@@ -26,7 +26,7 @@ und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
 
 ## Ablauf
 
-1. **Aenderungen lesen:** `git diff` oder die genannten Dateien pruefen
+1. **Aenderungen lesen:** `git diff -- <dateien>` (IMMER `--` Separator verwenden!) oder die genannten Dateien pruefen
 2. **Checkliste durchgehen:** Jeden Punkt pruefen
 3. **Ergebnis:** Klar kommunizieren was OK ist und was geaendert werden muss
 4. **Bei Problemen:** Konkrete Vorschlaege machen, nicht nur bemeckern

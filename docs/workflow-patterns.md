@@ -34,3 +34,5 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-02 | cleanup: exports | config-audit.py + orchestrator-audit.py exit 1 bricht parallel calls ab | Exit-Codes gefixt: 0 bei WARNs/Violations, nur Script-Fehler=non-zero | geloest | 1 |
 | 2026-04-02 | reviewer-doku | Agent(Explore) statt Direkt-Read fuer bekannte Referenz-Datei (gateway/description.md) | Lerneffekt: Gateway ist Referenz fuer Sektions-Format | geloest | 1 |
 | 2026-04-02 | reviewer-doku | MiniMax-Konsultation liefert Wetter statt Reviewer-Kontext (9B-Halluzination) | Bekanntes 9B-Problem, kein Fix moeglich | offen | 1 |
+| 2026-04-02 | dead-code-cleanup | /reviewer git diff ohne '--' Separator → ambiguous argument | reviewer.md: '--' Separator Pflicht dokumentiert | geloest | 1 |
+| 2026-04-02 | dead-code-cleanup | Agent(Explore) statt Grep fuer Export-Suche (Ergebnis unzuverlaessig) | Grep bevorzugen fuer gezielte Symbol-Suchen | geloest | 1 |

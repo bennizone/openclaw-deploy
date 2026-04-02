@@ -32,8 +32,8 @@
       "current": 0,
       "since": "2026-04-01",
       "metrics": {
-        "sessions_total": 1,
-        "sessions_error_free": 1,
+        "sessions_total": 2,
+        "sessions_error_free": 2,
         "last_error": null
       }
     },
@@ -50,8 +50,8 @@
       "current": 0,
       "since": "2026-04-01",
       "metrics": {
-        "sessions_total": 1,
-        "sessions_error_free": 1,
+        "sessions_total": 2,
+        "sessions_error_free": 2,
         "last_error": null
       }
     },
@@ -68,8 +68,8 @@
       "current": 0,
       "since": "2026-04-01",
       "metrics": {
-        "sessions_total": 1,
-        "sessions_error_free": 1,
+        "sessions_total": 2,
+        "sessions_error_free": 2,
         "last_error": null
       }
     },
