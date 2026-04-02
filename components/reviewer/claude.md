@@ -57,3 +57,8 @@ Kein Build — Reviewer ist ein uebergreifender Agent ohne eigenen Code.
 
 Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
 `consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
+
+**Konkret fuer Reviewer:**
+- Git-Diffs > 6000 Zeichen → MiniMax-Erstanalyse, dann gezielt pruefen
+- Pflicht-Checks (Secrets, Build, Plugin-Doctor) immer selbst (brauchen Tool-Zugriff)
+- MiniMax-Findings als Startpunkt, nicht als Endergebnis (9B kann halluzinieren)

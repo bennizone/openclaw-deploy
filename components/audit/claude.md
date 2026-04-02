@@ -29,3 +29,7 @@
 
 Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
 `consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
+
+**Kategorie-Zuordnung:**
+- MiniMax: Kat. 5 (Compliance), 6 (Code), 8 (Workflow), 9 (Reflect)
+- Claude: Kat. 1-4 (kompakt), 7 (braucht Grep), 10 (Urteilskraft)

@@ -42,6 +42,25 @@ und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
    - **Design-blockierend:** (Architektur, API-Bruch, Sicherheit) — mit `[BLOCKIEREND]` markieren, Workflow muss pausieren
    - **Design-nicht-blockierend:** (Verbesserungsvorschlaege, Stilfragen) — mit `[TODO]` markieren, wird geparkt
 
+## Tokenfresser-Delegation (bei grossen Diffs)
+
+Wenn der Diff > 6000 Zeichen ist, NICHT komplett selbst lesen.
+Stattdessen MiniMax fuer die Erstanalyse nutzen:
+
+1. Diff in Temp-Datei: `git diff -- <dateien> > /tmp/review-diff.txt`
+2. Groesse pruefen: `wc -c /tmp/review-diff.txt`
+3. Wenn > 6000 Zeichen:
+   ```bash
+   scripts/consult-agent.sh reviewer \
+     "Pruefe diesen Diff auf: Secrets, Breaking Changes, toter Code, Error-Handling. Liste Findings als Tabelle mit [mechanisch]/[BLOCKIEREND]/[TODO]." \
+     --input-file /tmp/review-diff.txt \
+     --reduce-prompt "Konsolidiere: [mechanisch]/[BLOCKIEREND]/[TODO] mit Datei und Zeile"
+   ```
+4. Nur die gemeldeten Stellen gezielt mit `Read` pruefen
+5. Pflicht-Checks (Secrets, Build, Plugin-Doctor, Breaking Changes, Version) weiterhin SELBST pruefen
+
+**Hinweis:** Diff-Inhalt bleibt lokal (localhost→GPU), aber pruefen ob offensichtliche Secrets vor Delegation entfernt werden koennen.
+
 ## Kontext
 
 - **tools.profile muss "full" sein** — Andere Profile filtern Plugin-Tools

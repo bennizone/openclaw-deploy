@@ -46,3 +46,11 @@ head -1 docs/audits/$(ls -t docs/audits/ | head -1)
 ### Test: /audit config
 - Starte `/audit config`
 - Erwartet: config-audit.py Output + DECISIONS.md Abgleich
+
+### Test: Tokenfresser-Delegation
+```bash
+# consult-agent.sh mit --input-file funktioniert
+echo "Test-Daten fuer Audit" > /tmp/test-audit-tokenfresser.txt
+scripts/consult-agent.sh audit "Fasse zusammen" --input-file /tmp/test-audit-tokenfresser.txt --brief
+# Erwartet: MiniMax-Antwort (Inhalt kann 9B-Halluzination sein, Pipeline muss funktionieren)
+```

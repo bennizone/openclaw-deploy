@@ -34,3 +34,11 @@ ls components/*/claude.md | wc -l
 ### Test: Blockierende Design-Findings → User
 - Reviewer meldet Architektur-Problem
 - Erwartet: Orchestrator holt User-Input
+
+### Test: Tokenfresser-Delegation
+```bash
+# consult-agent.sh mit --input-file funktioniert fuer Reviewer
+echo "Test-Diff fuer Review" > /tmp/test-reviewer-tokenfresser.txt
+scripts/consult-agent.sh reviewer "Pruefe auf Probleme" --input-file /tmp/test-reviewer-tokenfresser.txt --brief
+# Erwartet: MiniMax-Antwort (Pipeline-Test, Inhalt sekundaer)
+```

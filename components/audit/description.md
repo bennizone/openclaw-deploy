@@ -47,3 +47,4 @@ Ergebnisse werden als Checkliste in `docs/audits/YYYY-MM-DD.md` gespeichert.
 - Nicht-destruktiv: Aendert keine Dateien, gibt nur Empfehlungen
 - DECISIONS.md Abgleich ist Pflicht um false positives zu vermeiden
 - Compliance-Violations bei Doku/Admin-Sessions sind oft false positives (kein Feature-Workflow)
+- **Tokenfresser-Delegation aktiv** — Kategorien 5, 6, 8, 9 delegieren Rohdaten-Analyse an MiniMax via consult-agent.sh --input-file. Claude liest nur das MiniMax-Ergebnis.

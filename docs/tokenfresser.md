@@ -59,7 +59,8 @@ scripts/consult-agent.sh audit "Bewerte diese Config auf Probleme" \
   --input-file /tmp/config-dump.txt
 ```
 
-## Wer nutzt es bereits?
+## Wer nutzt es?
 
 - `/reflect` via `scripts/reflect-auto.sh` — Session-Analyse
-- Weitere Migrationen geplant: `/audit`, `/reviewer`
+- `/audit` — Kategorien 5, 6, 8, 9 (Compliance, Code, Workflow, Reflect)
+- `/reviewer` — Grosse Git-Diffs (>6000 Zeichen) Erstanalyse
