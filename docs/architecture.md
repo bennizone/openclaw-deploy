@@ -14,7 +14,7 @@ Internet
 LAN
 ├── GPU-Server (${GPU_SERVER_IP})
 │   ├── llama-server :8080 — Qwen 3.5 9B (Chat, CUDA)
-│   │     Params: ctx=196608, parallel=2 (98304/Slot), kv-cache=q4_0, flash-attn, reasoning-budget=1024
+│   │     Params: ctx=VRAM-abhaengig (8GB:32768, 11GB:196608), parallel=1-2, kv-cache=q4_0, flash-attn, reasoning-budget=2048
 │   │     Threads: 1 inference, nproc-2 batch (dynamisch)
 │   └── llama-server :8081 — bge-m3 Q8_0 (Embedding, CUDA)
 │         Params: ctx=2048, pooling=cls

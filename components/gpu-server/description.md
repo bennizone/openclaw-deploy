@@ -12,12 +12,13 @@ Bietet OpenAI-kompatible APIs fuer alle Komponenten im LAN.
 GPU-Server (${GPU_SERVER_IP})
 ├── llama-server :8080 — Qwen 3.5 9B Opus-Distilled v2 (Chat, CUDA)
 │   ├── Modell: Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf (5.63 GB)
-│   ├── ctx-size: 196608, parallel: 2 → 98304 pro Slot
-│   ├── kv-cache: q4_0 (Quantisierung spart VRAM)
-│   ├── flash-attn: auto
-│   ├── reasoning-budget: 1024 (verhindert Endlos-Thinking)
+│   ├── ctx-size: VRAM-abhaengig (8GB: 32768, 11GB: 196608), parallel halbiert pro Slot
+│   ├── kv-cache: q4_0 (spart ~1.5GB VRAM vs F16, gehoert zur ctx-size Optimierung)
+│   ├── flash-attn: auto (reduziert VRAM fuer Attention)
+│   ├── reasoning-budget: 2048 (Server-Maximum, per API-Request steuerbar)
 │   ├── threads: 1 (Inference), threads-batch: nproc-2 (dynamisch)
-│   └── jinja: Template-Support fuer Chat-Formate
+│   ├── jinja: Template-Support fuer Chat-Formate
+│   └── Throughput: ~51 t/s single (RTX 2070s), ~36 t/s (GTX 1080 Ti)
 │
 ├── llama-server :8081 — bge-m3 Q8_0 (Embedding, CUDA)
 │   ├── Modell: bge-m3-q8_0.gguf (634 MB)
@@ -26,7 +27,7 @@ GPU-Server (${GPU_SERVER_IP})
 │   └── VRAM: ~600 MB
 │
 ├── ~/llama.cpp/                # llama.cpp Source + Build
-│   └── build/bin/llama-server  # Kompiliert mit CUDA
+│   └── build/bin/llama-server  # Kompiliert mit CUDA (GGML_CUDA_ARCHITECTURES muss zur GPU passen!)
 │
 └── ~/models/                   # GGUF Modell-Dateien
     ├── Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf
@@ -83,9 +84,11 @@ setup/gpu-server/
 
 - **Kein Hot-Reload** — Modellwechsel erfordert Service-Restart
 - **VRAM-Limit** — Qwen 3.5 9B + bge-m3 muessen zusammen in GPU-VRAM passen
-- **reasoning-budget: 1024** — Verhindert Endlos-Thinking, begrenzt aber Reasoning-Tiefe
-- **parallel: 2** — Nur 2 gleichzeitige Chat-Requests (98304 Tokens pro Slot)
-- **CPU Embedding Fallback auf LXC** — Wenn GPU-Server ausfaellt, localhost:8081 auf LXC
+- **reasoning-budget: 2048** — Server-Maximum, per API-Request steuerbar
+- **parallel: 2** — Halbiert ctx pro Slot. Bei knappem VRAM ggf. parallel=1 waehlen
+- **CUDA_ARCHITECTURES** — Build muss zur GPU-Architektur passen (61=Pascal, 75=Turing, 86=Ampere, 89=Ada). Falscher Build crasht!
+- **Ollama-Konflikt** — Ollama belegt GPU-VRAM. Vor llama.cpp-Nutzung deaktivieren
+- **CPU Embedding Fallback auf LXC** — Wenn GPU-Server ausfaellt oder VRAM knapp, localhost:8081 auf LXC
 - **Kein Qwen-Fallback fuer Extraction** — Qwen halluziniert bei Memory-Extraktion (siehe memory-system)
 
 ## Neues Feature hinzufuegen

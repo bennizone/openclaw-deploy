@@ -8,6 +8,14 @@ After=network.target
 # Minimum: 2
 ExecStartPre=/bin/bash -c 'CORES=$(nproc); TB=$((CORES > 4 ? CORES - 2 : 2)); echo "THREADS_BATCH=$TB" > /tmp/llama-chat-env'
 EnvironmentFile=/tmp/llama-chat-env
+# --- GPU-Server Parameter-Guide ---
+# ctx-size: VRAM-abhaengig. 8GB→32768, 11GB→196608.
+#   Groesserer ctx = mehr VRAM fuer KV-Cache. Im Onboarding mit User abstimmen.
+# parallel: parallel=2 halbiert ctx pro Slot. Bei knappem VRAM: parallel=1 fuer maximalen Context.
+#   Im Onboarding wird der User gefragt ob parallel=2 oder parallel=1 gewuenscht ist.
+# cache-type q4_0: KV-Cache Quantisierung spart ~1.5GB VRAM vs F16. Gehoert zur ctx-size Optimierung.
+# flash-attn: Reduziert VRAM-Verbrauch fuer Attention-Berechnung.
+# reasoning-budget: Server-Maximum, per API-Request steuerbar. Verdoppelt auf 2048 (2026-04-02).
 ExecStart=/home/GPUUSER/llama.cpp/build/bin/llama-server \
   --model /home/GPUUSER/models/Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf \
   --port 8080 --host 0.0.0.0 \

@@ -30,14 +30,15 @@ Dies passiert im `before_model_resolve` Hook.
 - Besonderheit: CJK Language Bleeding → Sanitizer aktiv
 
 ### Qwen 3.5 9B Opus-Distilled v2 (Q4_K_M)
-- Context: 196.608 Tokens gesamt (2 Slots à 98.304)
+- Context: VRAM-abhaengig (8GB: 32768, 11GB: 196608). Bei parallel=2 wird ctx pro Slot halbiert.
 - Max Output: 8.192 Tokens
-- KV-Cache: Q4_0 (spart ~1.5 GB VRAM vs F16)
-- Parallel: 2 Slots
-- Reasoning-Budget: 1024
+- KV-Cache: Q4_0 (spart ~1.5 GB VRAM vs F16, gehoert zur ctx-size Optimierung)
+- Flash-Attention: auto (reduziert VRAM fuer Attention)
+- Parallel: 1-2 Slots (im Onboarding mit User abstimmbar)
+- Reasoning-Budget: 2048 (Server-Maximum, per API-Request steuerbar)
 - `enable_thinking: false` via `chat_template_kwargs` (IMMER!)
-- Throughput: ~37 t/s auf GTX 1080 Ti
-- VRAM: ~5.700 MB
+- Throughput: ~51 t/s single (RTX 2070s), ~36 t/s (GTX 1080 Ti)
+- VRAM: ~5.700 MB (Modell) + ctx-abhaengiger KV-Cache
 
 ### bge-m3 (Q8_0)
 - Dimension: 1024 (NICHT 1536!)

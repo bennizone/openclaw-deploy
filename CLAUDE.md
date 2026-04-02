@@ -42,6 +42,8 @@ Fuehre KEINE anderen Aufgaben aus bis das Onboarding abgeschlossen ist (ausser `
     "ha_url": "https://homeassistant.local:8123",
     "agent_names": ["benni", "household"],
     "default_agent": "benni",
+    "gpu_parallel": 2,
+    "gpu_ctx_size": 32768,
     "channels": ["whatsapp"]
   }
 }

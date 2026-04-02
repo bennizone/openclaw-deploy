@@ -13,6 +13,26 @@ if ! command -v nvidia-smi &>/dev/null; then
   exit 1
 fi
 
+# GPU Compute Capability ermitteln → CUDA_ARCHITECTURES setzen
+COMPUTE_CAP=$(nvidia-smi --query-gpu=compute_cap --format=csv,noheader,nounits | head -1 | tr -d '[:space:]')
+if [ -n "$COMPUTE_CAP" ]; then
+  # Compute Capability in CUDA Architecture umrechnen (z.B. 7.5 → 75)
+  CUDA_ARCH=$(echo "$COMPUTE_CAP" | tr -d '.')
+  case "$CUDA_ARCH" in
+    61) echo "[OK] GPU-Architektur: Pascal (sm_61, z.B. GTX 1080 Ti)" ;;
+    75) echo "[OK] GPU-Architektur: Turing (sm_75, z.B. RTX 2070/2080)" ;;
+    80) echo "[OK] GPU-Architektur: Ampere (sm_80, z.B. A100)" ;;
+    86) echo "[OK] GPU-Architektur: Ampere (sm_86, z.B. RTX 3060/3090)" ;;
+    89) echo "[OK] GPU-Architektur: Ada Lovelace (sm_89, z.B. RTX 4070/4090)" ;;
+    *)  echo "[WARN] Unbekannte GPU-Architektur: sm_${CUDA_ARCH}. Nutze Fallback sm_80."
+        CUDA_ARCH=80 ;;
+  esac
+else
+  echo "[WARN] Konnte GPU Compute Capability nicht ermitteln. Nutze Fallback sm_80."
+  CUDA_ARCH=80
+fi
+echo "     GGML_CUDA_ARCHITECTURES=${CUDA_ARCH}"
+
 # CUDA Toolkit pruefen
 if ! command -v nvcc &>/dev/null; then
   echo "[...] CUDA Toolkit nicht gefunden. Installiere..."
@@ -51,8 +71,8 @@ if [ -f "$LLAMA_DIR/build/bin/llama-server" ]; then
   echo "[OK] llama-server bereits gebaut"
   echo "     Um neu zu bauen: rm -rf $LLAMA_DIR/build && dieses Script erneut ausfuehren"
 else
-  echo "[...] Baue llama.cpp mit CUDA (das dauert einige Minuten)"
-  cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON
+  echo "[...] Baue llama.cpp mit CUDA fuer sm_${CUDA_ARCH} (das dauert einige Minuten)"
+  cmake -B build -DCMAKE_BUILD_TYPE=Release -DGGML_CUDA=ON -DGGML_CUDA_ARCHITECTURES="${CUDA_ARCH}"
   cmake --build build --config Release -j$(nproc) --target llama-server
   echo "[OK] llama-server mit CUDA gebaut"
 fi

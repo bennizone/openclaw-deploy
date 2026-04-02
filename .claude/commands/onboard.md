@@ -79,18 +79,48 @@ Nach dem Interview:
 
 Ueber SSH auf dem GPU-Server:
 1. `setup/gpu-server/detect-nvidia.sh` — NVIDIA erkennen + Treiber
+   - Das Script zeigt jetzt auch VRAM, Compute Capability und empfohlene ctx-size an.
+   - **Ollama-Check:** Falls Ollama laeuft, wird eine Warnung angezeigt.
+     Frage den User ob Ollama deaktiviert werden soll (belegt VRAM, kollidiert mit llama.cpp).
 2. `setup/gpu-server/build-llama-cpp.sh` — llama.cpp mit CUDA bauen
+   - Das Script erkennt automatisch die GPU-Architektur (Compute Capability)
+     und setzt `GGML_CUDA_ARCHITECTURES` korrekt (z.B. 75 fuer Turing, 61 fuer Pascal).
+   - **WICHTIG:** Ein Build fuer die falsche Architektur crasht! Pascal-Build (61) laeuft
+     NICHT auf Turing (75) und umgekehrt.
 3. `setup/gpu-server/download-models.sh` — Modelle laden
    - Das Script nutzt `huggingface-cli` fuer grosse Downloads.
    - Falls `huggingface-cli` auf dem GPU-Server nicht installiert ist:
      `ssh <USER>@<GPU_IP> "pip3 install huggingface_hub[cli]"`
-4. systemd Services deployen aus `setup/gpu-server/systemd/`
+
+4. **GPU-Konfiguration mit User abstimmen** (VOR dem Service-Deploy!):
+   a) **VRAM ermitteln:**
+      `ssh <USER>@<GPU_IP> "nvidia-smi --query-gpu=memory.total,memory.free --format=csv,noheader"`
+      Zeige dem User die verfuegbaren Werte.
+   b) **Parallel-Modus:**
+      Frage den User: "Soll der Chat-Server mit parallel=2 (2 gleichzeitige Anfragen,
+      halber Context pro Slot) oder parallel=1 (maximaler Context, nur eine Anfrage
+      gleichzeitig) laufen? parallel=2 ist empfohlen wenn mehrere Agents gleichzeitig
+      anfragen koennten (z.B. HA + WhatsApp)."
+   c) **Context-Size:**
+      Frage den User: "Soll die maximale ctx-size ausgelotet werden oder der konservative
+      Wert genutzt werden? Konservative Empfehlung: 32768 bei <=8GB VRAM, 196608 bei >8GB.
+      Groesserer Context = mehr VRAM fuer den KV-Cache. KV-Cache q4_0 spart ~1.5GB vs F16
+      und ist bereits aktiviert."
+      Bei VRAM-knappen GPUs (<=8GB): Hinweis dass bei parallel=2 der Context pro Slot
+      halbiert wird. Bei parallel=1 steht der volle Context zur Verfuegung.
+   d) **Embedding-Entscheidung bei knappem VRAM:**
+      Falls VRAM knapp (Modell + ctx + Embedding > verfuegbares VRAM): Empfehle dem User
+      das Embedding auf den CPU-Fallback (LXC) auszulagern statt auf dem GPU-Server zu laufen.
+   e) Passe die Werte in `llama-chat.service` basierend auf den User-Entscheidungen an
+      BEVOR der Service deployed wird.
+
+5. systemd Services deployen aus `setup/gpu-server/systemd/`
    - Pfade in den Templates an den tatsaechlichen User anpassen (GPUUSER ersetzen)
    - **Chat-Template:** Die Service-Unit nutzt `--jinja`, d.h. llama-server liest
      das Chat-Template direkt aus der GGUF-Datei. Kein separates Template-File noetig.
    - **threads-batch** wird dynamisch berechnet: `nproc - 2` (min. 2).
      threads=1 reicht fuer Inference (GPU), threads-batch fuer Prompt-Processing (CPU-parallel).
-5. Services starten + Health-Check:
+6. Services starten + Health-Check:
    - `curl http://<GPU_IP>:8080/health` (Chat)
    - `curl http://<GPU_IP>:8081/health` (Embedding)
    - **Erwartete Startzeiten:**
@@ -98,7 +128,9 @@ Ueber SSH auf dem GPU-Server:
      - llama-embed (bge-m3, CUDA): 5-10 Sekunden
    - Falls Health-Check nach 60s fehlschlaegt:
      `ssh <USER>@<GPU_IP> "journalctl --user -u llama-chat -n 50"`
-6. Phase "gpu_server" als done markieren
+   - **User-Entscheidungen dokumentieren:** Die gewaehlten Werte fuer parallel und ctx-size
+     in `~/.openclaw-deploy-state.json` unter `config` speichern (z.B. `"gpu_parallel": 2, "gpu_ctx_size": 32768`).
+7. Phase "gpu_server" als done markieren
 
 ## Phase 2: LXC Setup
 
