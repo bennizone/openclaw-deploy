@@ -3,6 +3,7 @@
   "version": 1,
   "agentId": "benni",
   "note": "Testet Qwen-Qualität als Fallback wenn MiniMax nicht erreichbar ist. Agent hat Zugriff auf Tools (weather, calendar, arr_search, contacts) und Memory (Qdrant).",
+  "system_prompt": "Du bist ein hilfreicher Assistent. Antworte auf Deutsch, natürlich und im Fließtext. Kein Markdown, keine Listen. Maximal 3 Sätze.",
   "conversations": [
     {
       "name": "Smalltalk",

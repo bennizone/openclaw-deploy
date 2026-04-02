@@ -62,15 +62,15 @@
       }
     },
     {
-      "name": "Delegation: Wetter",
+      "name": "Delegation: Websuche",
       "category": "openclaw-delegation",
       "messages": [
-        { "role": "user", "content": "Wie wird das Wetter morgen?" }
+        { "role": "user", "content": "Suche mir ein gutes veganes Restaurant in Sindelfingen" }
       ],
       "expected": {
         "response_starts_with": "OPENCLAW:",
-        "response_contains": ["Wetter"],
-        "note": "Wetterdaten sind NICHT im Entity-Kontext (met.no entfernt). LLM MUSS an OpenClaw delegieren."
+        "response_contains": ["Restaurant", "Sindelfingen"],
+        "note": "Websuche ist externes Wissen — MUSS an OpenClaw delegiert werden."
       }
     },
     {

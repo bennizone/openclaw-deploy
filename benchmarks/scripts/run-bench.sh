@@ -7,7 +7,7 @@
 #   ./run-bench.sh --dataset ha --endpoint http://10.83.1.110:8080 --thinking-budgets "0,512,1024,2048"
 #   ./run-bench.sh --dataset fallback --endpoint http://10.83.1.110:8080 --parallel-test
 #
-# Dependencies: bash, curl, jq, bc
+# Dependencies: bash, curl, jq, bc (or python3 as fallback)
 # Optional: ssh + nvidia-smi (for GPU info)
 
 set -euo pipefail
@@ -67,6 +67,13 @@ esac
 
 [[ ! -f "$DATASET_FILE" ]] && { echo "Error: Dataset not found: $DATASET_FILE" >&2; exit 1; }
 
+# Memory dataset needs its own script (different format: turns, expectedFacts/expectedRejects)
+if [[ "$DATASET" == "memory" ]]; then
+  echo "Memory-Benchmark benötigt eigenes Script (TODO)." >&2
+  echo "Das Memory-Dataset verwendet ein anderes Format (turns statt messages, expectedFacts/expectedRejects)." >&2
+  exit 0
+fi
+
 # ── Collect metadata ──
 
 echo "Collecting metadata..." >&2
@@ -89,7 +96,7 @@ fi
 if [[ -z "$OUTPUT_FILE" ]]; then
   MODEL_SLUG=$(echo "$MODEL_NAME" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-50)
   GPU_SLUG=$(echo "$GPU_NAME" | sed 's/[^a-zA-Z0-9._-]/_/g' | cut -c1-30)
-  OUTPUT_FILE="$RESULTS_DIR/${DATE_SLUG}_${MODEL_SLUG}_${GPU_SLUG}.json"
+  OUTPUT_FILE="$RESULTS_DIR/${DATE_SLUG}_${MODEL_SLUG}_${GPU_SLUG}_${DATASET}.json"
 fi
 
 mkdir -p "$RESULTS_DIR"
@@ -100,6 +107,24 @@ echo "Endpoint: $ENDPOINT" >&2
 echo "Dataset: $DATASET ($DATASET_FILE)" >&2
 
 # ── Helper functions ──
+
+# bc with python3 fallback for math operations
+# Usage: calc "scale=1; 100 * 1000 / 500"
+calc() {
+  local expr="$1"
+  if command -v bc &>/dev/null; then
+    echo "$expr" | bc 2>/dev/null && return
+  fi
+  # Fallback: strip bc-specific "scale=N;" prefix, evaluate with python3
+  local py_expr="${expr#*;}"
+  py_expr="${py_expr# }"
+  # Extract scale for rounding
+  local scale=0
+  if [[ "$expr" =~ scale=([0-9]+) ]]; then
+    scale="${BASH_REMATCH[1]}"
+  fi
+  python3 -c "print(round(${py_expr}, ${scale}))" 2>/dev/null || echo "0"
+}
 
 # Send a chat completion request, measure timing, return JSON with metrics
 # Args: $1=messages_json, $2=thinking_budget (optional, "" for default), $3=tools_json (optional)
@@ -149,42 +174,21 @@ send_request() {
     body=$(echo "$body" | jq --argjson tools "$tools" '. + { tools: $tools, tool_choice: "auto" }')
   fi
 
-  # Measure TTFT and total time
-  local start_ns end_ns ttft_ns
-  start_ns=$(date +%s%N)
-
-  local http_code
-  http_code=$(curl -sf -o "$tmpfile" -w "%{http_code}" \
+  # Measure TTFT and total time in a SINGLE request (content + timing)
+  # curl -o writes body to $tmpfile, -w writes timing info to stdout
+  local ttft_ms total_ms http_code
+  local curl_timing
+  curl_timing=$(curl -s -o "$tmpfile" \
+    -w "%{time_starttransfer} %{time_total} %{http_code}" \
     -H "Content-Type: application/json" \
     --connect-timeout 10 \
     --max-time 120 \
     -d "$body" \
-    "$ENDPOINT/v1/chat/completions" 2>/dev/null || echo "000")
+    "$ENDPOINT/v1/chat/completions" 2>/dev/null) || curl_timing="0 0 000"
 
-  end_ns=$(date +%s%N)
-
-  # TTFT approximation (non-streaming: use time_starttransfer from curl)
-  # Re-run with timing for TTFT
-  local ttft_ms total_ms
-  local timing_file
-  timing_file=$(mktemp)
-
-  curl -sf -o /dev/null \
-    -w "%{time_starttransfer} %{time_total}" \
-    -H "Content-Type: application/json" \
-    --connect-timeout 10 \
-    --max-time 120 \
-    -d "$body" \
-    "$ENDPOINT/v1/chat/completions" > "$timing_file" 2>/dev/null || true
-
-  if [[ -f "$timing_file" && -s "$timing_file" ]]; then
-    ttft_ms=$(awk '{printf "%.0f", $1 * 1000}' "$timing_file" 2>/dev/null || echo "0")
-    total_ms=$(awk '{printf "%.0f", $2 * 1000}' "$timing_file" 2>/dev/null || echo "0")
-  else
-    total_ms=$(( (end_ns - start_ns) / 1000000 ))
-    ttft_ms="$total_ms"
-  fi
-  rm -f "$timing_file"
+  ttft_ms=$(echo "$curl_timing" | awk '{printf "%.0f", $1 * 1000}' 2>/dev/null || echo "0")
+  total_ms=$(echo "$curl_timing" | awk '{printf "%.0f", $2 * 1000}' 2>/dev/null || echo "0")
+  http_code=$(echo "$curl_timing" | awk '{print $3}' 2>/dev/null || echo "000")
 
   if [[ "$http_code" != "200" ]]; then
     echo "{\"error\": \"HTTP $http_code\", \"ttft_ms\": 0, \"total_ms\": 0}"
@@ -208,7 +212,7 @@ send_request() {
   # Calculate t/s
   local tokens_per_sec="0"
   if [[ "$total_ms" -gt 0 && "$completion_tokens" -gt 0 ]]; then
-    tokens_per_sec=$(echo "scale=1; $completion_tokens * 1000 / $total_ms" | bc 2>/dev/null || echo "0")
+    tokens_per_sec=$(calc "scale=1; $completion_tokens * 1000 / $total_ms")
   fi
 
   # JSON validity check (for tool calls) + extract details
@@ -298,7 +302,7 @@ run_parallel_test() {
   tps1=$(jq -r '.tokens_per_sec // 0' "$tmp1" 2>/dev/null || echo "0")
   tps2=$(jq -r '.tokens_per_sec // 0' "$tmp2" 2>/dev/null || echo "0")
   local tps_combined
-  tps_combined=$(echo "scale=1; $tps1 + $tps2" | bc 2>/dev/null || echo "0")
+  tps_combined=$(calc "scale=1; $tps1 + $tps2")
 
   jq -n \
     --arg tps1 "$tps1" \
@@ -334,26 +338,33 @@ echo "Conversations to test: $CONV_COUNT" >&2
 ALL_RESULTS="[]"
 PARALLEL_RESULT="{}"
 
+# Detect system prompt mode (dataset-level, checked once)
+# 1. system_prompt_template (with {time}, {daylight}, {entities} placeholders) — e.g. HA dataset
+# 2. system_prompt (static string) — e.g. fallback-chat dataset
+# 3. Neither — no system message prepended
+HAS_TEMPLATE=$(jq -r 'if .system_prompt_template then "yes" else "no" end' "$DATASET_FILE")
+HAS_SYSTEM=$(jq -r 'if .system_prompt then "yes" else "no" end' "$DATASET_FILE")
+
 for ((c=0; c<CONV_COUNT; c++)); do
   CONV_NAME=$(jq -r ".conversations[$c].name" "$DATASET_FILE")
   CONV_CATEGORY=$(jq -r ".conversations[$c].category // \"unknown\"" "$DATASET_FILE")
 
   echo "  [$((c+1))/$CONV_COUNT] $CONV_NAME ($CONV_CATEGORY)" >&2
 
-  # Build messages array
-  # For HA dataset: include system prompt with mock entities
-  if [[ "$DATASET" == "ha" ]]; then
-    SYSTEM_PROMPT=$(jq -r '.system_prompt_template // ""' "$DATASET_FILE" | \
-      sed "s/{time}/$(date +%H:%M)/g" | \
-      sed "s/{daylight}/Tag, neutrales Licht bevorzugt/g")
-    MOCK_ENTITIES=$(jq -r '.mock_entities // ""' "$DATASET_FILE")
-    SYSTEM_PROMPT=$(echo "$SYSTEM_PROMPT" | sed "s|{entities}|$MOCK_ENTITIES|g")
-
-    MESSAGES=$(jq -r --arg sys "$SYSTEM_PROMPT" \
-      '[{role: "system", content: $sys}] + .conversations['"$c"'].messages' \
+  if [[ "$HAS_TEMPLATE" == "yes" ]]; then
+    MESSAGES=$(jq --arg time "$(date +%H:%M)" --arg daylight "Tag, neutrales Licht bevorzugt" \
+      '(.system_prompt_template // "") as $tpl |
+       (.mock_entities // "") as $ent |
+       ($tpl | gsub("\\{time\\}"; $time) | gsub("\\{daylight\\}"; $daylight) | gsub("\\{entities\\}"; $ent)) as $sys |
+       [{role: "system", content: $sys}] + .conversations['"$c"'].messages' \
+      "$DATASET_FILE")
+  elif [[ "$HAS_SYSTEM" == "yes" ]]; then
+    MESSAGES=$(jq \
+      '(.system_prompt // "") as $sys |
+       [{role: "system", content: $sys}] + .conversations['"$c"'].messages' \
       "$DATASET_FILE")
   else
-    MESSAGES=$(jq -r '.conversations['"$c"'].messages' "$DATASET_FILE")
+    MESSAGES=$(jq '.conversations['"$c"'].messages' "$DATASET_FILE")
   fi
 
   # Check if this conversation requires tool definitions
@@ -383,9 +394,16 @@ done
 # Parallel test (use first conversation's messages)
 if [[ "$PARALLEL_TEST" == "true" ]]; then
   echo "Running parallel throughput test..." >&2
-  if [[ "$DATASET" == "ha" ]]; then
-    FIRST_MSGS=$(jq --arg sys "$(jq -r '.system_prompt_template // ""' "$DATASET_FILE")" \
-      '[{role: "system", content: $sys}] + .conversations[0].messages' "$DATASET_FILE")
+  if [[ "$HAS_TEMPLATE" == "yes" ]]; then
+    FIRST_MSGS=$(jq --arg time "$(date +%H:%M)" --arg daylight "Tag, neutrales Licht bevorzugt" \
+      '(.system_prompt_template // "") as $tpl |
+       (.mock_entities // "") as $ent |
+       ($tpl | gsub("\\{time\\}"; $time) | gsub("\\{daylight\\}"; $daylight) | gsub("\\{entities\\}"; $ent)) as $sys |
+       [{role: "system", content: $sys}] + .conversations[0].messages' \
+      "$DATASET_FILE")
+  elif [[ "$HAS_SYSTEM" == "yes" ]]; then
+    FIRST_MSGS=$(jq '(.system_prompt // "") as $sys |
+       [{role: "system", content: $sys}] + .conversations[0].messages' "$DATASET_FILE")
   else
     FIRST_MSGS=$(jq '.conversations[0].messages' "$DATASET_FILE")
   fi

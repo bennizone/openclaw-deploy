@@ -11,7 +11,7 @@ EnvironmentFile=/tmp/llama-chat-env
 ExecStart=/home/GPUUSER/llama.cpp/build/bin/llama-server \
   --model /home/GPUUSER/models/Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf \
   --port 8080 --host 0.0.0.0 \
-  --ctx-size 196608 \
+  --ctx-size 32768 \
   --n-predict 8192 \
   --n-gpu-layers 999 \
   --parallel 2 \

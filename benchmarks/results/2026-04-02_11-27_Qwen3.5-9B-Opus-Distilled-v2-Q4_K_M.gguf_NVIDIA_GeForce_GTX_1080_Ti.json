@@ -1,0 +1,709 @@
+{
+  "meta": {
+    "timestamp": "2026-04-02T09:27:52Z",
+    "model": "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf",
+    "gpu": "NVIDIA GeForce GTX 1080 Ti",
+    "gpu_vram": "11264 MiB",
+    "dataset": "ha",
+    "endpoint": "http://10.83.1.110:8080"
+  },
+  "performance": {
+    "ttft_ms": {
+      "avg": 3658,
+      "p50": 3411,
+      "p95": 5881
+    },
+    "tokens_per_sec_avg": 0,
+    "parallel": {
+      "slot_1_tps": 0,
+      "slot_2_tps": 0,
+      "combined_tps": 0,
+      "wall_time_ms": 12119
+    }
+  },
+  "summary": {
+    "total_tests": 28,
+    "tool_call_tests": 7,
+    "tool_calls_valid": 7,
+    "errors": 0
+  },
+  "results": [
+    {
+      "content": "Ja, das Licht im Wohnzimmer ist an. Die Deckenlampe im Wohnzimmer ist eingeschaltet.",
+      "thinking": "Der Benutzer fragt, ob das Licht im Wohnzimmer an ist. Ich muss die im Kontext gegebenen Geräte- und Sensordaten überprüfen.\n\nAus den Daten:\n- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n\nDie Deckenlampe im Wohnzimmer ist \"on\" (an). Die Frage bezieht sich auf \"das Licht\" im Wohnzimmer, und die Deckenlampe ist das primäre Lichtgerät, das als an gemeldet wird.",
+      "ttft_ms": 2430,
+      "total_ms": 2430,
+      "prompt_tokens": 421,
+      "completion_tokens": 127,
+      "thinking_tokens": 96,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Ja, die Deckenlampe im Wohnzimmer ist an.",
+      "thinking": "Der Nutzer fragt, ob das Licht im Wohnzimmer an ist. Ich schaue in den bereitgestellten Gerätedaten:\n\n- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n\nDie Deckenlampe im Wohnzimmer ist aktiviert (\"on\"). Das ist eine der explizit genannten Lichtquellen im Wohnzimmer. Ich kann diese Information direkt aus dem Kontext beantworten, ohne externe Daten zu benötigen.",
+      "ttft_ms": 2361,
+      "total_ms": 2361,
+      "prompt_tokens": 421,
+      "completion_tokens": 105,
+      "thinking_tokens": 96,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Es ist 19,2 °C im Schlafzimmer.",
+      "thinking": "Der Benutzer fragt nach der Temperatur im Schlafzimmer. Ich muss die Sensorwerte aus dem Kontext überprüfen.\n\nIm Kontext steht:\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n\nDas ist die aktuelle Temperatur im Schlafzimmer. Ich kann diese Information direkt aus den gegebenen Daten beantworten.",
+      "ttft_ms": 3482,
+      "total_ms": 3482,
+      "prompt_tokens": 420,
+      "completion_tokens": 79,
+      "thinking_tokens": 74,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Es ist 19,2 °C im Schlafzimmer.",
+      "thinking": "Der Benutzer fragt nach der Temperatur im Schlafzimmer. Ich muss die Sensor-Daten aus dem Kontext überprüfen.\n\nIm Kontext steht:\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n\nDas ist die aktuelle Temperatur im Schlafzimmer. Ich sollte direkt diese Information zurückgeben, ohne zusätzliche Erklärungen oder Formatierungen.",
+      "ttft_ms": 4232,
+      "total_ms": 4232,
+      "prompt_tokens": 420,
+      "completion_tokens": 86,
+      "thinking_tokens": 82,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Wohnzimmer beträgt die Temperatur 21,8 °C und die Luftfeuchtigkeit liegt bei 43 %.",
+      "thinking": "Der Benutzer fragt nach dem Klima im Wohnzimmer. Ich muss die relevanten Daten aus dem Kontext extrahieren:\n\n1. Klimasensor Wohnzimmer: 21.8 °C\n2. Luftfeuchtigkeit Wohnzimmer: 43 %\n3. Heizung Wohnzimmer: 22 °C (Soll)\n\nIch sollte diese Informationen zusammenfassen, ohne etwas zu erfinden oder zu interpretieren.",
+      "ttft_ms": 3411,
+      "total_ms": 3412,
+      "prompt_tokens": 420,
+      "completion_tokens": 111,
+      "thinking_tokens": 77,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "mode": "default"
+    },
+    {
+      "content": "Das Klima im Wohnzimmer ist mit 21,8 °C Temperatur und 43 % Luftfeuchtigkeit. Die Heizung ist auf 22 °C eingestellt.",
+      "thinking": "Der Benutzer fragt nach dem Klima im Wohnzimmer. Ich habe die relevanten Sensordaten im Kontext:\n\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer (Wohnzimmer): 43 %\n- Heizung Wohnzimmer (Wohnzimmer): 22 °C (Soll)\n\nIch kann diese Daten verwenden, um eine natürliche Antwort zu geben.",
+      "ttft_ms": 3337,
+      "total_ms": 3337,
+      "prompt_tokens": 420,
+      "completion_tokens": 123,
+      "thinking_tokens": 77,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "mode": "default"
+    },
+    {
+      "content": "Ich mache die Deckenlampe im Wohnzimmer aus.",
+      "thinking": "Der Benutzer möchte, dass ich das Licht im Wohnzimmer ausmache. Ich muss prüfen, welche Lichtquellen im Wohnzimmer aktiv sind, basierend auf den im Kontext gegebenen Daten.\n\nLaut den Gerätedaten:\n- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n\nDie Deckenlampe ist also eingeschaltet. Ich kann diese ausmachen, da dies eine direkte Befolgung der Anweisung ist.",
+      "ttft_ms": 2938,
+      "total_ms": 2938,
+      "prompt_tokens": 420,
+      "completion_tokens": 110,
+      "thinking_tokens": 95,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Gerätsteuerung: Licht ausschalten",
+      "category": "entity-control",
+      "mode": "default"
+    },
+    {
+      "content": "Ich werde die Deckenlampe im Wohnzimmer ausschalten.",
+      "thinking": "Zuerst muss ich die aktuelle Situation analysieren:\n\n1. Ich bin ein smarter Haushaltsassistent\n2. Die aktuelle Uhrzeit ist 11:28 (Tag)\n3. Die Deckenlampe im Wohnzimmer ist derzeit AN\n4. Die Anfrage lautet: \"Mach das Licht im Wohnzimmer aus\"\n\nIch muss prüfen, welche Lichtquellen es im Wohnzimmer gibt:\n- Deckenlampe Wohnzimmer: on\n- Ambiente (Wohnzimmer): off\n\nDie Deckenlampe ist an, also muss ich diese ausschalten. Ich werde die Deckenlampe im Wohnzimmer ausschalten.",
+      "ttft_ms": 5007,
+      "total_ms": 5007,
+      "prompt_tokens": 420,
+      "completion_tokens": 142,
+      "thinking_tokens": 117,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Gerätsteuerung: Licht ausschalten",
+      "category": "entity-control",
+      "mode": "default"
+    },
+    {
+      "content": "Ich habe keine Wettervorhersagedaten für morgen. Ich kann nur die aktuellen Sensordaten abrufen (aktuelle Temperaturen, Luftfeuchtigkeit, Sonnenstand). Für Wettervorhersagen benötige ich Zugriff auf externe Wetterdienste, die mir nicht zur Verfügung stehen.",
+      "thinking": "Der Benutzer fragt nach dem Wetter für morgen. Ich habe keine Wettervorhersagedaten im Kontext. Ich habe nur die aktuellen Sensordaten (Temperatur, Luftfeuchtigkeit) und den aktuellen Sonnenstand (sun.sun: above_horizon, elevation 25.3).\n\nIch habe keine Zugriff auf externe Wettervorhersagedaten. Ich muss ehrlich sagen, dass ich keine Wettervorhersage für morgen habe.",
+      "ttft_ms": 3935,
+      "total_ms": 3935,
+      "prompt_tokens": 419,
+      "completion_tokens": 145,
+      "thinking_tokens": 92,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Delegation: Wetter",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Wettervorhersage für morgen\n\nIch habe keine Wettervorhersagedaten für morgen in meinem Kontext. Ich kann nur auf die mir zur Verfügung gestellten Daten zugreifen – darunter aktuelle Raumtemperaturen, Luftfeuchtigkeit und die Position der Sonne heute. Für Wettervorhersagen benötige ich Zugriff auf Wetterdienste oder historische Wetterdaten, die ich aktuell nicht habe.",
+      "thinking": "Der Benutzer fragt nach dem Wetter von morgen. Ich habe im Kontext keine Wettervorhersage-Daten für morgen erhalten. Die einzigen Wetter-ähnlichen Daten, die ich habe, sind:\n- sun.sun: above_horizon, elevation 25.3 (bezieht sich auf die aktuelle Position der Sonne)\n- Raumtemperaturdaten und Luftfeuchtigkeit\n\nKeines davon gibt Auskunft über das Wetter von morgen. Ich muss ehrlich sagen, dass ich auf diese Daten keinen Zugriff habe.",
+      "ttft_ms": 670,
+      "total_ms": 670,
+      "prompt_tokens": 419,
+      "completion_tokens": 186,
+      "thinking_tokens": 108,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Delegation: Wetter",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "Ich habe keinen Zugriff auf deinen Kalender oder Termine. Diese Information wurde mir nicht im Kontext gegeben.\n\nOPENCLAW: Was steht morgen im Kalender?",
+      "thinking": "Der Benutzer fragt nach dem Kalender für morgen. Ich habe keinen Zugriff auf Kalendern oder Termine - diese Information wurde mir nicht im Kontext gegeben. Ich muss ehrlich antworten, dass ich keinen Zugriff auf diese Daten habe.",
+      "ttft_ms": 2115,
+      "total_ms": 2115,
+      "prompt_tokens": 419,
+      "completion_tokens": 81,
+      "thinking_tokens": 57,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "Ich habe keinen Zugriff auf Kalenderdaten oder Termine. Diese Informationen sind nicht in den bereitgestellten Sensordaten oder Gerätezuständen enthalten. Wenn du Kalenderdaten einbinden möchtest, bräuchte ich entsprechende Schnittstellen oder API-Zugänge.",
+      "thinking": "Der Nutzer fragt nach dem Kalender für morgen. Ich habe keinen Zugriff auf Kalenderdaten, Termine oder ähnliche Informationen. Diese sind nicht im Kontext angegeben und gehören nicht zu den Sensordaten oder Gerätezuständen.\n\nIch muss ehrlich antworten, dass ich keinen Zugriff auf solche Daten habe.",
+      "ttft_ms": 2664,
+      "total_ms": 2664,
+      "prompt_tokens": 419,
+      "completion_tokens": 112,
+      "thinking_tokens": 74,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "Ich habe keinen Zugriff auf Informationen über eine Bibliothek oder deren Bestände. Die bereitgestellten Daten enthalten nur Informationen zu Geräten, Sensoren und Umgebungsbedingungen in verschiedenen Räumen (Wohnzimmer, Schlafzimmer, Küche, Büro), aber keine Bibliothek.\n\nOPENCLAW: Ich kann nicht bestätigen, ob \"Severance\" in der Bibliothek vorhanden ist, da ich keinen Zugriff auf Bibliotheksbestände oder deren Inventar habe.",
+      "thinking": "Der Benutzer fragt, ob wir \"Severance\" in der Bibliothek haben.\n\nIch muss prüfen, ob ich Informationen über eine Bibliothek und deren Bestände habe.\n\nIn den bereitgestellten Kontextdaten sehe ich:\n- Geräte- und Sensordaten für verschiedene Räume (Wohnzimmer, Schlafzimmer, Küche, Büro)\n- Temperatur- und Luftfeuchtigkeitssensoren\n- Heizungsdaten\n- Lampenzustände\n- Waschtrockner\n\nEs gibt KEINE Informationen über eine Bibliothek oder deren Bestände in den bereitgestellten Daten.\n\nDa ich keine Daten über eine Bibliothek habe, kann ich nicht bestätigen oder verneinen, ob \"Severance\" (vermutlich ein Buch oder Film) in der Bibliothek vorhanden ist.\n\nIch muss ehrlich antworten, dass ich keinen Zugriff auf diese Information habe.",
+      "ttft_ms": 6703,
+      "total_ms": 6703,
+      "prompt_tokens": 423,
+      "completion_tokens": 269,
+      "thinking_tokens": 182,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Der Nutzer fragt, ob die TV-Serie \"Severance\" in der Bibliothek verfügbar ist. Dies ist eine Frage nach externen Wissen (Verfügbarkeit von Medieninhalten), die nicht in den bereitgestellten Geräte- und Sensordaten enthalten ist.",
+      "thinking": "Der Nutzer fragt, ob \"Severance\" in der Bibliothek vorhanden ist. Dies ist eine Frage nach externen Wissen (obwohl \"Severance\" ein populärer TV-Serie ist, die ich als KI-KI kennen könnte).\n\nLaut den Anweisungen:\n- Wenn eine Frage echtes externes Wissen erfordert, antworte mit OPENCLAW: <die Anfrage in eigenen Worten>\n- Im Zweifel antworte selbst\n- NUR wenn externe Wissen nötig ist\n\n\"Severance\" ist eine bekannte TV-Serie von Apple TV+. Ich habe dieses Wissen in meinem Training. Da dies eine reine Wissensfrage ist und nicht nach Geräten/Sensordaten, sollte ich OPENCLAW verwenden.\n\nAber warten wir - die Anweisung sagt \"Im Zweifel antworte selbst\". Da ich weiß, dass Severance eine existierende TV-Serie ist, könnte ich auch selbst antworten.\n\nEigentlich, die Regel sagt: \"NUR wenn eine Frage echtes externes Wissen erfordert (z.B. Filmtermine, Nachrichten, Rezepte, Wissensfragen), antworte mit: OPENCLAW: <die Anfrage in eigenen Worten>\"\n\n\"Wissensfragen\" sind explizit aufgeführt, also sollte ich OPENCLAW verwenden.",
+      "ttft_ms": 5382,
+      "total_ms": 5382,
+      "prompt_tokens": 423,
+      "completion_tokens": 317,
+      "thinking_tokens": 255,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "Moment mal. Im Wohnzimmer ist bereits die Deckenlampe an, und im Büro ist die Stehlampe an. Was genau möchtest du beleuchten?",
+      "thinking": "Der Benutzer sagt \"Mach mal Licht\" - das ist eine sehr vage Anfrage. Ich muss die vorhandenen Geräte- und Sensordaten analysieren, um zu verstehen, was bereits an ist und was nicht.\n\nAus den Daten:\n- Deckenlampe Wohnzimmer: on\n- Ambiente (Wohnzimmer): off\n- Sternenhimmel (Schlafzimmer): off\n- Deckenlampe Schlafzimmer: off\n- Stehlampe (Büro): on\n\nAlso sind bereits zwei Lampen an:\n1. Deckenlampe im Wohnzimmer\n2. Stehlampe im Büro\n\nDer Benutzer hat nicht spezifiziert, welches Licht er möchte. Da die Anfrage sehr allgemein ist, sollte ich:\n1. Bestätigen, dass bereits Licht an ist\n2. Fragen, welches Licht er genau meint oder ob er etwas anderes möchte\n\nIch darf keine neuen Geräte erfinden oder Werte erfinden. Ich muss nur die gegebenen Daten verwenden.",
+      "ttft_ms": 5581,
+      "total_ms": 5581,
+      "prompt_tokens": 417,
+      "completion_tokens": 233,
+      "thinking_tokens": 189,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "mode": "default"
+    },
+    {
+      "content": "Du hast aktuell zwei Lichter an: die Deckenlampe im Wohnzimmer und die Stehlampe im Büro.\n\nDie anderen Lichter sind noch aus:\n- Ambiente im Wohnzimmer\n- Sternenhimmel im Schlafzimmer\n- Deckenlampe im Schlafzimmer\n\nIch kann keine Befehle ausführen, um Geräte direkt zu steuern, aber ich kann dir gerne Tipps geben, wie du die Beleuchtung optimal nutzen kannst, oder Informationen zu den aktuellen Raumtemperaturen und Luftfeuchtigkeiten teilen.",
+      "thinking": "Der Benutzer bittet mich, Licht anzumachen. Ich sollte prüfen, welche Lichter aktuell an sind und welche noch aus sind, basierend auf den bereitgestellten Gerätedaten.\n\nAktuell an:\n- Deckenlampe Wohnzimmer: on\n- Stehlampe (Büro): on\n\nAus:\n- Ambiente (Wohnzimmer): off\n- Sternenhimmel (Schlafzimmer): off\n- Deckenlampe Schlafzimmer (Schlafzimmer): off\n\nIch habe keine direkte Befehlsmöglichkeit, um Geräte zu steuern - ich kann nur auf die bereitgestellten Daten zugreifen. Ich sollte dem Benutzer mitteilen, welche Lichter bereits an sind, und erklären, dass ich als Haushaltsassistent keine direkten Befehle ausführen kann.",
+      "ttft_ms": 5555,
+      "total_ms": 5555,
+      "prompt_tokens": 417,
+      "completion_tokens": 263,
+      "thinking_tokens": 156,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Die Hauptstadt von Frankreich ist Paris.",
+      "thinking": "Der Benutzer fragt nach der Hauptstadt von Frankreich. Das ist eine reine Wissensfrage, die ich aus meinem internen Wissen beantworten kann. Ich muss nicht auf die im Kontext gegebenen Daten zurückgreifen, da dies keine Frage nach Sensordaten oder Gerätezuständen ist.\n\nDie Hauptstadt von Frankreich ist Paris.",
+      "ttft_ms": 3835,
+      "total_ms": 3835,
+      "prompt_tokens": 420,
+      "completion_tokens": 77,
+      "thinking_tokens": 77,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Sie fragen nach der Hauptstadt von Frankreich.",
+      "thinking": "Der Benutzer fragt nach der Hauptstadt von Frankreich. Das ist eine allgemeine Wissensfrage, keine Frage nach den im Kontext bereitgestellten Geräte- oder Sensordaten.\n\nDa dies echtes externes Wissen erfordert (das nicht im Kontext gegeben ist), muss ich OPENCLAW verwenden, wie in den Regeln angegeben.",
+      "ttft_ms": 2988,
+      "total_ms": 2988,
+      "prompt_tokens": 420,
+      "completion_tokens": 78,
+      "thinking_tokens": 75,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "mode": "default"
+    },
+    {
+      "content": "Hier ist die aktuelle Temperaturübersicht im Haus:\n\nKüche: 17,4 °C (Bewegungsmelder)\nWohnzimmer: 21,8 °C (Klimasensor)\nSchlafzimmer: 19,2 °C (Klimasensor)\n\nZusätzlich sind die Heizungs-Sollwerte eingestellt auf 22 °C im Wohnzimmer und 18 °C im Schlafzimmer.",
+      "thinking": "Der Benutzer möchte eine Übersicht über alle Temperaturen im Haus. Ich muss alle Temperaturdaten aus dem Kontext extrahieren und auflisten.\n\nAus dem Kontext sind folgende Temperaturdaten vorhanden:\n1. Bewegungsmelder Küche: 17.4 °C\n2. Klimasensor Wohnzimmer: 21.8 °C\n3. Klimasensor Schlafzimmer: 19.2 °C\n\nDie Heizungs-Sollwerte (22 °C und 18 °C) sind auch Temperaturangaben, aber sie sind Sollwerte, keine aktuellen Messwerte. Ich sollte sie trotzdem erwähnen, da sie Teil der Temperaturinformationen sind.\n\nIch werde eine klare, natürliche Antwort auf Deutsch geben, ohne Markdown.",
+      "ttft_ms": 5881,
+      "total_ms": 5881,
+      "prompt_tokens": 423,
+      "completion_tokens": 244,
+      "thinking_tokens": 145,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "mode": "default"
+    },
+    {
+      "content": "Hier sind alle aktuell messbaren Temperaturen im Haus:\n\nKüche: 17.4 °C (Bewegungsmelder)\nWohnzimmer: 21.8 °C (Klimasensor)\nSchlafzimmer: 19.2 °C (Klimasensor)\n\nDie Heizungsthermostate zeigen nur die Sollwerte (Wohnzimmer: 22 °C, Schlafzimmer: 18 °C), nicht die aktuellen Raumtemperaturen.",
+      "thinking": "Der Benutzer fragt nach allen Temperaturen im Haus. Ich muss die Temperaturdaten aus dem Kontext extrahieren, die mir zur Verfügung stehen:\n\n1. Bewegungsmelder Küche: 17.4 °C\n2. Klimasensor Wohnzimmer: 21.8 °C\n3. Klimasensor Schlafzimmer: 19.2 °C\n\nIch habe keine anderen Temperaturwerte im Kontext gefunden (wie Heizungsthermostate, die zwar Sollwerte zeigen, aber das sind nicht die aktuellen Raumtemperaturen).\n\nIch werde diese drei Werte auflisten, ohne zu erfinden oder zu interpolieren.",
+      "ttft_ms": 5633,
+      "total_ms": 5633,
+      "prompt_tokens": 423,
+      "completion_tokens": 232,
+      "thinking_tokens": 122,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "512",
+      "conversation": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "mode": "default"
+    },
+    {
+      "content": "Das Licht im Wohnzimmer ist bereits eingeschaltet.",
+      "thinking": "Der Benutzer möchte das Licht im Wohnzimmer einschalten. Laut den aktuellen Gerätedaten ist die Deckenlampe im Wohnzimmer bereits eingeschaltet (\"on\"). Ich sollte dem Benutzer mitteilen, dass das Licht bereits an ist, und keine Funktion aufrufen, da keine Aktion erforderlich ist.",
+      "ttft_ms": 2160,
+      "total_ms": 2160,
+      "prompt_tokens": 913,
+      "completion_tokens": 70,
+      "thinking_tokens": 70,
+      "tokens_per_sec": 0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Benutzer möchte das Licht im Wohnzimmer einschalten. Ich sollte prüfen, welche Lichter im Wohnzimmer bereits aktiv sind.\n\nLaut den Geräten- und Sensordaten:\n- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n\nDa die Deckenlampe bereits eingeschaltet ist, könnte ich entweder:\n1. Keine Aktion durchführen und darauf hinweisen, dass Licht bereits an ist\n2. Die Ambiente-Lampe einschalten, da sie ausgeschaltet ist\n\nDa der Befehl allgemein \"das Licht im Wohnzimmer\" lautet, und die Deckenlampe schon an ist, würde ich die Ambiente-Lampe einschalten, um mehr Licht zu haben.",
+      "ttft_ms": 2736,
+      "total_ms": 2736,
+      "prompt_tokens": 913,
+      "completion_tokens": 177,
+      "thinking_tokens": 148,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOn",
+          "arguments": {
+            "name": "Ambiente",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "512",
+      "conversation": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Benutzer möchte das Licht im Arbeitszimmer heller machen. Ich sehe, dass es eine Stehlampe im Büro gibt, die bereits an ist. Ich sollte die Helligkeit erhöhen.",
+      "ttft_ms": 2134,
+      "total_ms": 2134,
+      "prompt_tokens": 914,
+      "completion_tokens": 81,
+      "thinking_tokens": 40,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassLightSet",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro",
+            "brightness": "80"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Nutzer möchte das Licht im Arbeitszimmer heller machen. Ich sehe, dass es eine Stehlampe im Büro gibt, die bereits an ist. Das \"Arbeitszimmer\" und \"Büro\" sind wahrscheinlich dasselbe. Ich muss die Stehlampe im Büro heller machen.",
+      "ttft_ms": 2912,
+      "total_ms": 2912,
+      "prompt_tokens": 914,
+      "completion_tokens": 102,
+      "thinking_tokens": 58,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassLightSet",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro",
+            "brightness": "80"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "512",
+      "conversation": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Benutzer möchte die Heizung im Schlafzimmer auf 20 Grad stellen. Ich habe Zugriff auf die Funktion HassClimateSetTemperature, um dies zu tun.\n\nAus dem Kontext:\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n\nIch werde die Temperatur auf 20 Grad setzen.",
+      "ttft_ms": 3344,
+      "total_ms": 3344,
+      "prompt_tokens": 917,
+      "completion_tokens": 111,
+      "thinking_tokens": 65,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassClimateSetTemperature",
+          "arguments": {
+            "name": "Heizung Schlafzimmer",
+            "area": "Schlafzimmer",
+            "temperature": "20"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Benutzer möchte die Heizung im Schlafzimmer auf 20 Grad stellen. Ich habe Zugriff auf die Funktion HassClimateSetTemperature, um dies zu tun.\n\nAus dem Kontext weiß ich:\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n\nIch muss die Funktion HassClimateSetTemperature aufrufen mit:\n- name: \"Heizung Schlafzimmer\"\n- area: \"Schlafzimmer\"\n- temperature: \"20\"",
+      "ttft_ms": 2888,
+      "total_ms": 2888,
+      "prompt_tokens": 917,
+      "completion_tokens": 142,
+      "thinking_tokens": 90,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassClimateSetTemperature",
+          "arguments": {
+            "name": "Heizung Schlafzimmer",
+            "area": "Schlafzimmer",
+            "temperature": "20"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "512",
+      "conversation": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Benutzer möchte:\n1. Das Licht im Wohnzimmer ausmachen\n2. Das Licht im Arbeitszimmer (Büro) anmachen\n\nAus den Gerätedaten:\n- Deckenlampe Wohnzimmer (Wohnzimmer): on → soll ausgemacht werden\n- Stehlampe (Büro): on → ist bereits an, aber der Benutzer will es anmachen (vielleicht ein anderes Gerät oder er will es sicherstellen)\n\nIch werde:\n1. Deckenlampe Wohnzimmer ausmachen\n2. Stehlampe im Büro anmachen (ist bereits an, aber ich werde den Befehl trotzdem ausführen)",
+      "ttft_ms": 4587,
+      "total_ms": 4587,
+      "prompt_tokens": 918,
+      "completion_tokens": 166,
+      "thinking_tokens": 117,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOff",
+          "arguments": {
+            "name": "Deckenlampe",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Benutzer möchte das Licht im Wohnzimmer ausmachen und im Arbeitszimmer anmachen.\n\nAus den Gerätedaten sehe ich:\n- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n- Stehlampe (Büro): on\n\nIch muss die Lichter umschalten:\n1. Wohnzimmer: Deckenlampe ist an → ausmachen\n2. Arbeitszimmer: Ich habe keine Lichter im Arbeitszimmer in den Daten. \"Büro\" ist nicht gleich \"Arbeitszimmer\".\n\nIch sollte:\n1. Deckenlampe Wohnzimmer ausmachen\n2. Für das Arbeitszimmer: Ich habe keine Lichter im Arbeitszimmer in den Daten. Ich kann nicht einfach erfinden, ob es welche gibt oder welche Namen sie haben.",
+      "ttft_ms": 3526,
+      "total_ms": 3526,
+      "prompt_tokens": 918,
+      "completion_tokens": 203,
+      "thinking_tokens": 152,
+      "tokens_per_sec": 0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOff",
+          "arguments": {
+            "name": "Deckenlampe Wohnzimmer",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "512",
+      "conversation": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    }
+  ],
+  "quality_scores": {
+    "evaluator": "claude-opus-4-6",
+    "date": "2026-04-02",
+    "budget_0": {
+      "avg_score": 5.2,
+      "scores": {
+        "entity_licht_status": {
+          "score": 8,
+          "issues": [
+            "2 Sätze statt 1"
+          ]
+        },
+        "entity_temperatur": {
+          "score": 6,
+          "issues": [
+            "°C statt Grad (Format)"
+          ]
+        },
+        "entity_multi_sensoren": {
+          "score": 5,
+          "issues": [
+            "°C und % statt ausgeschrieben"
+          ]
+        },
+        "entity_licht_aus": {
+          "score": 9,
+          "issues": []
+        },
+        "delegation_wetter": {
+          "score": 2,
+          "issues": [
+            "FAIL: Kein OPENCLAW-Prefix, antwortet selbst"
+          ]
+        },
+        "delegation_kalender": {
+          "score": 6,
+          "issues": [
+            "OPENCLAW erst am Ende, viel Fülltext"
+          ]
+        },
+        "delegation_medien": {
+          "score": 4,
+          "issues": [
+            "OPENCLAW erst am Ende, Unsinn-Inhalt"
+          ]
+        },
+        "edge_mehrdeutig": {
+          "score": 7,
+          "issues": [
+            "Fragt nach, aber nicht direkt welcher Raum"
+          ]
+        },
+        "edge_allgemeinwissen": {
+          "score": 2,
+          "issues": [
+            "FAIL: Delegiert statt selbst antworten"
+          ]
+        },
+        "edge_format": {
+          "score": 3,
+          "issues": [
+            "Liste statt Fließtext, °C statt Grad"
+          ]
+        },
+        "tool_licht_ein": {
+          "score": 3,
+          "issues": [
+            "FAIL: Kein Tool-Call, sagt ist schon an"
+          ]
+        },
+        "tool_heller": {
+          "score": 9,
+          "issues": []
+        },
+        "tool_heizung": {
+          "score": 10,
+          "issues": []
+        },
+        "tool_zwei_geraete": {
+          "score": 4,
+          "issues": [
+            "Nur 1 von 2 Tool-Calls"
+          ]
+        }
+      }
+    },
+    "budget_512": {
+      "avg_score": 5.0,
+      "scores": {
+        "delegation_wetter": {
+          "score": 4,
+          "issues": [
+            "OPENCLAW da, aber Fülltext"
+          ]
+        },
+        "delegation_kalender": {
+          "score": 2,
+          "issues": [
+            "Kein OPENCLAW mehr"
+          ]
+        },
+        "edge_allgemeinwissen": {
+          "score": 2,
+          "issues": [
+            "Delegiert immer noch"
+          ]
+        },
+        "edge_mehrdeutig": {
+          "score": 4,
+          "issues": [
+            "Listet alles auf statt nachfragen"
+          ]
+        },
+        "tool_licht_ein": {
+          "score": 6,
+          "issues": [
+            "Tool-Call da, aber Ambiente statt Deckenlampe"
+          ]
+        },
+        "tool_zwei_geraete": {
+          "score": 4,
+          "issues": [
+            "Nur 1 Tool-Call"
+          ]
+        }
+      }
+    },
+    "critical_issues": [
+      "OPENCLAW-Delegation unzuverlässig (Wetter nicht delegiert, Paris delegiert)",
+      "Format-Regeln ignoriert (°C, %, Markdown, Listen)",
+      "Multi-Tool-Calls: nur 1 von 2",
+      "Tool-Call Licht ein: verweigert bei Budget 0"
+    ]
+  }
+}
