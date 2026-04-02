@@ -168,6 +168,16 @@ scripts/consult-agent.sh <komponente> "<frage>" --with-decisions
 
 Das Script liest Token, description.md und Scopes-Header automatisch.
 
+### Workflow-Tracking (PFLICHT)
+
+Bei jedem nicht-trivialen Workflow: ALLE Schritte (1-14 inkl. /reflect) als Tasks
+anlegen (TaskCreate) BEVOR mit der Arbeit begonnen wird. Keine nachtraeglichen
+Ergaenzungen — die vollstaendige Task-Liste muss ab Schritt 1 stehen.
+Tasks in der Statusleiste zeigen dem User und dem Orchestrator den Fortschritt.
+Status laufend aktualisieren (pending → in_progress → completed).
+Abhaengigkeiten setzen (addBlockedBy). Tasks die aufgrund der Anfrage
+uebersprungen werden: Status auf completed mit Begruendung im Description-Feld.
+
 ### Workflow bei neuen Features / Aenderungen
 
 1. Ziel klaeren mit User
@@ -187,9 +197,10 @@ Das Script liest Token, description.md und Scopes-Header automatisch.
 8. Build: `npm run build` / `openclaw plugins doctor`
 9. `/tester` liest `testinstruct.md`, fuehrt Tests aus — mindestens Health-Checks + Plugin-Doctor
 10. `/reviewer` prueft — listet Findings (mechanisch + Design)
-10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → Orchestrator delegiert an `/coder` (NIE selbst fixen!)
+10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → SOFORT an `/coder` delegieren, nicht User fragen (NIE selbst fixen!)
 10b. Design-Findings die den Workflow BLOCKIEREN (Architektur, API-Bruch, Sicherheit) → SOFORT User-Input holen
-10c. Nicht-blockierende Design-Findings → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
+10c. Nicht-blockierende Design-Findings die keine User-Entscheidung brauchen → SOFORT an `/coder` delegieren
+10d. Nicht-blockierende Design-Findings die User-Input brauchen → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
 11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
 12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
 13. Ship it: Commit + Deploy — Zusammenfassung zeigt geparkte Design-Findings aus 10c

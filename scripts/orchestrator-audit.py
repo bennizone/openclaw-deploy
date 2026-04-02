@@ -174,6 +174,8 @@ def check_violations(calls: list[dict], segments: list[dict]) -> list[dict]:
                 had_tester = True
             elif skill == "docs":
                 had_docs = True
+        elif call["name"] == "Bash" and "consult-agent.sh" in call.get("input", ""):
+            had_consult = True
         elif call["name"] == "Read" and "components/" in call["input"] and "description.md" in call["input"]:
             had_description_read = True
         if call["name"] in WRITE_TOOLS and not has_edits:
@@ -331,7 +333,11 @@ def format_report(session_name: str, calls: list[dict], segments: list[dict],
         c["name"] == "Read" and "components/" in c["input"] and "description.md" in c["input"]
         for c in calls
     )
-    has_consult = bool(skills_used & {"consult", "plan-review"})
+    has_consult_bash = any(
+        c["name"] == "Bash" and "consult-agent.sh" in c.get("input", "")
+        for c in calls
+    )
+    has_consult = bool(skills_used & {"consult", "plan-review"}) or has_consult_bash
 
     def check(ok: bool) -> str:
         return "[x]" if ok else "[ ]"

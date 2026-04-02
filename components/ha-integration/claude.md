@@ -1,5 +1,25 @@
 # Agent-Scope: HA-Integration
 
+**Alias:** Auch bekannt als "home-llm" (Code-Verzeichnis: `services/home-llm/`).
+
+## Credentials & Zugang
+
+```
+HA Token:    ~/.openclaw/.env → HA_LONG_LIVED_TOKEN
+HA SSH:      root@haos.home.benni.zone (Key-Auth, kein Passwort)
+HA URL:      https://haos.home.benni.zone
+Backup API:  POST /api/services/hassio/backup_full  {"name": "..."}
+Restart API: POST /api/services/homeassistant/restart
+```
+
+## Entity-IDs
+
+```
+conversation.home_llm_household   # Household-Agent (Qwen via HA Assist)
+conversation.home_llm_benni       # Benni-Agent
+conversation.home_llm_domi        # Domi-Agent
+```
+
 ## Meine Dateien
 
 ```

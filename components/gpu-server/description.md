@@ -18,7 +18,7 @@ GPU-Server (${GPU_SERVER_IP})
 │   ├── reasoning-budget: 2048 (Server-Maximum, per API-Request steuerbar)
 │   ├── threads: 1 (Inference), threads-batch: nproc-2 (dynamisch)
 │   ├── jinja: Template-Support fuer Chat-Formate
-│   └── Throughput: ~51 t/s single (RTX 2070s), ~36 t/s (GTX 1080 Ti)
+│   └── Throughput: ~49 t/s single (RTX 2070s, ctx 65536), ~36 t/s (GTX 1080 Ti)
 │
 ├── llama-server :8081 — bge-m3 Q8_0 (Embedding, CUDA)
 │   ├── Modell: bge-m3-q8_0.gguf (634 MB)
@@ -104,4 +104,5 @@ setup/gpu-server/
 1. SSH auf GPU-Server
 2. `cd ~/llama.cpp && git pull`
 3. `rm -rf build && bash ~/openclaw-deploy/setup/gpu-server/build-llama-cpp.sh`
-4. Services neustarten
+4. Alte Prozesse pruefen und beenden: `ps aux | grep llama-server` (nach Reboot koennen Zombie-Prozesse Ports blockieren)
+5. Services neustarten
