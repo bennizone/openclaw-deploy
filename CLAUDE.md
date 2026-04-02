@@ -54,6 +54,7 @@ Die `config`-Sektion speichert Interview-Antworten fuer spaetere Referenz.
 
 - **Neues System aufsetzen:** `/onboard`
 - **Hilfe zum System:** `/helper`
+- **Wartungsmodus:** Siehe `docs/maintenance-mode.md`
 - **Alle Commands:** Siehe Abschnitt "Slash-Commands" unten
 
 ## Architektur

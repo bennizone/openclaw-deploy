@@ -8,7 +8,8 @@ Reproduzierbares Setup fuer einen kompletten OpenClaw Smart-Home-Stack mit Claud
 - **GPU-Server** — Lokales LLM (Qwen 3.5 9B) + Embeddings (bge-m3) via llama.cpp
 - **Memory-System** — Qdrant Vektordatenbank + automatische Fakten-Extraktion
 - **Home Assistant Integration** — Sprachassistent als HA Conversation Agent
-- **3 Plugins** — HA Voice, Memory Recall, Sonarr/Radarr (HA-Skill optional via ClaWHub)
+- **3 Plugins** — HA Voice, Memory Recall, Sonarr/Radarr
+- **Tool-Hub MCP** — Web-Suche, Bildanalyse, Medien (Sonarr/Radarr), Kalender, Kontakte, Wetter
 
 ## Voraussetzungen
 
@@ -167,6 +168,10 @@ journalctl --user -u openclaw-gateway.service -f
 | `/reviewer` | Code-Review |
 | `/tester` | Tests + Health-Checks |
 | `/docs` | Dokumentation pflegen |
+| `/ha-admin` | Home Assistant verwalten |
+| `/consult` | Komponenten-Agent befragen |
+| `/plan-review` | Konsultationsrunde an betroffene Agenten |
+| `/reflect` | Session Self-Reflection |
 
 ## Projektstruktur
 
@@ -174,10 +179,11 @@ journalctl --user -u openclaw-gateway.service -f
 openclaw-deploy/
 ├── CLAUDE.md              # Claude Code Systemwissen
 ├── README.md              # Diese Datei
-├── .claude/commands/      # 10 Slash-Commands (Agenten)
+├── .claude/commands/      # 14 Slash-Commands (Agenten)
+├── components/            # Komponenten-Agenten (Wissen + Scope)
 ├── config/                # Config-Templates + Versions
 ├── plugins/               # 3 OpenClaw Plugins (Source)
-├── services/              # Extractor + Home LLM
+├── services/              # Extractor, Home LLM, Tool-Hub MCP
 ├── setup/                 # Setup-Scripts + systemd
 ├── agents/                # Agent-Workspace-Templates
 ├── troubleshooting/       # Bekannte Probleme + Loesungen
