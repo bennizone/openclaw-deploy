@@ -2,7 +2,6 @@
 
 DOMAIN = "home_llm"
 
-CONF_API_KEY = "api_key"
 CONF_PERSONA = "persona"
 CONF_QDRANT_URL = "qdrant_url"
 CONF_EMBED_URL = "embed_url"
@@ -32,3 +31,14 @@ CONF_OPENCLAW_API_KEY = "openclaw_api_key"
 DEFAULT_OPENCLAW_URL = "http://localhost:18789"
 DEFAULT_OPENCLAW_API_KEY = ""
 OPENCLAW_INTENT_PREFIX = "OPENCLAW:"
+
+CONF_ENABLE_CONTROL = "enable_control"
+DEFAULT_ENABLE_CONTROL = True
+
+CONF_THINKING_BUDGET = "thinking_budget"
+DEFAULT_THINKING_BUDGET = 256
+
+EXTRA_ATTRIBUTES_TO_EXPOSE = [
+    "brightness", "temperature", "rgb_color", "color_temp",
+    "humidity", "fan_mode",
+]

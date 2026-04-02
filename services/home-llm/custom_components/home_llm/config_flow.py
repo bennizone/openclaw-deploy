@@ -19,6 +19,8 @@ from .const import (
     CONF_LLM_MODEL,
     CONF_OPENCLAW_URL,
     CONF_OPENCLAW_API_KEY,
+    CONF_ENABLE_CONTROL,
+    CONF_THINKING_BUDGET,
     DEFAULT_AGENT_ID,
     DEFAULT_PERSONA,
     DEFAULT_QDRANT_URL,
@@ -29,6 +31,8 @@ from .const import (
     DEFAULT_LLM_MODEL,
     DEFAULT_OPENCLAW_URL,
     DEFAULT_OPENCLAW_API_KEY,
+    DEFAULT_ENABLE_CONTROL,
+    DEFAULT_THINKING_BUDGET,
 )
 
 
@@ -48,7 +52,7 @@ async def _validate_llm(llm_url: str) -> bool:
 class HomeLLMConfigFlow(ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Home LLM."""
 
-    VERSION = 5
+    VERSION = 6
 
     async def async_step_user(self, user_input=None):
         errors = {}
@@ -72,6 +76,8 @@ class HomeLLMConfigFlow(ConfigFlow, domain=DOMAIN):
                         CONF_TOP_K: user_input.get(CONF_TOP_K, DEFAULT_TOP_K),
                         CONF_OPENCLAW_URL: user_input.get(CONF_OPENCLAW_URL, DEFAULT_OPENCLAW_URL),
                         CONF_OPENCLAW_API_KEY: user_input.get(CONF_OPENCLAW_API_KEY, DEFAULT_OPENCLAW_API_KEY),
+                        CONF_ENABLE_CONTROL: user_input.get(CONF_ENABLE_CONTROL, DEFAULT_ENABLE_CONTROL),
+                        CONF_THINKING_BUDGET: user_input.get(CONF_THINKING_BUDGET, DEFAULT_THINKING_BUDGET),
                     },
                 )
             errors["base"] = "cannot_connect"
@@ -90,6 +96,8 @@ class HomeLLMConfigFlow(ConfigFlow, domain=DOMAIN):
                     vol.Optional(CONF_TOP_K, default=DEFAULT_TOP_K): int,
                     vol.Optional(CONF_OPENCLAW_URL, default=DEFAULT_OPENCLAW_URL): str,
                     vol.Optional(CONF_OPENCLAW_API_KEY, default=DEFAULT_OPENCLAW_API_KEY): str,
+                    vol.Optional(CONF_ENABLE_CONTROL, default=DEFAULT_ENABLE_CONTROL): bool,
+                    vol.Optional(CONF_THINKING_BUDGET, default=DEFAULT_THINKING_BUDGET): int,
                 }
             ),
             errors=errors,
@@ -125,6 +133,8 @@ class HomeLLMOptionsFlow(OptionsFlow):
                     vol.Optional(CONF_TOP_K, default=opts.get(CONF_TOP_K, DEFAULT_TOP_K)): int,
                     vol.Optional(CONF_OPENCLAW_URL, default=opts.get(CONF_OPENCLAW_URL, DEFAULT_OPENCLAW_URL)): str,
                     vol.Optional(CONF_OPENCLAW_API_KEY, default=opts.get(CONF_OPENCLAW_API_KEY, DEFAULT_OPENCLAW_API_KEY)): str,
+                    vol.Optional(CONF_ENABLE_CONTROL, default=opts.get(CONF_ENABLE_CONTROL, DEFAULT_ENABLE_CONTROL)): bool,
+                    vol.Optional(CONF_THINKING_BUDGET, default=opts.get(CONF_THINKING_BUDGET, DEFAULT_THINKING_BUDGET)): int,
                 }
             ),
         )

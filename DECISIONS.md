@@ -1,5 +1,32 @@
 # DECISIONS.md — OpenClaw Deploy
 
+## 2026-04-02: Native Tool-Calling + LLM-Benchmark
+
+### home-llm: Natives Tool-Calling statt Text-Parsing
+
+- **Kontext:** HA's Intent-System versteht keine relativen deutschen Befehle ("mach es heller").
+  Text-basiertes Tool-Calling (`<tool_call>` Tags) funktionierte nicht — Qwen ignorierte ICL-Beispiele.
+- **Entscheidung:** Natives llama.cpp Tool-Calling ueber OpenAI-kompatible API + HA Assist API.
+  Schema-Konvertierung via `voluptuous_openapi`. ~3s pro Tool-Call, korrekte Args.
+- **Architektur:** Dreistufiges Routing:
+  1. HA Intent (<1s) — Standard-Befehle
+  2. LLM Tool-Calling (~3s) — Relative/komplexe Befehle
+  3. OpenClaw (5-10s) — Externes Wissen
+- Tool-Call-Fehler → Retry als HA Intent (agent_id=conversation.home_assistant)
+- Tool-Call-Logging (TOOL_CALL_SUCCESS/FAIL) fuer spaetere Intent-System-Erweiterung
+
+### GPU-Server: Reasoning-Budget 2048
+
+- **Kontext:** Budget war 1024, zu eng fuer Thinking-Modelle.
+  `--think-budget-message` Flag existiert nicht in aktueller llama.cpp Version.
+- **Entscheidung:** `--reasoning-budget 2048` als Server-Obergrenze. Per API pro Request steuerbar.
+
+### /bench LLM-Benchmark Slash-Command
+
+- **Kontext:** Bei jedem neuen LLM das Rad neu erfinden vermeiden.
+- **Entscheidung:** Interaktiver Benchmark-Wizard mit fixen Testdatensaetzen (HA 10, Memory 10, Fallback 7).
+  Scripts fuer TTFT, t/s, Thinking-Budget-Tests. Claude bewertet Antwortqualitaet.
+
 ## 2026-03-31: Initiales Onboarding
 
 ### Setup-Uebersicht

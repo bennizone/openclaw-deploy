@@ -31,7 +31,38 @@ Zugriff hast" bei fehlenden Daten. Verbietet Erfinden von Werten.
 **Alternativen verworfen:**
 - Nur Kontext-Injection — reicht nicht, Qwen halluziniert trotzdem
 
-## 2026-03-29 — enable_thinking: false PFLICHT
+## 2026-04-02 — Natives Tool-Calling via Assist API
+
+**Kontext:** HA Intent-System versteht keine relativen Befehle ("mach es heller").
+Text-basiertes Tool-Calling (`<tool_call>` Tags) scheiterte — Qwen ignorierte ICL-Beispiele
+und antwortete auf Englisch mit "I cannot control devices".
+
+**Entscheidung:** Natives llama.cpp Tool-Calling ueber OpenAI-kompatible API.
+Assist API Tools via `llm.async_get_api("assist", ...)` holen,
+Schemas via `voluptuous_openapi.convert()` konvertieren,
+als `tools` Parameter im Chat-Completion-Request mitschicken.
+~3s pro Tool-Call, korrekte Args (getestet: HassTurnOn, HassLightSet).
+
+**Alternativen verworfen:**
+- Text-basiertes `<tool_call>` Parsing — Modell nicht dafuer trainiert, unzuverlaessig
+- HA `openai_compatible_conversation` — haette funktioniert, aber kein Memory/OPENCLAW
+- Custom Sentences — nur fuer haeufige Muster, nicht fuer beliebige Befehle
+
+## 2026-04-02 — Thinking-Budget konfigurierbar (Default 256)
+
+**Kontext:** Bisher `enable_thinking: false` Pflicht. Tests zeigen: Tool-Calls
+funktionieren mit und ohne Thinking identisch (~0.2s Unterschied).
+
+**Entscheidung:** Thinking-Budget als Config-Option (Default 256, 0=deaktiviert).
+Benchmark via `/bench` soll optimalen Wert ermitteln.
+
+**Alternativen verworfen:**
+- Immer aus — verliert Option fuer komplexere Berechnungen
+- Immer an mit hohem Budget — unnoetige Latenz bei einfachen Befehlen
+
+## 2026-03-29 — enable_thinking: false PFLICHT (VERALTET)
+
+**Status:** Durch konfiguriertes Thinking-Budget ersetzt (siehe 2026-04-02).
 
 **Kontext:** Qwen 3.5 denkt standardmaessig sichtbar nach. In der Sprachausgabe
 werden dann Thinking-Tokens vorgelesen.

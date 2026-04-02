@@ -1,0 +1,142 @@
+{
+  "description": "Memory-Extraction Benchmark — 10 synthetische Konversationen mit Ground Truth",
+  "version": 1,
+  "source": "services/extractor/src/benchmark-synthetic.ts",
+  "conversations": [
+    {
+      "name": "Licht-Praeferenzen",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Mach mal das Licht im Wohnzimmer an" },
+        { "role": "assistant", "content": "Das Licht im Wohnzimmer ist jetzt an. Soll ich eine bestimmte Helligkeit oder Farbtemperatur einstellen?" },
+        { "role": "user", "content": "Ja, abends mag ich es gerne warmweiß, so 2700K oder wärmer. Nicht so kalt." },
+        { "role": "assistant", "content": "Verstanden! Ich habe das Wohnzimmer-Licht auf 2700K eingestellt. Gemütlich warm!" },
+        { "role": "user", "content": "Perfekt, genau so." },
+        { "role": "assistant", "content": "Schön! Ich merke mir, dass du abends warmweißes Licht bevorzugst." }
+      ],
+      "expectedFacts": ["Benni bevorzugt abends warmweißes Licht (2700K oder wärmer)"],
+      "expectedRejects": ["Wohnzimmer-Licht ist an", "Licht auf 2700K eingestellt"]
+    },
+    {
+      "name": "Pizza-Praeferenz mit Korrektur",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Bestell uns mal Pizza heute Abend" },
+        { "role": "assistant", "content": "Klar! Was für Pizza möchtet ihr?" },
+        { "role": "user", "content": "Ich mag am liebsten Margherita mit extra Käse. Domi will immer Hawaii." },
+        { "role": "assistant", "content": "Also eine Margherita mit extra Käse für dich und eine Hawaii für Domi. Soll ich bestellen?" },
+        { "role": "user", "content": "Moment, Domi hat gesagt sie will diesmal Salami statt Hawaii." },
+        { "role": "assistant", "content": "Ok, dann Margherita mit extra Käse für dich und Salami für Domi!" }
+      ],
+      "expectedFacts": [
+        "Benni mag am liebsten Pizza Margherita mit extra Käse",
+        "Domi will Salami-Pizza (korrigiert von Hawaii)"
+      ],
+      "expectedRejects": ["Pizza bestellt", "heute Abend Pizza"]
+    },
+    {
+      "name": "Serien-Praeferenzen",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Haben wir Scrubs in der Bibliothek?" },
+        { "role": "assistant", "content": "Ja, Scrubs ist vorhanden! Alle 9 Staffeln." },
+        { "role": "user", "content": "Super, das ist meine Lieblingsserie. Und schau mal ob Breaking Bad auch da ist." },
+        { "role": "assistant", "content": "Breaking Bad ist auch verfügbar, alle 5 Staffeln plus El Camino." },
+        { "role": "user", "content": "Nice. Wir schauen gerade die zweite Staffel Breaking Bad zusammen." },
+        { "role": "assistant", "content": "Viel Spaß! Breaking Bad wird ab Staffel 3 richtig intensiv." }
+      ],
+      "expectedFacts": [
+        "Scrubs ist Bennis Lieblingsserie",
+        "Benni und Domi schauen gerade Breaking Bad Staffel 2"
+      ],
+      "expectedRejects": ["Scrubs hat 9 Staffeln", "Breaking Bad hat 5 Staffeln"]
+    },
+    {
+      "name": "Schlafzimmer-Einstellungen",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Wie warm ist es im Schlafzimmer?" },
+        { "role": "assistant", "content": "Im Schlafzimmer sind es aktuell 21.3°C bei 45% Luftfeuchtigkeit." },
+        { "role": "user", "content": "Das ist zu warm zum Schlafen. Wir schlafen am liebsten bei 18 Grad." },
+        { "role": "assistant", "content": "Verstanden! Soll ich die Heizung im Schlafzimmer auf 18°C stellen?" },
+        { "role": "user", "content": "Ja bitte. Und ab 22 Uhr sollte die Heizung immer automatisch auf 18 Grad runterregeln." },
+        { "role": "assistant", "content": "Erledigt! Die Heizung im Schlafzimmer regelt jetzt ab 22 Uhr auf 18°C herunter." }
+      ],
+      "expectedFacts": [
+        "Bevorzugte Schlaftemperatur ist 18 Grad",
+        "Heizung Schlafzimmer soll ab 22 Uhr auf 18 Grad runterregeln"
+      ],
+      "expectedRejects": ["Schlafzimmer 21.3°C", "45% Luftfeuchtigkeit"]
+    },
+    {
+      "name": "Rein technisch — keine Facts",
+      "agentId": "household",
+      "turns": [
+        { "role": "user", "content": "Welche Lichter gibt es?" },
+        { "role": "assistant", "content": "Es gibt 12 Light-Entities: Ambiente, Deckenlampe Wohnzimmer, Sternenhimmel..." },
+        { "role": "user", "content": "Zeig mir die area_id für jede Entity" },
+        { "role": "assistant", "content": "Die State-API gibt leider keine area_id zurück. Die steckt im Entity Registry." }
+      ],
+      "expectedFacts": [],
+      "expectedRejects": ["12 Light-Entities", "area_id nicht verfügbar"]
+    },
+    {
+      "name": "Implizite Bestaetigung",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Erzähl mir was über Katzen" },
+        { "role": "assistant", "content": "Katzen sind faszinierende Tiere! Habt ihr eine Katze?" },
+        { "role": "user", "content": "Ja, wir haben zwei Katzen. Luna und Milo." },
+        { "role": "assistant", "content": "Oh wie süß! Luna und Milo, schöne Namen!" }
+      ],
+      "expectedFacts": ["Im Haushalt gibt es zwei Katzen: Luna und Milo"],
+      "expectedRejects": ["Katzen sind faszinierende Tiere"]
+    },
+    {
+      "name": "Sensorwerte ohne Praeferenz",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Wie ist das Klima im Wohnzimmer?" },
+        { "role": "assistant", "content": "Wohnzimmer: 22.1°C, 42% Luftfeuchtigkeit, CO2 bei 650ppm." },
+        { "role": "user", "content": "Ok danke" },
+        { "role": "assistant", "content": "Gerne! Sag Bescheid wenn du was ändern möchtest." }
+      ],
+      "expectedFacts": [],
+      "expectedRejects": ["22.1°C", "42% Luftfeuchtigkeit", "650ppm CO2"]
+    },
+    {
+      "name": "Medien-Wunsch",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Kannst du Severance zur Watchlist hinzufügen? Das will ich unbedingt schauen." },
+        { "role": "assistant", "content": "Severance wurde zur Watchlist hinzugefügt!" }
+      ],
+      "expectedFacts": ["Benni will Severance schauen"],
+      "expectedRejects": []
+    },
+    {
+      "name": "Familieninfo",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Nächsten Samstag kommen meine Eltern zu Besuch, die wohnen in Stuttgart." },
+        { "role": "assistant", "content": "Notiert! Soll ich dich am Freitag daran erinnern?" },
+        { "role": "user", "content": "Ja, gute Idee." },
+        { "role": "assistant", "content": "Erinnerung für Freitag ist gesetzt!" }
+      ],
+      "expectedFacts": ["Bennis Eltern wohnen in Stuttgart"],
+      "expectedRejects": ["Besuch nächsten Samstag"]
+    },
+    {
+      "name": "Assistent behauptet — User ignoriert",
+      "agentId": "benni",
+      "turns": [
+        { "role": "user", "content": "Mach das Licht aus" },
+        { "role": "assistant", "content": "Alles klar! Du scheinst ein Nachtmensch zu sein, um diese Uhrzeit noch wach!" },
+        { "role": "user", "content": "Danke" },
+        { "role": "assistant", "content": "Gute Nacht!" }
+      ],
+      "expectedFacts": [],
+      "expectedRejects": ["Nachtmensch", "Licht ist aus"]
+    }
+  ]
+}

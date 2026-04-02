@@ -84,11 +84,11 @@ User (Voice/Text) → HA Assist Pipeline → home_llm conversation.py
 ## Bekannte Einschraenkungen
 
 - **Kein Streaming** — Antworten komplett generiert vor TTS
-- **Kein Tool-Calling** — Qwen kann keine HA-Services aufrufen; HA's Intent-System uebernimmt
-- **max_tokens = 256** — Begrenzt Antwortlaenge (reicht fuer Sprachausgabe)
+- **Tool-Calling (~3s)** — Natives llama.cpp Tool-Calling via Assist API fuer Geraetesteuerung
+- **max_tokens = 512** — Begrenzt Antwortlaenge (inkl. Tool-Call-Overhead)
 - **OpenClaw-Delegation dauert ~7-13s** — MiniMax API + OpenClaw Overhead
 - **Zwischenmeldung fehlt** — "Moment, ich schaue nach..." noch nicht implementiert
-- **enable_thinking: false PFLICHT** — Sonst denkt Qwen sichtbar nach in der Sprachausgabe
+- **Thinking-Budget konfigurierbar** — Default 256 Tokens, 0 = deaktiviert. Bei Geraetesteuerung hilft Thinking bei relativen Befehlen
 - **ZigBee-Delay nach HA-Restart** — Sensoren temporaer `unknown`
 
 ## Neues Feature hinzufuegen

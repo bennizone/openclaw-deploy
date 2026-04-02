@@ -20,7 +20,7 @@ ExecStart=/home/GPUUSER/llama.cpp/build/bin/llama-server \
   --jinja \
   --threads 1 \
   --threads-batch ${THREADS_BATCH} \
-  --reasoning-budget 1024
+  --reasoning-budget 2048
 Restart=always
 RestartSec=5
 

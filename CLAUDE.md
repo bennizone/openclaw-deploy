@@ -236,6 +236,12 @@ Bei jeder Aenderung an `openclaw.json`:
 
 Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json` → sofortiger Rollback
 
+## CLAUDE.md Pflege
+
+Diese Datei soll eine knappe Referenz bleiben. Details (Ablaeufe, Testdaten,
+Architektur-Erklaerungen) gehoeren in eigene Dateien (`docs/`, `benchmarks/README.md`,
+`components/*/`). Hier nur Einzeiler, Tabellen-Eintraege und Verweise.
+
 ## Kritische Lektionen (NICHT wiederholen!)
 
 1. **Node 24 VOR OpenClaw installieren** — sonst PATH-Probleme
@@ -271,6 +277,7 @@ Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openc
 | `/consult` | Einzelnen Komponenten-Agent via MiniMax befragen | — |
 | `/plan-review` | Konsultationsrunde an betroffene Agenten | — |
 | `/reflect` | Session Self-Reflection (Token-Waste Analyse) | — |
+| `/bench` | LLM-Benchmark (interaktiv, Ergebnisse in `benchmarks/`) | Sonnet |
 
 ## ENV-Substitution
 

@@ -1,6 +1,7 @@
-"""Home LLM conversation agent."""
+"""Home LLM conversation agent with native tool-calling via Assist API."""
 from __future__ import annotations
 
+import json
 import logging
 import time
 from datetime import datetime
@@ -11,7 +12,7 @@ from homeassistant.components import conversation
 from homeassistant.components.conversation import ConversationInput, ConversationResult
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers import intent
+from homeassistant.helpers import intent, llm as llm_helper
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import (
@@ -26,6 +27,8 @@ from .const import (
     CONF_LLM_MODEL,
     CONF_OPENCLAW_URL,
     CONF_OPENCLAW_API_KEY,
+    CONF_ENABLE_CONTROL,
+    CONF_THINKING_BUDGET,
     DEFAULT_AGENT_ID,
     DEFAULT_PERSONA,
     DEFAULT_QDRANT_URL,
@@ -36,12 +39,16 @@ from .const import (
     DEFAULT_LLM_MODEL,
     DEFAULT_OPENCLAW_URL,
     DEFAULT_OPENCLAW_API_KEY,
+    DEFAULT_ENABLE_CONTROL,
+    DEFAULT_THINKING_BUDGET,
     EMBEDDING_MODEL,
     MAX_HISTORY_MESSAGES,
     OPENCLAW_INTENT_PREFIX,
+    EXTRA_ATTRIBUTES_TO_EXPOSE,
 )
 
 _LOGGER = logging.getLogger(__name__)
+_TOOL_LOGGER = logging.getLogger(f"{__name__}.tool_calls")
 
 
 async def async_setup_entry(
@@ -54,7 +61,7 @@ async def async_setup_entry(
 
 
 class HomeLLMConversationEntity(conversation.ConversationEntity):
-    """Home LLM conversation agent with memory recall."""
+    """Home LLM conversation agent with memory recall and native tool-calling."""
 
     _attr_has_entity_name = True
     _attr_should_poll = False
@@ -67,6 +74,13 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         agent_id = entry.options.get(CONF_AGENT_ID, DEFAULT_AGENT_ID)
         self._attr_name = f"Home LLM ({agent_id})"
         self._buffers: dict[str, list[tuple[float, str, str]]] = {}
+
+        if entry.options.get(CONF_ENABLE_CONTROL, DEFAULT_ENABLE_CONTROL):
+            self._attr_supported_features = (
+                conversation.ConversationEntityFeature.CONTROL
+            )
+
+    # ── Properties ──
 
     @property
     def _agent_id(self) -> str:
@@ -116,11 +130,23 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
     def _openclaw_api_key(self) -> str:
         return self.entry.options.get(CONF_OPENCLAW_API_KEY, DEFAULT_OPENCLAW_API_KEY)
 
+    @property
+    def _enable_control(self) -> bool:
+        return self.entry.options.get(CONF_ENABLE_CONTROL, DEFAULT_ENABLE_CONTROL)
+
+    @property
+    def _thinking_budget(self) -> int:
+        return self.entry.options.get(CONF_THINKING_BUDGET, DEFAULT_THINKING_BUDGET)
+
+    # ── Lifecycle ──
+
     async def async_added_to_hass(self) -> None:
         conversation.async_set_agent(self.hass, self.entry, self)
 
     async def async_will_remove_from_hass(self) -> None:
         conversation.async_unset_agent(self.hass, self.entry)
+
+    # ── Entity context ──
 
     def _build_daylight_context(self) -> str:
         sun_state = self.hass.states.get("sun.sun")
@@ -135,7 +161,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
             return "Nacht, gedimmtes warmes Licht bevorzugt"
 
     def _build_exposed_entities_context(self) -> str:
-        """Build context from HA-exposed entities (Settings > Voice Assistants > Expose)."""
+        """Build context from HA-exposed entities with entity_id and attributes."""
         try:
             from homeassistant.components.homeassistant.exposed_entities import (
                 async_should_expose,
@@ -166,20 +192,40 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                 area = self._get_entity_area(state.entity_id)
                 attrs = state.attributes
 
-                # Weather entities: include temp + humidity from attributes
                 if state.entity_id.startswith("weather."):
                     condition = condition_map.get(state.state, state.state)
                     parts = [condition]
                     if (temp := attrs.get("temperature")) is not None:
                         parts.append(f"{temp}°C")
                     if (hum := attrs.get("humidity")) is not None:
-                        parts.append(f"{hum}% Luftfeuchtigkeit")
-                    val = ", ".join(parts)
+                        parts.append(f"{hum}%")
+                    state_str = ";".join(parts)
                 else:
                     unit = attrs.get("unit_of_measurement", "")
-                    val = f"{state.state} {unit}".strip()
+                    state_str = f"{state.state} {unit}".strip()
 
-                entry = f"- {name} ({area}): {val}" if area else f"- {name}: {val}"
+                    extra = []
+                    for attr_name in EXTRA_ATTRIBUTES_TO_EXPOSE:
+                        val = attrs.get(attr_name)
+                        if val is None:
+                            continue
+                        if attr_name == "brightness":
+                            extra.append(f"{int(val / 255 * 100)}%")
+                        elif attr_name == "temperature":
+                            extra.append(f"{val}°C")
+                        elif attr_name == "humidity":
+                            extra.append(f"{val}%")
+                        elif attr_name == "rgb_color":
+                            extra.append(f"rgb{val}")
+                        elif attr_name == "color_temp":
+                            extra.append(f"{val}K")
+                        else:
+                            extra.append(str(val))
+                    if extra:
+                        state_str = state_str + ";" + ";".join(extra)
+
+                area_str = f" ({area})" if area else ""
+                entry = f"{state.entity_id} '{name}'{area_str} = {state_str}"
                 lines.append(entry)
 
             _LOGGER.debug("Exposed entities context: %d entities", len(lines))
@@ -213,6 +259,31 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         except Exception:
             pass
         return None
+
+    # ── Tools ──
+
+    @staticmethod
+    def _format_tools_for_api(llm_api: llm_helper.APIInstance) -> list[dict]:
+        """Convert Assist API tools to OpenAI-compatible tool definitions."""
+        from voluptuous_openapi import convert
+
+        tools = []
+        for tool in llm_api.tools:
+            try:
+                params = convert(tool.parameters)
+            except Exception:
+                params = {"type": "object", "properties": {}}
+            tools.append({
+                "type": "function",
+                "function": {
+                    "name": tool.name,
+                    "description": tool.description or "",
+                    "parameters": params,
+                },
+            })
+        return tools
+
+    # ── System prompt ──
 
     def _build_system_prompt(self, memory_block: str) -> str:
         now = datetime.now()
@@ -250,6 +321,10 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
             "Erfinde NIEMALS Sensorwerte, Temperaturen, Wetterdaten oder Gerätezustände.\n"
             "- Wenn du nach Daten gefragt wirst, die nicht im Kontext stehen, "
             "sage ehrlich, dass du darauf keinen Zugriff hast.\n"
+            "- Bei Gerätesteuerung: minimaler Bestätigungssatz genügt "
+            "(z.B. 'Erledigt.' oder 'Licht eingeschaltet.').\n"
+            "- Gerät aus aber heller/wärmer gewünscht? Zuerst einschalten.\n"
+            "- Mehrere Geräte gleichzeitig steuern ist möglich.\n"
             "- NUR wenn eine Frage echtes externes Wissen erfordert "
             "(z.B. Filmtermine, Nachrichten, Rezepte, Wissensfragen, Produktsuche), "
             "antworte mit: OPENCLAW: <die Anfrage in eigenen Worten>\n"
@@ -259,6 +334,8 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         )
 
         return "\n".join(parts)
+
+    # ── Embedding + Memory ──
 
     async def _get_embedding(self, text: str) -> list[float] | None:
         """Get bge-m3 embedding via OpenAI-compatible API."""
@@ -321,6 +398,8 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
             _LOGGER.debug("Qdrant search failed: %s", err)
             return ""
 
+    # ── Conversation buffer ──
+
     def _get_or_create_buffer(self, conversation_id: str) -> list[tuple[float, str, str]]:
         now = time.time()
         retention_secs = self._retention_minutes * 60
@@ -335,34 +414,62 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
     def _buffer_to_messages(self, buf: list[tuple[float, str, str]]) -> list[dict[str, str]]:
         return [{"role": role, "content": content} for _, role, content in buf]
 
-    async def _call_llm(self, messages: list[dict[str, str]]) -> str:
-        """Call llama-server via OpenAI-compatible chat API."""
+    # ── LLM call ──
+
+    async def _call_llm(
+        self,
+        messages: list[dict[str, str]],
+        tools: list[dict] | None = None,
+    ) -> tuple[str, list[dict]]:
+        """Call llama-server via OpenAI-compatible chat API.
+
+        Returns (content_text, tool_calls_list).
+        """
+        request_body: dict = {
+            "model": self._llm_model,
+            "messages": messages,
+            "max_tokens": 512,
+            "temperature": 0.15,
+            "stream": False,
+        }
+
+        timeout_sec = 15
+        if tools:
+            request_body["tools"] = tools
+            request_body["tool_choice"] = "auto"
+            timeout_sec = 30
+
+        if self._thinking_budget > 0:
+            request_body["thinking"] = {
+                "type": "enabled",
+                "budget_tokens": self._thinking_budget,
+            }
+        else:
+            request_body["chat_template_kwargs"] = {"enable_thinking": False}
+
         try:
             async with aiohttp.ClientSession() as session:
                 async with session.post(
                     f"{self._llm_url}/v1/chat/completions",
-                    json={
-                        "model": self._llm_model,
-                        "messages": messages,
-                        "max_tokens": 256,
-                        "temperature": 0.15,
-                        "stream": False,
-                        "chat_template_kwargs": {"enable_thinking": False},
-                    },
-                    timeout=aiohttp.ClientTimeout(total=15),
+                    json=request_body,
+                    timeout=aiohttp.ClientTimeout(total=timeout_sec),
                 ) as resp:
                     if resp.status != 200:
                         body = await resp.text()
                         _LOGGER.error("LLM error %s: %s", resp.status, body[:200])
-                        return "Entschuldigung, ich konnte gerade keine Antwort generieren."
+                        return ("Entschuldigung, ich konnte gerade keine Antwort generieren.", [])
 
                     data = await resp.json()
-                    result = data.get("choices", [{}])[0].get("message", {}).get("content", "")
-                    return result.strip() if result else "Ich habe keine Antwort."
+                    msg = data.get("choices", [{}])[0].get("message", {})
+                    content = (msg.get("content") or "").strip()
+                    tool_calls = msg.get("tool_calls") or []
+                    return (content, tool_calls)
 
         except (aiohttp.ClientError, TimeoutError) as err:
             _LOGGER.error("LLM request failed: %s", err)
-            return "Entschuldigung, ich bin gerade nicht erreichbar."
+            return ("Entschuldigung, ich bin gerade nicht erreichbar.", [])
+
+    # ── OpenClaw delegation ──
 
     async def _call_openclaw(self, query: str) -> str:
         """Forward query to OpenClaw household agent."""
@@ -392,11 +499,86 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
             _LOGGER.error("OpenClaw request failed: %s", err)
             return "Entschuldigung, mein Wissens-Service ist gerade nicht erreichbar."
 
+    # ── Tool-call execution ──
+
+    async def _execute_tool_call(
+        self,
+        tool_call: dict,
+        llm_api: llm_helper.APIInstance,
+        llm_context,
+        query: str,
+    ) -> bool:
+        """Execute a native API tool call. Returns True on success."""
+        try:
+            func = tool_call.get("function", {})
+            tool_name = func.get("name", "")
+            raw_args = func.get("arguments", "{}")
+            tool_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+        except (json.JSONDecodeError, KeyError) as err:
+            _TOOL_LOGGER.warning(
+                "TOOL_CALL_FAIL user=%s tool=? args=? error=bad format: %s",
+                query[:80], err,
+            )
+            return False
+
+        matching_tool = None
+        for tool in llm_api.tools:
+            if tool.name == tool_name:
+                matching_tool = tool
+                break
+
+        if not matching_tool:
+            _TOOL_LOGGER.warning(
+                "TOOL_CALL_FAIL user=%s tool=%s args=%s error=tool not found",
+                query[:80], tool_name, json.dumps(tool_args),
+            )
+            return False
+
+        try:
+            tool_input = llm_helper.ToolInput(
+                tool_name=tool_name,
+                tool_args=tool_args,
+            )
+            await matching_tool.async_call(self.hass, tool_input, llm_context)
+            _TOOL_LOGGER.info(
+                "TOOL_CALL_SUCCESS user=%s tool=%s args=%s",
+                query[:80], tool_name, json.dumps(tool_args),
+            )
+            return True
+        except Exception as err:
+            _TOOL_LOGGER.warning(
+                "TOOL_CALL_FAIL user=%s tool=%s args=%s error=%s",
+                query[:80], tool_name, json.dumps(tool_args), err,
+            )
+            return False
+
+    # ── Main processing ──
+
     async def async_process(self, user_input: ConversationInput) -> ConversationResult:
         conversation_id = user_input.conversation_id or user_input.agent_id
         query = user_input.text
 
         _LOGGER.debug("Processing: %s (conv=%s)", query[:60], conversation_id)
+
+        # Get Assist API for device control
+        llm_api = None
+        llm_context = None
+        formatted_tools = None
+        if self._enable_control:
+            try:
+                llm_context = llm_helper.LLMContext(
+                    platform=DOMAIN,
+                    context=user_input.context,
+                    language=user_input.language or "de",
+                    assistant=conversation.DOMAIN,
+                    device_id=user_input.device_id,
+                )
+                llm_api = await llm_helper.async_get_api(
+                    self.hass, "assist", llm_context
+                )
+                formatted_tools = self._format_tools_for_api(llm_api)
+            except Exception as err:
+                _LOGGER.warning("Assist API nicht verfügbar: %s", err)
 
         memory_block = await self._search_memories(query)
         system_prompt = self._build_system_prompt(memory_block)
@@ -408,13 +590,49 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         messages.extend(self._buffer_to_messages(buf))
         messages.append({"role": "user", "content": query})
 
-        response_text = await self._call_llm(messages)
+        content, tool_calls = await self._call_llm(messages, tools=formatted_tools)
 
-        # Check for OpenClaw delegation intent
-        if response_text.strip().startswith(OPENCLAW_INTENT_PREFIX):
-            openclaw_query = response_text.strip()[len(OPENCLAW_INTENT_PREFIX):].strip()
+        # Route: tool-calls first (device action), then text
+        if tool_calls and llm_api:
+            any_success = False
+            for tc in tool_calls:
+                if await self._execute_tool_call(tc, llm_api, llm_context, query):
+                    any_success = True
+
+            if any_success:
+                response_text = content or "Erledigt."
+            elif content:
+                # Retry: feed speech text to HA intent system
+                _TOOL_LOGGER.info("Retry als Intent: %s", content[:80])
+                try:
+                    retry_result = await conversation.async_converse(
+                        self.hass,
+                        content,
+                        conversation_id=None,
+                        context=user_input.context,
+                        language=user_input.language or "de",
+                        agent_id="conversation.home_assistant",
+                    )
+                    resp_data = retry_result.response
+                    if resp_data.response_type == intent.IntentResponseType.ACTION_DONE:
+                        plain = resp_data.speech.get("plain", {})
+                        response_text = plain.get("speech", content)
+                    else:
+                        response_text = content
+                except Exception as err:
+                    _LOGGER.debug("Intent retry failed: %s", err)
+                    response_text = content
+            else:
+                response_text = "Das hat leider nicht geklappt."
+
+        elif content and content.strip().startswith(OPENCLAW_INTENT_PREFIX):
+            # OpenClaw delegation
+            openclaw_query = content.strip()[len(OPENCLAW_INTENT_PREFIX):].strip()
             _LOGGER.info("Delegating to OpenClaw: %s", openclaw_query[:80])
             response_text = await self._call_openclaw(openclaw_query)
+
+        else:
+            response_text = content
 
         now = time.time()
         buf.append((now, "user", query))

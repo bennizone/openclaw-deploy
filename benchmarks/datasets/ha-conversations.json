@@ -1,0 +1,245 @@
+{
+  "description": "Home Assistant Benchmark — Konversationstests für HA Voice Agent",
+  "version": 1,
+  "system_context": "Household Agent (SOUL.md Regeln: Deutsch, 1-2 Sätze, kein Markdown, Einheiten ausschreiben)",
+  "note": "home-llm ruft LLM OHNE Tool-Definitionen auf — Entity-Daten kommen via System-Prompt. Tool-Calls (weather, calendar, arr_search) laufen über OpenClaw-Delegation (OPENCLAW: Prefix).",
+  "system_prompt_template": "Du bist ein smarter Haushaltsassistent. Antworte auf Deutsch, kurz und natürlich (Sprachausgabe, kein Markdown).\n\nKontext:\n- Uhrzeit: {time}\n- Tageszeit: {daylight}\n\nAktuelle Geräte- und Sensordaten:\n{entities}\n\nWichtige Regeln:\n- Antworte nur mit Daten, die dir im Kontext gegeben wurden. Erfinde NIEMALS Sensorwerte, Temperaturen, Wetterdaten oder Gerätezustände.\n- Wenn du nach Daten gefragt wirst, die nicht im Kontext stehen, sage ehrlich, dass du darauf keinen Zugriff hast.\n- NUR wenn eine Frage echtes externes Wissen erfordert (z.B. Filmtermine, Nachrichten, Rezepte, Wissensfragen), antworte mit: OPENCLAW: <die Anfrage in eigenen Worten>\n- Im Zweifel antworte selbst. Nutze OPENCLAW nur wenn du sicher bist, dass externes Wissen nötig ist.",
+  "mock_entities": "- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n- Sternenhimmel (Schlafzimmer): off\n- Deckenlampe Schlafzimmer (Schlafzimmer): off\n- Stehlampe (Büro): on\n- Bewegungsmelder Küche (Küche): 17.4 °C\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer (Wohnzimmer): 43 %\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n- Luftfeuchtigkeit Schlafzimmer (Schlafzimmer): 48 %\n- Heizung Wohnzimmer (Wohnzimmer): 22 °C (Soll)\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n- Waschtrockner (Küche): off\n- sun.sun: above_horizon, elevation 25.3",
+  "conversations": [
+    {
+      "name": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "messages": [
+        { "role": "user", "content": "Ist das Licht im Wohnzimmer an?" }
+      ],
+      "expected": {
+        "response_contains": ["Wohnzimmer", "an"],
+        "response_must_not_contain": ["°C", "%", "**", "- ", "🌡"],
+        "format_rules": ["max_sentences_2", "no_markdown", "german", "units_written_out"],
+        "no_tool_call": true,
+        "no_hallucination": "Muss aus mock_entities ableiten: Deckenlampe Wohnzimmer ist on"
+      }
+    },
+    {
+      "name": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "messages": [
+        { "role": "user", "content": "Wie warm ist es im Schlafzimmer?" }
+      ],
+      "expected": {
+        "response_contains": ["Schlafzimmer", "Grad"],
+        "response_must_not_contain": ["°C", "**", "- "],
+        "format_rules": ["max_sentences_2", "no_markdown", "german", "units_written_out"],
+        "no_tool_call": true,
+        "no_hallucination": "Muss 19,2 Grad sagen (aus mock_entities), NICHT erfinden"
+      }
+    },
+    {
+      "name": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "messages": [
+        { "role": "user", "content": "Wie ist das Klima im Wohnzimmer?" }
+      ],
+      "expected": {
+        "response_contains": ["Wohnzimmer", "Grad", "Prozent"],
+        "response_must_not_contain": ["°C", "%", "**"],
+        "format_rules": ["max_sentences_2", "no_markdown", "german", "units_written_out"],
+        "no_tool_call": true,
+        "no_hallucination": "21,8 Grad und 43 Prozent aus mock_entities"
+      }
+    },
+    {
+      "name": "Gerätsteuerung: Licht ausschalten",
+      "category": "entity-control",
+      "messages": [
+        { "role": "user", "content": "Mach das Licht im Wohnzimmer aus" }
+      ],
+      "expected": {
+        "response_contains": ["Wohnzimmer", "aus"],
+        "response_must_not_contain": ["**", "- "],
+        "format_rules": ["max_sentences_2", "no_markdown", "german"],
+        "note": "home-llm hat keine Tool-Calls — LLM bestätigt nur. Reale Steuerung läuft über HA Assist Pipeline."
+      }
+    },
+    {
+      "name": "Delegation: Wetter",
+      "category": "openclaw-delegation",
+      "messages": [
+        { "role": "user", "content": "Wie wird das Wetter morgen?" }
+      ],
+      "expected": {
+        "response_starts_with": "OPENCLAW:",
+        "response_contains": ["Wetter"],
+        "note": "Wetterdaten sind NICHT im Entity-Kontext (met.no entfernt). LLM MUSS an OpenClaw delegieren."
+      }
+    },
+    {
+      "name": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "messages": [
+        { "role": "user", "content": "Was steht morgen im Kalender?" }
+      ],
+      "expected": {
+        "response_starts_with": "OPENCLAW:",
+        "response_contains": ["Kalender"],
+        "note": "Kalender ist externes Wissen — MUSS an OpenClaw delegiert werden."
+      }
+    },
+    {
+      "name": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "messages": [
+        { "role": "user", "content": "Haben wir Severance in der Bibliothek?" }
+      ],
+      "expected": {
+        "response_starts_with": "OPENCLAW:",
+        "response_contains": ["Severance"],
+        "note": "Medienbibliothek ist externes Wissen — MUSS an OpenClaw delegiert werden."
+      }
+    },
+    {
+      "name": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "messages": [
+        { "role": "user", "content": "Mach mal Licht" }
+      ],
+      "expected": {
+        "response_contains_any": ["welch", "Raum", "wo"],
+        "response_must_not_contain": ["**", "- "],
+        "format_rules": ["max_sentences_2", "no_markdown", "german"],
+        "note": "Ohne Raumangabe sollte der LLM nachfragen, nicht raten."
+      }
+    },
+    {
+      "name": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "messages": [
+        { "role": "user", "content": "Was ist die Hauptstadt von Frankreich?" }
+      ],
+      "expected": {
+        "response_contains": ["Paris"],
+        "response_must_not_contain": ["OPENCLAW", "**", "- "],
+        "format_rules": ["max_sentences_2", "no_markdown", "german"],
+        "note": "Einfaches Allgemeinwissen — LLM soll selbst antworten, NICHT delegieren."
+      }
+    },
+    {
+      "name": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "messages": [
+        { "role": "user", "content": "Gib mir eine Übersicht über alle Temperaturen im Haus" }
+      ],
+      "expected": {
+        "response_must_not_contain": ["°C", "%", "**", "- ", "•", "|", ":", "🌡"],
+        "format_rules": ["max_sentences_2", "no_markdown", "german", "units_written_out", "no_lists"],
+        "no_hallucination": "Nur Werte aus mock_entities: Küche 17,4 / Wohnzimmer 21,8 / Schlafzimmer 19,2",
+        "note": "Stresstest: LLM soll mehrere Werte in Fließtext packen, NICHT als Liste."
+      }
+    },
+    {
+      "name": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools",
+      "messages": [
+        { "role": "user", "content": "Schalte das Licht im Wohnzimmer ein" }
+      ],
+      "expected": {
+        "must_tool_call": true,
+        "tool_name": "ha_call_service",
+        "args_must_contain": {
+          "domain": "light",
+          "service": "turn_on"
+        },
+        "args_entity_pattern": "light.*wohnzimmer",
+        "ha_executable": "HA muss mit domain=light, service=turn_on und einer entity_id die 'wohnzimmer' enthält das Licht schalten können.",
+        "note": "LLM muss einen validen ha_call_service Tool-Call produzieren den HA ausführen kann. Entity-ID muss zum Wohnzimmer passen (z.B. light.deckenlampe_wohnzimmer)."
+      }
+    },
+    {
+      "name": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools",
+      "messages": [
+        { "role": "user", "content": "Mach das Licht in der Küche heller" }
+      ],
+      "expected": {
+        "must_tool_call": true,
+        "tool_name": "ha_call_service",
+        "args_must_contain": {
+          "domain": "light",
+          "service": "turn_on"
+        },
+        "args_should_contain_any": ["brightness", "brightness_pct", "brightness_step_pct"],
+        "ha_executable": "HA braucht domain=light, service=turn_on mit brightness-Parameter. Küche hat keinen dedizierten light-Entity in mock_entities — LLM sollte entweder ha_render_template nutzen um Küchen-Lights zu finden, oder sagen dass es kein Licht in der Küche gibt.",
+        "note": "Schwieriger Test: Küche hat nur Bewegungsmelder (Temperatur), kein light-Entity. LLM muss entweder nachfragen oder korrekt area_entities prüfen."
+      }
+    },
+    {
+      "name": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools",
+      "messages": [
+        { "role": "user", "content": "Stell die Heizung im Schlafzimmer auf 20 Grad" }
+      ],
+      "expected": {
+        "must_tool_call": true,
+        "tool_name": "ha_call_service",
+        "args_must_contain": {
+          "domain": "climate",
+          "service": "set_temperature"
+        },
+        "args_should_contain": { "temperature": 20 },
+        "args_entity_pattern": "climate.*schlafzimmer",
+        "ha_executable": "HA braucht domain=climate, service=set_temperature, temperature=20 und eine climate-Entity fürs Schlafzimmer.",
+        "note": "Heizung Schlafzimmer ist in mock_entities als Soll-Temperatur 18°C gelistet. LLM soll auf 20 Grad ändern."
+      }
+    }
+  ],
+  "tool_definitions": [
+    {
+      "type": "function",
+      "function": {
+        "name": "ha_call_service",
+        "description": "Ruft einen Home Assistant Service auf (z.B. Licht schalten, Heizung einstellen)",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "domain": { "type": "string", "description": "HA Domain (z.B. light, climate, switch, automation)" },
+            "service": { "type": "string", "description": "Service-Name (z.B. turn_on, turn_off, set_temperature)" },
+            "entity_id": { "type": "string", "description": "Entity-ID (z.B. light.deckenlampe_wohnzimmer)" },
+            "data": { "type": "object", "description": "Zusätzliche Service-Daten (z.B. brightness, temperature)" }
+          },
+          "required": ["domain", "service", "entity_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ha_get_state",
+        "description": "Liest den aktuellen Status einer Home Assistant Entity",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "entity_id": { "type": "string", "description": "Entity-ID (z.B. light.wohnzimmer, sensor.temperatur)" }
+          },
+          "required": ["entity_id"]
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "ha_render_template",
+        "description": "Rendert ein Home Assistant Jinja2-Template (z.B. um Entities in einem Raum zu finden)",
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "template": { "type": "string", "description": "Jinja2-Template (z.B. {{ area_entities('wohnzimmer') | list }})" }
+          },
+          "required": ["template"]
+        }
+      }
+    }
+  ]
+}

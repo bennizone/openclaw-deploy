@@ -1,0 +1,102 @@
+{
+  "description": "Fallback-Chat Benchmark — Persönlicher Agent Konversationsqualität (Qwen als Fallback für MiniMax)",
+  "version": 1,
+  "agentId": "benni",
+  "note": "Testet Qwen-Qualität als Fallback wenn MiniMax nicht erreichbar ist. Agent hat Zugriff auf Tools (weather, calendar, arr_search, contacts) und Memory (Qdrant).",
+  "conversations": [
+    {
+      "name": "Smalltalk",
+      "category": "smalltalk",
+      "messages": [
+        { "role": "user", "content": "Hey, wie geht's dir?" }
+      ],
+      "expected": {
+        "response_must_not_contain": ["Ich bin ein KI", "Ich bin ein Sprachmodell", "Als KI"],
+        "quality": ["natuerlich", "persoenlich", "deutsch"],
+        "note": "Soll natürlich antworten, nicht roboterhaft. Kein Tool nötig."
+      }
+    },
+    {
+      "name": "Wissen: Star Trek",
+      "category": "wissen",
+      "messages": [
+        { "role": "user", "content": "Erkläre mir kurz wie ein Warp-Antrieb funktioniert" }
+      ],
+      "expected": {
+        "response_contains_any": ["Subraum", "Warp-Feld", "Materie", "Antimaterie", "Dilithium", "Lichtgeschwindigkeit"],
+        "quality": ["sachlich_korrekt", "star_trek_canon", "nicht_zu_lang"],
+        "note": "Benni ist Star Trek Fan — soll Warp Drive im Star Trek Kanon erklären, nicht real-physikalisch."
+      }
+    },
+    {
+      "name": "Empfehlung: Serie",
+      "category": "empfehlung",
+      "messages": [
+        { "role": "user", "content": "Welche Serie soll ich als nächstes schauen?" }
+      ],
+      "expected": {
+        "may_use_tools": ["arr_search"],
+        "may_use_memory": true,
+        "quality": ["personalisiert", "begruendet"],
+        "note": "Idealerweise nutzt Memory (Scrubs Lieblingsserie, Breaking Bad geschaut) oder Medienbibliothek."
+      }
+    },
+    {
+      "name": "Planung: Elternbesuch",
+      "category": "planung",
+      "messages": [
+        { "role": "user", "content": "Was muss ich für den Besuch meiner Eltern vorbereiten?" }
+      ],
+      "expected": {
+        "may_use_memory": true,
+        "quality": ["hilfreich", "konkret", "deutsch"],
+        "note": "Idealerweise nutzt Memory-Fakt 'Bennis Eltern wohnen in Stuttgart'. Soll konkrete Tipps geben."
+      }
+    },
+    {
+      "name": "Tool: Wetter",
+      "category": "tool-weather",
+      "messages": [
+        { "role": "user", "content": "Brauche ich morgen einen Regenschirm?" }
+      ],
+      "expected": {
+        "should_use_tools": ["weather"],
+        "quality": ["direkte_antwort", "ja_oder_nein_mit_begruendung"],
+        "note": "Muss weather-Tool aufrufen. Soll nicht raten sondern echte Daten nutzen."
+      }
+    },
+    {
+      "name": "Tool: Kalender",
+      "category": "tool-calendar",
+      "messages": [
+        { "role": "user", "content": "Hab ich morgen was vor?" }
+      ],
+      "expected": {
+        "should_use_tools": ["calendar_events"],
+        "tool_args_contain": { "agent_id": "benni" },
+        "quality": ["konkret", "uebersichtlich"],
+        "note": "Muss calendar_events mit agent_id=benni aufrufen."
+      }
+    },
+    {
+      "name": "Multi-Turn: Film finden und hinzufügen",
+      "category": "multi-turn",
+      "messages": [
+        { "role": "user", "content": "Gibt es den neuen Dune Film bei uns?" },
+        { "role": "assistant", "content": "[PLACEHOLDER — wird durch tatsächliche LLM-Antwort ersetzt]" },
+        { "role": "user", "content": "Nein, ich meine Dune Part Two. Kannst du den hinzufügen?" }
+      ],
+      "expected": {
+        "turn_1": {
+          "should_use_tools": ["arr_search"],
+          "tool_args_contain": { "query": "Dune" }
+        },
+        "turn_2": {
+          "should_use_tools": ["arr_add_movie"],
+          "quality": ["bestaetigung"]
+        },
+        "note": "Multi-Turn: Erst suchen, dann auf Nachfrage hinzufügen. Turn 2 braucht Kontext aus Turn 1."
+      }
+    }
+  ]
+}

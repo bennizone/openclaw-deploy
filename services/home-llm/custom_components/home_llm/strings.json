@@ -14,7 +14,9 @@
           "retention_minutes": "Konversations-Timeout (Minuten)",
           "top_k": "Max. Memory-Fakten pro Anfrage",
           "openclaw_url": "OpenClaw Gateway URL",
-          "openclaw_api_key": "OpenClaw API-Key"
+          "openclaw_api_key": "OpenClaw API-Key",
+          "enable_control": "Gerätesteuerung (Assist API)",
+          "thinking_budget": "Thinking-Budget (Tokens, 0 = deaktiviert)"
         }
       }
     },
@@ -36,7 +38,9 @@
           "retention_minutes": "Konversations-Timeout (Minuten)",
           "top_k": "Max. Memory-Fakten pro Anfrage",
           "openclaw_url": "OpenClaw Gateway URL",
-          "openclaw_api_key": "OpenClaw API-Key"
+          "openclaw_api_key": "OpenClaw API-Key",
+          "enable_control": "Gerätesteuerung (Assist API)",
+          "thinking_budget": "Thinking-Budget (Tokens, 0 = deaktiviert)"
         }
       }
     }
