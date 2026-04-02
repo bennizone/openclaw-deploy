@@ -14,3 +14,13 @@ Allgemeinwissen faelschlich delegiert.
 **Ergebnis:** Delegation 100%, Format 100%, Allgemeinwissen 100%. Edge-ambiguous offen.
 
 **Details:** `components/ha-integration/decisions.md`
+
+## 2026-04-02 — Benchmark Phase 3: Dataset-Fixes + Token-Zaehlung
+
+**Kontext:** Test-Dataset inkonsistent nach mock_entities-Aenderung, Token-Verbrauch nicht gemessen.
+
+**Entscheidung:** mock_entities Deckenlampe off, 3 Tests angepasst, ":" erlaubt,
+run-bench.sh mit separatem Speed-Test (Prefill/Decode t/s), Helper-Refactoring,
+jq Float-Division Fix. Memory-Bench geparkt.
+
+**Details:** `components/ha-integration/decisions.md`

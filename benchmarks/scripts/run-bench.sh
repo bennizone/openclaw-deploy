@@ -5,6 +5,8 @@
 # Usage:
 #   ./run-bench.sh --dataset ha --endpoint http://10.83.1.110:8080
 #   ./run-bench.sh --dataset ha --endpoint http://10.83.1.110:8080 --thinking-budgets "0,512,1024,2048"
+#   ./run-bench.sh --dataset ha --endpoint http://10.83.1.110:8080 --speed-only
+#   ./run-bench.sh --dataset ha --endpoint http://10.83.1.110:8080 --no-speed-test
 #   ./run-bench.sh --dataset fallback --endpoint http://10.83.1.110:8080 --parallel-test
 #
 # Dependencies: bash, curl, jq, bc (or python3 as fallback)
@@ -24,6 +26,8 @@ THINKING_BUDGETS=""
 PARALLEL_TEST=false
 GPU_SSH="badmin@10.83.1.110"
 OUTPUT_FILE=""
+DO_SPEED_TEST=true
+SPEED_ONLY=false
 
 usage() {
   cat <<EOF
@@ -34,6 +38,8 @@ Options:
   --endpoint <url>           LLM endpoint (default: http://10.83.1.110:8080)
   --thinking-budgets <list>  Comma-separated budgets to test (e.g., "0,512,1024,2048")
   --parallel-test            Run parallel throughput test (2 concurrent requests)
+  --no-speed-test            Skip speed test (cold + warm runs)
+  --speed-only               Run only speed test, skip quality tests
   --gpu-ssh <user@host>      SSH target for GPU info (default: badmin@10.83.1.110)
   --output <file>            Output file (default: auto-generated in results/)
   -h, --help                 Show this help
@@ -48,6 +54,8 @@ while [[ $# -gt 0 ]]; do
     --endpoint) ENDPOINT="$2"; shift 2 ;;
     --thinking-budgets) THINKING_BUDGETS="$2"; shift 2 ;;
     --parallel-test) PARALLEL_TEST=true; shift ;;
+    --no-speed-test) DO_SPEED_TEST=false; shift ;;
+    --speed-only) SPEED_ONLY=true; shift ;;
     --gpu-ssh) GPU_SSH="$2"; shift 2 ;;
     --output) OUTPUT_FILE="$2"; shift 2 ;;
     -h|--help) usage ;;
@@ -273,6 +281,89 @@ send_request() {
   rm -f "$tmpfile"
 }
 
+# Build messages array for a conversation index
+# Args: $1=conversation_index (0-based)
+# Uses globals: HAS_TEMPLATE, HAS_SYSTEM, DATASET_FILE
+build_messages() {
+  local idx="$1"
+  if [[ "$HAS_TEMPLATE" == "yes" ]]; then
+    jq --arg time "$(date +%H:%M)" --arg daylight "Tag, neutrales Licht bevorzugt" \
+      '(.system_prompt_template // "") as $tpl |
+       (.mock_entities // "") as $ent |
+       ($tpl | gsub("\\{time\\}"; $time) | gsub("\\{daylight\\}"; $daylight) | gsub("\\{entities\\}"; $ent)) as $sys |
+       [{role: "system", content: $sys}] + .conversations['"$idx"'].messages' \
+      "$DATASET_FILE"
+  elif [[ "$HAS_SYSTEM" == "yes" ]]; then
+    jq '(.system_prompt // "") as $sys |
+       [{role: "system", content: $sys}] + .conversations['"$idx"'].messages' "$DATASET_FILE"
+  else
+    jq '.conversations['"$idx"'].messages' "$DATASET_FILE"
+  fi
+}
+
+# Speed-test request with streaming for accurate TTFT measurement
+# With stream:false, curl's time_starttransfer == time_total (no difference).
+# Streaming gives us real TTFT (first chunk) vs total time.
+# Args: $1=messages_json
+send_speed_request() {
+  local messages="$1"
+  local tmpfile
+  tmpfile=$(mktemp)
+
+  local body
+  body=$(jq -n --argjson msgs "$messages" '{
+    model: "default",
+    messages: $msgs,
+    max_tokens: 2048,
+    temperature: 0.15,
+    stream: true,
+    chat_template_kwargs: { enable_thinking: false }
+  }')
+
+  local curl_timing
+  curl_timing=$(curl -sN -o "$tmpfile" \
+    -w "%{time_starttransfer} %{time_total} %{http_code}" \
+    -H "Content-Type: application/json" \
+    --connect-timeout 10 \
+    --max-time 120 \
+    -d "$body" \
+    "$ENDPOINT/v1/chat/completions" 2>/dev/null) || curl_timing="0 0 000"
+
+  local ttft_ms total_ms http_code
+  ttft_ms=$(echo "$curl_timing" | awk '{printf "%.0f", $1 * 1000}' 2>/dev/null || echo "0")
+  total_ms=$(echo "$curl_timing" | awk '{printf "%.0f", $2 * 1000}' 2>/dev/null || echo "0")
+  http_code=$(echo "$curl_timing" | awk '{print $3}' 2>/dev/null || echo "000")
+
+  if [[ "$http_code" != "200" ]]; then
+    echo '{"error":"HTTP '"$http_code"'","ttft_ms":0,"total_ms":0,"prompt_tokens":0,"completion_tokens":0}'
+    rm -f "$tmpfile"
+    return 1
+  fi
+
+  # Parse SSE: llama.cpp sends timings in the last non-[DONE] chunk
+  # timings has: prompt_n, predicted_n, prompt_per_second, predicted_per_second
+  local prompt_tokens=0 completion_tokens=0 prompt_tps=0 generation_tps=0
+  local last_chunk
+  last_chunk=$(grep '^data: ' "$tmpfile" | grep -v '\[DONE\]' | tail -1 | sed 's/^data: //')
+  if [[ -n "$last_chunk" ]]; then
+    prompt_tokens=$(echo "$last_chunk" | jq -r '.timings.prompt_n // .usage.prompt_tokens // 0' 2>/dev/null || echo "0")
+    completion_tokens=$(echo "$last_chunk" | jq -r '.timings.predicted_n // .usage.completion_tokens // 0' 2>/dev/null || echo "0")
+    prompt_tps=$(echo "$last_chunk" | jq -r '.timings.prompt_per_second // 0' 2>/dev/null || echo "0")
+    generation_tps=$(echo "$last_chunk" | jq -r '.timings.predicted_per_second // 0' 2>/dev/null || echo "0")
+  fi
+
+  jq -n \
+    --argjson ttft_ms "$ttft_ms" \
+    --argjson total_ms "$total_ms" \
+    --argjson prompt_tokens "$prompt_tokens" \
+    --argjson completion_tokens "$completion_tokens" \
+    --arg prompt_tps "$prompt_tps" \
+    --arg generation_tps "$generation_tps" \
+    '{ttft_ms: $ttft_ms, total_ms: $total_ms, prompt_tokens: $prompt_tokens, completion_tokens: $completion_tokens, prompt_tps: ($prompt_tps | tonumber), generation_tps: ($generation_tps | tonumber)}'
+
+  rm -f "$tmpfile"
+}
+
 # ── Run parallel throughput test ──
 
 run_parallel_test() {
@@ -298,23 +389,25 @@ run_parallel_test() {
   par_end=$(date +%s%N)
   local par_total_ms=$(( (par_end - par_start) / 1000000 ))
 
-  local tps1 tps2
-  tps1=$(jq -r '.tokens_per_sec // 0' "$tmp1" 2>/dev/null || echo "0")
-  tps2=$(jq -r '.tokens_per_sec // 0' "$tmp2" 2>/dev/null || echo "0")
-  local tps_combined
-  tps_combined=$(calc "scale=1; $tps1 + $tps2")
+  # Extract per-slot metrics
+  local result1 result2
+  result1=$(cat "$tmp1" 2>/dev/null || echo '{}')
+  result2=$(cat "$tmp2" 2>/dev/null || echo '{}')
 
-  jq -n \
-    --arg tps1 "$tps1" \
-    --arg tps2 "$tps2" \
-    --arg tps_combined "$tps_combined" \
-    --argjson total_ms "$par_total_ms" \
-    '{
-      slot_1_tps: ($tps1 | tonumber),
-      slot_2_tps: ($tps2 | tonumber),
-      combined_tps: ($tps_combined | tonumber),
-      wall_time_ms: $total_ms
-    }'
+  # Build parallel result with prompt/generation t/s per slot
+  jq -n --argjson r1 "$result1" --argjson r2 "$result2" --argjson wall_ms "$par_total_ms" \
+    'def speed_metrics:
+       (if .ttft_ms > 0 then (.prompt_tokens / (.ttft_ms / 1000.0) * 10 | floor) / 10 else 0 end) as $pt |
+       (if (.total_ms - .ttft_ms) > 0 then (.completion_tokens / ((.total_ms - .ttft_ms) / 1000.0) * 10 | floor) / 10 else 0 end) as $gt |
+       { generation_tps: $gt, prompt_tps: $pt, prompt_tokens: .prompt_tokens, completion_tokens: .completion_tokens };
+     ($r1 | speed_metrics) as $s1 |
+     ($r2 | speed_metrics) as $s2 |
+     {
+       slot_1: $s1,
+       slot_2: $s2,
+       combined_generation_tps: ($s1.generation_tps + $s2.generation_tps),
+       wall_time_ms: $wall_ms
+     }'
 
   rm -f "$tmp1" "$tmp2"
 }
@@ -345,70 +438,97 @@ PARALLEL_RESULT="{}"
 HAS_TEMPLATE=$(jq -r 'if .system_prompt_template then "yes" else "no" end' "$DATASET_FILE")
 HAS_SYSTEM=$(jq -r 'if .system_prompt then "yes" else "no" end' "$DATASET_FILE")
 
-for ((c=0; c<CONV_COUNT; c++)); do
-  CONV_NAME=$(jq -r ".conversations[$c].name" "$DATASET_FILE")
-  CONV_CATEGORY=$(jq -r ".conversations[$c].category // \"unknown\"" "$DATASET_FILE")
+# ── Speed test (separate from quality tests) ──
 
-  echo "  [$((c+1))/$CONV_COUNT] $CONV_NAME ($CONV_CATEGORY)" >&2
+SPEED_RESULT="{}"
+if [[ "$DO_SPEED_TEST" == "true" ]]; then
+  echo "" >&2
+  echo "Running speed test (cold + warm)..." >&2
 
-  if [[ "$HAS_TEMPLATE" == "yes" ]]; then
-    MESSAGES=$(jq --arg time "$(date +%H:%M)" --arg daylight "Tag, neutrales Licht bevorzugt" \
-      '(.system_prompt_template // "") as $tpl |
-       (.mock_entities // "") as $ent |
-       ($tpl | gsub("\\{time\\}"; $time) | gsub("\\{daylight\\}"; $daylight) | gsub("\\{entities\\}"; $ent)) as $sys |
-       [{role: "system", content: $sys}] + .conversations['"$c"'].messages' \
-      "$DATASET_FILE")
-  elif [[ "$HAS_SYSTEM" == "yes" ]]; then
-    MESSAGES=$(jq \
-      '(.system_prompt // "") as $sys |
-       [{role: "system", content: $sys}] + .conversations['"$c"'].messages' \
-      "$DATASET_FILE")
-  else
-    MESSAGES=$(jq '.conversations['"$c"'].messages' "$DATASET_FILE")
-  fi
+  SPEED_MSGS=$(build_messages 0)
 
-  # Check if this conversation requires tool definitions
-  CONV_MODE=$(jq -r ".conversations[$c].mode // \"default\"" "$DATASET_FILE")
-  TOOLS_JSON=""
-  if [[ "$CONV_MODE" == "with_tools" ]]; then
-    TOOLS_JSON=$(jq -r '.tool_definitions // []' "$DATASET_FILE")
-    echo "    (with tool definitions)" >&2
-  fi
+  # Cold run (empty KV cache — measures real prefill speed)
+  echo "  Cold run..." >&2
+  COLD_RESULT=$(send_speed_request "$SPEED_MSGS" 2>/dev/null || echo '{"error":"request_failed"}')
 
-  CONV_RESULTS="[]"
+  # Warm run (KV cache populated from cold run — measures cache hit speed)
+  echo "  Warm run..." >&2
+  WARM_RESULT=$(send_speed_request "$SPEED_MSGS" 2>/dev/null || echo '{"error":"request_failed"}')
 
-  for budget in "${BUDGETS_ARRAY[@]}"; do
-    BUDGET_LABEL="${budget:-default}"
-    echo "    Budget: $BUDGET_LABEL" >&2
+  # Build speed result from both runs
+  SPEED_RESULT=$(jq -n --argjson cold "$COLD_RESULT" --argjson warm "$WARM_RESULT" \
+    '{
+       cold: {
+         prompt_tps: $cold.prompt_tps,
+         generation_tps: $cold.generation_tps,
+         prompt_tokens: $cold.prompt_tokens,
+         completion_tokens: $cold.completion_tokens,
+         ttft_ms: $cold.ttft_ms,
+         total_ms: $cold.total_ms
+       },
+       warm: {
+         prompt_tps: $warm.prompt_tps,
+         generation_tps: $warm.generation_tps,
+         prompt_tokens: $warm.prompt_tokens,
+         completion_tokens: $warm.completion_tokens,
+         ttft_ms: $warm.ttft_ms,
+         total_ms: $warm.total_ms
+       }
+     }')
 
-    RESULT=$(send_request "$MESSAGES" "$budget" "$TOOLS_JSON" 2>/dev/null || echo '{"error":"request_failed"}')
-    RESULT=$(echo "$RESULT" | jq --arg name "$CONV_NAME" --arg cat "$CONV_CATEGORY" --arg mode "$CONV_MODE" \
-      '. + {conversation: $name, category: $cat, mode: $mode}')
+  SP_COLD_PROMPT=$(echo "$SPEED_RESULT" | jq -r '(.cold.prompt_tps * 10 | floor) / 10')
+  SP_COLD_GEN=$(echo "$SPEED_RESULT" | jq -r '(.cold.generation_tps * 10 | floor) / 10')
+  SP_WARM_PROMPT=$(echo "$SPEED_RESULT" | jq -r '(.warm.prompt_tps * 10 | floor) / 10')
+  SP_WARM_GEN=$(echo "$SPEED_RESULT" | jq -r '(.warm.generation_tps * 10 | floor) / 10')
+  SP_COLD_PT=$(echo "$SPEED_RESULT" | jq -r '.cold.prompt_tokens')
+  SP_WARM_PT=$(echo "$SPEED_RESULT" | jq -r '.warm.prompt_tokens')
+  echo "  Cold: prompt=${SP_COLD_PROMPT} t/s (${SP_COLD_PT} tokens)  generation=${SP_COLD_GEN} t/s" >&2
+  echo "  Warm: prompt=${SP_WARM_PROMPT} t/s (${SP_WARM_PT} tokens)  generation=${SP_WARM_GEN} t/s" >&2
+  echo "" >&2
+fi
 
-    CONV_RESULTS=$(echo "$CONV_RESULTS" | jq --argjson r "$RESULT" '. + [$r]')
+# ── Quality tests ──
+
+if [[ "$SPEED_ONLY" != "true" ]]; then
+  for ((c=0; c<CONV_COUNT; c++)); do
+    CONV_NAME=$(jq -r ".conversations[$c].name" "$DATASET_FILE")
+    CONV_CATEGORY=$(jq -r ".conversations[$c].category // \"unknown\"" "$DATASET_FILE")
+
+    echo "  [$((c+1))/$CONV_COUNT] $CONV_NAME ($CONV_CATEGORY)" >&2
+
+    MESSAGES=$(build_messages "$c")
+
+    # Check if this conversation requires tool definitions
+    CONV_MODE=$(jq -r ".conversations[$c].mode // \"default\"" "$DATASET_FILE")
+    TOOLS_JSON=""
+    if [[ "$CONV_MODE" == "with_tools" ]]; then
+      TOOLS_JSON=$(jq -r '.tool_definitions // []' "$DATASET_FILE")
+      echo "    (with tool definitions)" >&2
+    fi
+
+    CONV_RESULTS="[]"
+
+    for budget in "${BUDGETS_ARRAY[@]}"; do
+      BUDGET_LABEL="${budget:-default}"
+      echo "    Budget: $BUDGET_LABEL" >&2
+
+      RESULT=$(send_request "$MESSAGES" "$budget" "$TOOLS_JSON" 2>/dev/null || echo '{"error":"request_failed"}')
+      RESULT=$(echo "$RESULT" | jq --arg name "$CONV_NAME" --arg cat "$CONV_CATEGORY" --arg mode "$CONV_MODE" \
+        '. + {conversation: $name, category: $cat, mode: $mode}')
+
+      CONV_RESULTS=$(echo "$CONV_RESULTS" | jq --argjson r "$RESULT" '. + [$r]')
+    done
+
+    ALL_RESULTS=$(echo "$ALL_RESULTS" | jq --argjson r "$CONV_RESULTS" '. + $r')
   done
 
-  ALL_RESULTS=$(echo "$ALL_RESULTS" | jq --argjson r "$CONV_RESULTS" '. + $r')
-done
-
-# Parallel test (use first conversation's messages)
-if [[ "$PARALLEL_TEST" == "true" ]]; then
-  echo "Running parallel throughput test..." >&2
-  if [[ "$HAS_TEMPLATE" == "yes" ]]; then
-    FIRST_MSGS=$(jq --arg time "$(date +%H:%M)" --arg daylight "Tag, neutrales Licht bevorzugt" \
-      '(.system_prompt_template // "") as $tpl |
-       (.mock_entities // "") as $ent |
-       ($tpl | gsub("\\{time\\}"; $time) | gsub("\\{daylight\\}"; $daylight) | gsub("\\{entities\\}"; $ent)) as $sys |
-       [{role: "system", content: $sys}] + .conversations[0].messages' \
-      "$DATASET_FILE")
-  elif [[ "$HAS_SYSTEM" == "yes" ]]; then
-    FIRST_MSGS=$(jq '(.system_prompt // "") as $sys |
-       [{role: "system", content: $sys}] + .conversations[0].messages' "$DATASET_FILE")
-  else
-    FIRST_MSGS=$(jq '.conversations[0].messages' "$DATASET_FILE")
+  # Parallel test (use first conversation's messages)
+  if [[ "$PARALLEL_TEST" == "true" ]]; then
+    echo "Running parallel throughput test..." >&2
+    FIRST_MSGS=$(build_messages 0)
+    PARALLEL_RESULT=$(run_parallel_test "$FIRST_MSGS")
   fi
-  PARALLEL_RESULT=$(run_parallel_test "$FIRST_MSGS")
-fi
+fi  # end SPEED_ONLY guard
 
 # ── Aggregate metrics ──
 
@@ -423,6 +543,8 @@ TOTAL_TESTS=$(echo "$ALL_RESULTS" | jq 'length')
 TOOL_CALL_TESTS=$(echo "$ALL_RESULTS" | jq '[.[] | select(.has_tool_calls == true)] | length')
 TOOL_CALL_VALID=$(echo "$ALL_RESULTS" | jq '[.[] | select(.has_tool_calls == true and .tool_calls_valid == true)] | length')
 ERRORS=$(echo "$ALL_RESULTS" | jq '[.[] | select(.error)] | length')
+AVG_PROMPT_TOKENS=$(echo "$ALL_RESULTS" | jq '[.[].prompt_tokens | select(. > 0)] | if length > 0 then (add / length | floor) else 0 end')
+AVG_COMPLETION_TOKENS=$(echo "$ALL_RESULTS" | jq '[.[].completion_tokens | select(. > 0)] | if length > 0 then (add / length | floor) else 0 end')
 
 # ── Build final output ──
 
@@ -441,6 +563,9 @@ FINAL=$(jq -n \
   --argjson tool_call_tests "$TOOL_CALL_TESTS" \
   --argjson tool_call_valid "$TOOL_CALL_VALID" \
   --argjson errors "$ERRORS" \
+  --argjson avg_prompt_tokens "$AVG_PROMPT_TOKENS" \
+  --argjson avg_completion_tokens "$AVG_COMPLETION_TOKENS" \
+  --argjson speed_test "$SPEED_RESULT" \
   --argjson parallel "$PARALLEL_RESULT" \
   --argjson results "$ALL_RESULTS" \
   '{
@@ -453,8 +578,11 @@ FINAL=$(jq -n \
       endpoint: $endpoint
     },
     performance: {
+      speed_test: $speed_test,
       ttft_ms: { avg: $avg_ttft, p50: $p50_ttft, p95: $p95_ttft },
       tokens_per_sec_avg: $avg_tps,
+      avg_prompt_tokens: $avg_prompt_tokens,
+      avg_completion_tokens: $avg_completion_tokens,
       parallel: $parallel
     },
     summary: {
@@ -477,11 +605,18 @@ echo "═══ BENCHMARK SUMMARY ═══" >&2
 echo "Model:     $MODEL_NAME" >&2
 echo "GPU:       $GPU_NAME ($GPU_VRAM)" >&2
 echo "Dataset:   $DATASET ($CONV_COUNT conversations)" >&2
+if [[ "$DO_SPEED_TEST" == "true" ]]; then
+  echo "Speed cold: prompt=${SP_COLD_PROMPT} t/s (${SP_COLD_PT} tok)  gen=${SP_COLD_GEN} t/s" >&2
+  echo "Speed warm: prompt=${SP_WARM_PROMPT} t/s (${SP_WARM_PT} tok)  gen=${SP_WARM_GEN} t/s" >&2
+fi
 echo "TTFT:      avg=${AVG_TTFT}ms  p50=${P50_TTFT}ms  p95=${P95_TTFT}ms" >&2
 echo "t/s:       avg=${AVG_TPS}" >&2
+echo "Tokens:    avg prompt=${AVG_PROMPT_TOKENS}  avg completion=${AVG_COMPLETION_TOKENS}" >&2
 if [[ "$PARALLEL_TEST" == "true" ]]; then
-  PAR_TPS=$(echo "$PARALLEL_RESULT" | jq '.combined_tps // 0')
-  echo "t/s (2x):  combined=${PAR_TPS}" >&2
+  PAR_GEN_TPS=$(echo "$PARALLEL_RESULT" | jq '.combined_generation_tps // 0')
+  PAR_S1_PT=$(echo "$PARALLEL_RESULT" | jq '.slot_1.prompt_tps // 0')
+  PAR_S2_PT=$(echo "$PARALLEL_RESULT" | jq '.slot_2.prompt_tps // 0')
+  echo "Parallel:  gen=${PAR_GEN_TPS} t/s combined  prompt=${PAR_S1_PT}/${PAR_S2_PT} t/s per slot" >&2
 fi
 echo "Tests:     $TOTAL_TESTS total, $ERRORS errors" >&2
 if [[ "$TOOL_CALL_TESTS" -gt 0 ]]; then

@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "timestamp": "2026-04-02T13:02:42Z",
+    "model": "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf",
+    "gpu": "NVIDIA GeForce RTX 2070 SUPER",
+    "gpu_vram": "8192 MiB",
+    "dataset": "ha",
+    "endpoint": "http://10.83.1.110:8080"
+  },
+  "performance": {
+    "speed_test": {
+      "cold": {
+        "prompt_tps": 905.8285538296168,
+        "generation_tps": 35.62273067013481,
+        "prompt_tokens": 600,
+        "completion_tokens": 110,
+        "ttft_ms": 871,
+        "total_ms": 3959
+      },
+      "warm": {
+        "prompt_tps": 34.65513805740623,
+        "generation_tps": 42.142315960427915,
+        "prompt_tokens": 4,
+        "completion_tokens": 93,
+        "ttft_ms": 137,
+        "total_ms": 2344
+      }
+    },
+    "ttft_ms": {
+      "avg": 3133,
+      "p50": 3159,
+      "p95": 4333
+    },
+    "tokens_per_sec_avg": 36,
+    "avg_prompt_tokens": 741,
+    "avg_completion_tokens": 111,
+    "parallel": {}
+  },
+  "summary": {
+    "total_tests": 14,
+    "tool_call_tests": 4,
+    "tool_calls_valid": 4,
+    "errors": 0
+  },
+  "results": [
+    {
+      "content": "Nein, das Licht im Wohnzimmer ist nicht an. Sowohl die Deckenlampe als auch die Ambiente-Leuchte sind ausgeschaltet.",
+      "thinking": "Der Nutzer fragt, ob das Licht im Wohnzimmer an ist. Ich muss die aktuellen Geräte- und Sensordaten prüfen.\n\nLaut den Daten:\n- Deckenlampe Wohnzimmer (Wohnzimmer): off\n- Ambiente (Wohnzimmer): off\n\nBeide Lichtquellen im Wohnzimmer sind ausgeschaltet. Ich muss dies kurz und natürlich auf Deutsch antworten, ohne Markdown.",
+      "ttft_ms": 3690,
+      "total_ms": 3690,
+      "prompt_tokens": 600,
+      "completion_tokens": 109,
+      "thinking_tokens": 80,
+      "tokens_per_sec": 29.5,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Schlafzimmer sind es gerade 19,2 Grad Celsius.",
+      "thinking": "Der Nutzer fragt nach der Temperatur im Schlafzimmer. Ich muss die relevanten Daten aus dem Kontext finden.\n\nIm Kontext steht:\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n- Luftfeuchtigkeit Schlafzimmer (Schlafzimmer): 48 %\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n\nDie aktuelle Temperatur im Schlafzimmer beträgt 19,2 Grad Celsius.",
+      "ttft_ms": 3159,
+      "total_ms": 3159,
+      "prompt_tokens": 599,
+      "completion_tokens": 109,
+      "thinking_tokens": 87,
+      "tokens_per_sec": 34.5,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Wohnzimmer herrschen 21,8 Grad Celsius bei 43 Prozent Luftfeuchtigkeit.",
+      "thinking": "Der Nutzer fragt nach dem Klima im Wohnzimmer. Ich habe folgende Daten aus dem Kontext:\n\n- Klimasensor Wohnzimmer: 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer: 43 %\n- Heizung Wohnzimmer: 22 °C (Soll)\n\nIch muss diese Informationen in einer kurzen, natürlichen Antwort auf Deutsch formulieren, ohne Markdown und mit ausgeschriebenen Einheiten.",
+      "ttft_ms": 4002,
+      "total_ms": 4002,
+      "prompt_tokens": 599,
+      "completion_tokens": 106,
+      "thinking_tokens": 83,
+      "tokens_per_sec": 26.5,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "mode": "default"
+    },
+    {
+      "content": "Ich schalte die Deckenlampe im Wohnzimmer für dich an.",
+      "thinking": "Der Nutzer möchte das Licht im Wohnzimmer anmachen. Ich habe Zugriff auf die Geräte- und Sensordaten.\n\nIm Wohnzimmer gibt es:\n- Deckenlampe (Wohnzimmer): off\n- Ambiente (Wohnzimmer): off\n\nIch sollte die Deckenlampe im Wohnzimmer einschalten. Die Antwort soll kurz und natürlich sein, in Fließtext, maximal 1-2 Sätze.",
+      "ttft_ms": 4333,
+      "total_ms": 4333,
+      "prompt_tokens": 599,
+      "completion_tokens": 101,
+      "thinking_tokens": 79,
+      "tokens_per_sec": 23.3,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Gerätsteuerung: Licht einschalten",
+      "category": "entity-control",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Suche mir ein gutes veganes Restaurant in Sindelfingen",
+      "thinking": "Der Nutzer fragt nach einem guten veganen Restaurant in Sindelfingen. Dies ist eine Frage, die aktuelles lokales Wissen erfordert (Öffnungszeiten, Bewertungen, aktuelle Verfügbarkeit). Gemäß den Anweisungen muss ich solche Fragen an OpenClaw delegieren.\n\nIch muss die Antwort im Format \"OPENCLAW: <Anfrage>\" geben, ohne zusätzlichen Text davor oder danach.",
+      "ttft_ms": 3420,
+      "total_ms": 3420,
+      "prompt_tokens": 604,
+      "completion_tokens": 97,
+      "thinking_tokens": 89,
+      "tokens_per_sec": 28.4,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Websuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Was steht morgen im Kalender?",
+      "thinking": "Der Nutzer fragt nach dem Kalender für morgen. Das ist eine Frage, die aktuelles, lokales oder persönliches Wissen benötigt (Kalender). Laut den Anweisungen muss ich solche Fragen an OpenClaw delegieren.\n\nIch muss die Antwort im Format \"OPENCLAW: <Anfrage>\" geben, ohne zusätzlichen Text davor oder danach.",
+      "ttft_ms": 3062,
+      "total_ms": 3062,
+      "prompt_tokens": 598,
+      "completion_tokens": 84,
+      "thinking_tokens": 76,
+      "tokens_per_sec": 27.4,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Haben wir Severance in der Bibliothek?",
+      "thinking": "Der Nutzer fragt nach \"Severance\" in der Bibliothek. Das ist eine Frage nach lokalem Wissen (Bibliotheksinventar), das ich nicht aus dem bereitgestellten Kontext beantworten kann. Ich muss dies an OpenClaw delegieren.",
+      "ttft_ms": 2233,
+      "total_ms": 2233,
+      "prompt_tokens": 602,
+      "completion_tokens": 68,
+      "thinking_tokens": 54,
+      "tokens_per_sec": 30.5,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: In welchem Raum möchtest du das Licht anmachen?",
+      "thinking": "Der Nutzer möchte Licht anmachen. Ich muss herausfinden, in welchem Raum das gewünscht ist, da mehrere Räume mit Lichtquellen vorhanden sind.\n\nVerfügbare Lichtquellen:\n- Deckenlampe Wohnzimmer (Wohnzimmer): off\n- Ambiente (Wohnzimmer): off\n- Sternenhimmel (Schlafzimmer): off\n- Deckenlampe Schlafzimmer (Schlafzimmer): off\n- Stehlampe (Büro): on\n\nIch sollte nachfragen, in welchem Raum das Licht gewünscht ist.",
+      "ttft_ms": 2858,
+      "total_ms": 2858,
+      "prompt_tokens": 596,
+      "completion_tokens": 128,
+      "thinking_tokens": 102,
+      "tokens_per_sec": 44.8,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "mode": "default"
+    },
+    {
+      "content": "Paris.",
+      "thinking": "Der Nutzer fragt nach der Hauptstadt von Frankreich. Das ist eine einfache Allgemeinwissensfrage, die ich selbst beantworten kann. Ich muss nicht auf OpenClaw delegieren.\n\nDie Hauptstadt von Frankreich ist Paris.",
+      "ttft_ms": 1373,
+      "total_ms": 1373,
+      "prompt_tokens": 599,
+      "completion_tokens": 48,
+      "thinking_tokens": 53,
+      "tokens_per_sec": 35.0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "mode": "default"
+    },
+    {
+      "content": "Im Haus sind aktuell folgende Temperaturen gemessen: In der Küche 17,4 Grad, im Wohnzimmer 21,8 Grad und im Schlafzimmer 19,2 Grad. Die Heizungen sind auf 22 Grad im Wohnzimmer und 18 Grad im Schlafzimmer eingestellt.",
+      "thinking": "Der Nutzer möchte eine Übersicht über alle Temperaturen im Haus. Ich muss die verfügbaren Temperaturdaten aus dem Kontext extrahieren und in einer natürlichen, fließenden Sprache präsentieren.\n\nVerfügbare Temperaturdaten:\n- Bewegungsmelder Küche: 17.4 °C\n- Klimasensor Wohnzimmer: 21.8 °C\n- Klimasensor Schlafzimmer: 19.2 °C\n- Heizung Wohnzimmer: 22 °C (Soll)\n- Heizung Schlafzimmer: 18 °C (Soll)\n\nIch werde diese Daten in einer kurzen, natürlichen Antwort zusammenfassen, ohne Markdown oder Listen zu verwenden.",
+      "ttft_ms": 4128,
+      "total_ms": 4128,
+      "prompt_tokens": 602,
+      "completion_tokens": 196,
+      "thinking_tokens": 128,
+      "tokens_per_sec": 47.5,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "mode": "default"
+    },
+    {
+      "content": "",
+      "thinking": "Der Nutzer möchte das Licht im Wohnzimmer einschalten. Ich habe zwei Lichtquellen im Wohnzimmer:\n1. Deckenlampe Wohnzimmer (Wohnzimmer): off\n2. Ambiente (Wohnzimmer): off\n\nIch sollte beide Lichter im Wohnzimmer einschalten, da der Nutzer \"das Licht\" (im Plural/Singular unklar) im Wohnzimmer aktivieren möchte. Ich werde beide Lichter einschalten.",
+      "ttft_ms": 2752,
+      "total_ms": 2752,
+      "prompt_tokens": 1092,
+      "completion_tokens": 120,
+      "thinking_tokens": 86,
+      "tokens_per_sec": 43.6,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOn",
+          "arguments": {
+            "name": "Deckenlampe Wohnzimmer",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Nutzer möchte das Licht im Arbeitszimmer heller machen. Ich muss zuerst das Licht im Arbeitszimmer einschalten, da es aktuell aus ist. Dann kann ich die Helligkeit erhöhen.\n\nIch verwende HassLightSet mit einem höheren Helligkeitswert (z.B. 80-90) und neutralem Licht, da es Tag ist.",
+      "ttft_ms": 2853,
+      "total_ms": 2853,
+      "prompt_tokens": 1093,
+      "completion_tokens": 127,
+      "thinking_tokens": 71,
+      "tokens_per_sec": 44.5,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassLightSet",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro",
+            "brightness": "85",
+            "temperature": "4000"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "The user wants me to set the heating in the bedroom to 20 degrees Celsius. Looking at the sensor data, I can see there's a \"Heizung Schlafzimmer (Schlafzimmer)\" with a current target of 18°C. I need to use the HassClimateSetTemperature function to change this to 20°C.",
+      "ttft_ms": 2627,
+      "total_ms": 2627,
+      "prompt_tokens": 1096,
+      "completion_tokens": 114,
+      "thinking_tokens": 67,
+      "tokens_per_sec": 43.4,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassClimateSetTemperature",
+          "arguments": {
+            "name": "Heizung Schlafzimmer",
+            "area": "Schlafzimmer",
+            "temperature": "20"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "The user wants me to turn off the light in the office and turn on the light in the living room.\n\nLooking at the device data:\n- Stehlampe (Büro): on - This is the office light that needs to be turned off\n- Deckenlampe Wohnzimmer (Wohnzimmer): off - This is the living room light that needs to be turned on\n\nI need to:\n1. Turn off the Stehlampe in the Büro\n2. Turn on the Deckenlampe in the Wohnzimmer\n\nLet me make these function calls.",
+      "ttft_ms": 3379,
+      "total_ms": 3379,
+      "prompt_tokens": 1096,
+      "completion_tokens": 153,
+      "thinking_tokens": 108,
+      "tokens_per_sec": 45.3,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOff",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    }
+  ]
+}

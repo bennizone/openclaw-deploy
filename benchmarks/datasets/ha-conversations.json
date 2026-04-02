@@ -4,7 +4,7 @@
   "system_context": "Household Agent (SOUL.md Regeln: Deutsch, 1-2 Sätze, kein Markdown, Einheiten ausschreiben)",
   "note": "home-llm ruft LLM OHNE Tool-Definitionen auf — Entity-Daten kommen via System-Prompt. Tool-Calls (weather, calendar, arr_search) laufen über OpenClaw-Delegation (OPENCLAW: Prefix). Template enthält keine Platzhalter für Memory/Persona — Bench testet ohne diese optionalen Blöcke.",
   "system_prompt_template": "Du bist ein smarter Haushaltsassistent. Antworte auf Deutsch, kurz und natürlich (Sprachausgabe, kein Markdown).\n\nKontext:\n- Uhrzeit: {time}\n- Tageszeit: {daylight}\n\nAktuelle Geräte- und Sensordaten:\n{entities}\n\nFormat:\nAntworte in Fließtext, maximal 1-2 Sätze. Kein Markdown, keine Listen, keine Aufzählungszeichen. Einheiten ausschreiben: Grad statt °C, Prozent statt %.\n\nDaten:\nAntworte nur mit Daten aus dem Kontext oben. Erfinde NIEMALS Sensorwerte, Temperaturen, Wetterdaten oder Gerätezustände. Wenn Daten fehlen, sage ehrlich, dass du keinen Zugriff hast.\n\nGerätesteuerung:\nMinimale Bestätigung genügt (z.B. 'Erledigt.' oder 'Licht an.'). Gerät aus aber heller/wärmer gewünscht? Zuerst einschalten. Mehrere Geräte gleichzeitig steuern ist möglich. Wenn kein Raum genannt wird, frage nach welchem Raum gemeint ist.\n\nOPENCLAW-Delegation:\nFragen die aktuelles, lokales oder persönliches Wissen brauchen (Öffnungszeiten, Restaurants, Produktsuche, Nachrichten, Rezepte, Kalender, Medien-Bibliothek) delegierst du an OpenClaw. Antworte dann NUR mit: OPENCLAW: <Anfrage>\nKein Text davor oder danach.\nEinfaches Allgemeinwissen (Geografie, Geschichte, Mathe) beantworte selbst.\n\nBeispiele:\nNutzer: Hat der Burgerking in Sindelfingen noch offen?\nAntwort: OPENCLAW: Hat der Burgerking in Sindelfingen noch offen?\nNutzer: Was ist die Hauptstadt von Frankreich?\nAntwort: Paris.",
-  "mock_entities": "- Deckenlampe Wohnzimmer (Wohnzimmer): on\n- Ambiente (Wohnzimmer): off\n- Sternenhimmel (Schlafzimmer): off\n- Deckenlampe Schlafzimmer (Schlafzimmer): off\n- Stehlampe (Büro): on\n- Bewegungsmelder Küche (Küche): 17.4 °C\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer (Wohnzimmer): 43 %\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n- Luftfeuchtigkeit Schlafzimmer (Schlafzimmer): 48 %\n- Heizung Wohnzimmer (Wohnzimmer): 22 °C (Soll)\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n- Waschtrockner (Küche): off\n- sun.sun: above_horizon, elevation 25.3",
+  "mock_entities": "- Deckenlampe Wohnzimmer (Wohnzimmer): off\n- Ambiente (Wohnzimmer): off\n- Sternenhimmel (Schlafzimmer): off\n- Deckenlampe Schlafzimmer (Schlafzimmer): off\n- Stehlampe (Büro): on\n- Bewegungsmelder Küche (Küche): 17.4 °C\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer (Wohnzimmer): 43 %\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n- Luftfeuchtigkeit Schlafzimmer (Schlafzimmer): 48 %\n- Heizung Wohnzimmer (Wohnzimmer): 22 °C (Soll)\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n- Waschtrockner (Küche): off\n- sun.sun: above_horizon, elevation 25.3",
   "conversations": [
     {
       "name": "Entity-Abfrage: Licht-Status",
@@ -13,11 +13,12 @@
         { "role": "user", "content": "Ist das Licht im Wohnzimmer an?" }
       ],
       "expected": {
-        "response_contains": ["Wohnzimmer", "an"],
+        "response_contains": ["Wohnzimmer"],
+        "response_contains_any": ["aus", "off", "nicht", "nein"],
         "response_must_not_contain": ["°C", "%", "**", "- ", "🌡"],
         "format_rules": ["max_sentences_2", "no_markdown", "german", "units_written_out"],
         "no_tool_call": true,
-        "no_hallucination": "Muss aus mock_entities ableiten: Deckenlampe Wohnzimmer ist on"
+        "no_hallucination": "Muss aus mock_entities ableiten: Deckenlampe Wohnzimmer ist off"
       }
     },
     {
@@ -49,16 +50,17 @@
       }
     },
     {
-      "name": "Gerätsteuerung: Licht ausschalten",
+      "name": "Gerätsteuerung: Licht einschalten",
       "category": "entity-control",
       "messages": [
-        { "role": "user", "content": "Mach das Licht im Wohnzimmer aus" }
+        { "role": "user", "content": "Mach das Licht im Wohnzimmer an" }
       ],
       "expected": {
-        "response_contains": ["Wohnzimmer", "aus"],
+        "response_contains": ["Wohnzimmer"],
+        "response_contains_any": ["Erledigt", "Deckenlampe", "eingeschaltet", "angemacht", "Licht an"],
         "response_must_not_contain": ["**", "- "],
         "format_rules": ["max_sentences_2", "no_markdown", "german"],
-        "note": "home-llm hat keine Tool-Calls — LLM bestätigt nur. Reale Steuerung läuft über HA Assist Pipeline."
+        "note": "home-llm hat keine Tool-Calls — LLM bestätigt nur. Reale Steuerung läuft über HA Assist Pipeline. Deckenlampe ist off."
       }
     },
     {
@@ -130,7 +132,7 @@
         { "role": "user", "content": "Gib mir eine Übersicht über alle Temperaturen im Haus" }
       ],
       "expected": {
-        "response_must_not_contain": ["°C", "%", "**", "- ", "•", "|", ":", "🌡"],
+        "response_must_not_contain": ["°C", "%", "**", "- ", "•", "|", "🌡"],
         "format_rules": ["max_sentences_2", "no_markdown", "german", "units_written_out", "no_lists"],
         "no_hallucination": "Nur Werte aus mock_entities: Küche 17,4 / Wohnzimmer 21,8 / Schlafzimmer 19,2",
         "note": "Stresstest: LLM soll mehrere Werte in Fließtext packen, NICHT als Liste."
@@ -185,13 +187,13 @@
       "category": "tool-call-validate",
       "mode": "with_tools",
       "messages": [
-        { "role": "user", "content": "Mach das Licht im Wohnzimmer aus und im Arbeitszimmer an" }
+        { "role": "user", "content": "Mach das Licht im Büro aus und im Wohnzimmer an" }
       ],
       "expected": {
         "must_tool_call": true,
         "min_tool_calls": 2,
         "expected_tools": ["HassTurnOff", "HassTurnOn"],
-        "note": "Multi-Device Test. LLM muss zwei Tool-Calls in einem Response generieren: Wohnzimmer aus + Arbeitszimmer an."
+        "note": "Multi-Device Test. LLM muss zwei Tool-Calls generieren: Büro aus (Stehlampe ist on) + Wohnzimmer an (Deckenlampe ist off)."
       }
     }
   ],

@@ -121,3 +121,33 @@ Edge-ambiguous bleibt 25% (Qwen delegiert Nachfrage faelschlich an OPENCLAW bei 
 
 **Konsequenzen:** Benchmark-Template (ha-conversations.json) synchronisiert.
 Edge-ambiguous bleibt offener TODO-Punkt.
+
+## 2026-04-02 — Benchmark Phase 3: Dataset-Fixes + Token-Zaehlung
+
+**Kontext:** Phase 2 Prompt-Optimierung deckte Inkonsistenzen im Test-Dataset auf:
+Tool-Call-Test "Licht einschalten" schlug fehl weil mock_entities Deckenlampe als `on`
+fuehrte — Modell erkannte korrekt dass nichts zu tun war. Format-Test blockierte auf
+Doppelpunkt, der in natuerlichem Deutsch normal ist. Token-Verbrauch war nicht messbar.
+
+**Entscheidung:**
+1. mock_entities: Deckenlampe Wohnzimmer `on` → `off`. Folgeanpassungen an 3 Tests
+   (Licht-Status erwartet jetzt "aus", Geraetesteuerung auf Einschalten umgebaut,
+   Multi-Device nutzt Buero aus + Wohnzimmer an statt inkonsistente Kombination)
+2. Format-Compliance: `":"` aus `response_must_not_contain` entfernt — kein Markdown-Marker
+3. run-bench.sh: Speed-Test mit Cold + Warm Run (KV-Cache Vergleich).
+   Cold misst echten Prefill (prompt_tps via llama.cpp `timings`), Warm misst Cache-Hit.
+   Streaming-Request fuer echte TTFT-Messung (`send_speed_request()`).
+   Qualitaetstests laufen 1x pro Budget (kein Multi-Run).
+   Parallel-Test erweitert mit prompt/generation t/s pro Slot.
+   Flags: `--speed-only`, `--no-speed-test`
+4. Template-Code `build_messages()` als Helper extrahiert (vorher 3x dupliziert)
+5. jq Integer-Division Bug gefixt (`/1000` → `/1000.0` fuer Float-Division)
+6. Memory-Benchmark auf Master-TODO verschoben — Qwen 9B packt Extraction nicht
+
+**Alternativen verworfen:**
+- Test-Expected weichspuelen statt mock_entities fixen — verbirgt echte Probleme
+- Multi-Run Averaging — KV-Cache verfaelscht Wiederholungen, Cold+Warm ist aussagekraeftiger
+- curl-basierte t/s Berechnung — Server-seitige `timings` sind genauer (kein HTTP-Overhead)
+
+**Konsequenzen:** Benchmark liefert getrennte Prefill/Decode-Speed plus Qualitaetsergebnisse.
+Token-Kosten pro Test sichtbar. Vergleichbarkeit zwischen Modellen/Prompts verbessert.
