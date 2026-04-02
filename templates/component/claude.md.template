@@ -1,0 +1,21 @@
+# Agent-Scope: {{NAME}}
+
+## Meine Dateien
+
+{{DATEIEN_LISTE}}
+
+## Meine Verantwortung
+
+{{VERANTWORTUNG_LISTE}}
+
+### Kritische Regeln (NICHT verletzen!)
+
+{{REGELN_LISTE}}
+
+## Checklisten
+
+{{CHECKLISTEN_ODER_ENTFAELLT}}
+
+## Abgrenzung
+
+{{ABGRENZUNG_ZU_ANDEREN_AGENTEN}}

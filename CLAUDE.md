@@ -20,37 +20,7 @@ Beim Start: Lies die Datei `~/.openclaw-deploy-state.json` (KEINE Runtime-Checks
 
 Fuehre KEINE anderen Aufgaben aus bis das Onboarding abgeschlossen ist (ausser `/helper` fuer Fragen).
 
-### Format von `~/.openclaw-deploy-state.json`
-
-```json
-{
-  "onboarding_complete": false,
-  "phases": {
-    "interview": { "done": true, "timestamp": "2026-03-30T14:00:00Z" },
-    "gpu_server": { "done": true, "timestamp": "2026-03-30T14:30:00Z" },
-    "lxc_setup": { "done": false },
-    "plugins": { "done": false },
-    "agents": { "done": false },
-    "memory": { "done": false },
-    "channels": { "done": false },
-    "ha_integration": { "done": false, "skipped": true },
-    "verification": { "done": false }
-  },
-  "config": {
-    "gpu_server_ip": "192.168.1.100",
-    "gpu_ssh_user": "admin",
-    "ha_url": "https://homeassistant.local:8123",
-    "agent_names": ["benni", "household"],
-    "default_agent": "benni",
-    "gpu_parallel": 2,
-    "gpu_ctx_size": 32768,
-    "channels": ["whatsapp"]
-  }
-}
-```
-
-Diese Datei wird vom `/onboard` Agent bei jeder abgeschlossenen Phase aktualisiert.
-Die `config`-Sektion speichert Interview-Antworten fuer spaetere Referenz.
+Dateiformat: Siehe [docs/onboarding.md](docs/onboarding.md)
 
 ## Quick-Start
 
@@ -96,37 +66,7 @@ Proxmox / Bare-Metal
 
 > Konsolidierte Routing-Referenz (Agent-Auswahl, Scopes, Hooks): [docs/agent-routing.md](docs/agent-routing.md)
 
-| Aufgabe | Primaer | Fallback |
-|---------|---------|----------|
-| Chat (persoenlich) | MiniMax M2.7 (API) | Qwen 3.5 9B (GPU-Server) |
-| HA Voice (Household) | Qwen 3.5 9B (GPU-Server) | MiniMax M2.7 |
-| Embeddings | bge-m3 (GPU-Server:8081) | bge-m3 CPU (localhost:8081) |
-| Vision/Bilder | MiniMax M2.7 nativ (inline) | understand_image Tool-Hub → MiniMax VLM API |
-| Web-Suche | web_search Tool-Hub (DDG + MiniMax merged) | web_fetch (URL-Abruf) |
-
-### OpenClaw Tool-Hub MCP (`services/openclaw-tools/`)
-
-Zentraler MCP-Server fuer alle externen Tools. Eingebautes `web_search` ist via
-`tools.deny` deaktiviert, der Tool-Hub uebernimmt.
-
-- **`web_search`** — fragt DuckDuckGo + MiniMax Search parallel ab, merged + dedupliziert
-- **`understand_image`** — Bildanalyse ueber MiniMax VLM API (Qwen-Fallback fuer Vision)
-- **`arr_search`** — Suche in Sonarr/Radarr mit 3-stufiger deutscher Titelaufloesung
-- **`arr_add_movie`** / **`arr_add_series`** — Medien zur Bibliothek hinzufuegen
-- **`arr_series_detail`** — Staffel-Uebersicht mit Download-Status
-- **`arr_episode_list`** — Episoden einer Staffel mit Details
-- **`arr_calendar`** — Naechste Episoden/Filme + Download-Queue
-- **`arr_add_collection`** — Komplette Film-Collection hinzufuegen
-- **`calendar_events`** — Termine abrufen (Zeitraum, pro Agent gefiltert)
-- **`calendar_create`** / **`calendar_update`** / **`calendar_delete`** — Termine verwalten (braucht `readwrite`)
-- **`calendar_search`** — Freitext-Suche ueber Termine
-- **`contacts_search`** — Kontakte nach Name/Email/Telefon suchen
-- **`contacts_create`** / **`contacts_update`** — Kontakte verwalten (braucht `readwrite`)
-- **`contacts_birthdays`** — Anstehende Geburtstage (Kontakte + Kalender, dedupliziert)
-- **`weather`** — Aktuelles Wetter + Vorhersage via Open-Meteo (Geocoding + Forecast, kein API-Key)
-
-PIM-Tools sind **agentspezifisch**: `pim.json` definiert welcher Agent auf welche
-CalDAV/CardDAV-Quellen zugreifen darf (`read` oder `readwrite`).
+Tool-Hub MCP: Zentraler MCP-Server fuer alle externen Tools. Tool-Referenz: Siehe [docs/tool-hub.md](docs/tool-hub.md)
 
 ## Netzwerk-Ports
 
@@ -178,34 +118,7 @@ Status laufend aktualisieren (pending → in_progress → completed).
 Abhaengigkeiten setzen (addBlockedBy). Tasks die aufgrund der Anfrage
 uebersprungen werden: Status auf completed mit Begruendung im Description-Feld.
 
-### Workflow bei neuen Features / Aenderungen
-
-1. Ziel klaeren mit User
-2. Betroffene Komponenten identifizieren (`components/*/description.md` lesen — PFLICHT, nicht ueberspringen!)
-3. Plan-Entwurf mit Checkliste:
-   - [ ] Ziel definiert
-   - [ ] Nutzer/Zielgruppe
-   - [ ] Sicherheit
-   - [ ] Laufzeitumgebung
-   - [ ] Abhaengigkeiten
-   - [ ] Testbarkeit
-4. Konsultationsrunde: Betroffene Agenten via MiniMax befragen (`/consult`) — NICHT ueberspringen, kostet fast nichts
-5. Plan konsolidieren, Konflikte aufloesen
-6. User-Freigabe — bei Level 2+ Standard-Ops (read, write) ohne extra Freigabe
-   (Autonomie-Level pruefen: `python3 scripts/autonomy-status.py check <comp> <op>`)
-7. Coding via `/coder` (Claude) — liest vorher `claude.md` der Komponente
-8. Build: `npm run build` / `openclaw plugins doctor`
-9. `/tester` liest `testinstruct.md`, fuehrt Tests aus — mindestens Health-Checks + Plugin-Doctor
-10. `/reviewer` prueft — listet Findings (mechanisch + Design)
-10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → SOFORT an `/coder` delegieren, nicht User fragen (NIE selbst fixen!)
-10b. Design-Findings die den Workflow BLOCKIEREN (Architektur, API-Bruch, Sicherheit) → SOFORT User-Input holen
-10c. Nicht-blockierende Design-Findings die keine User-Entscheidung brauchen → SOFORT an `/coder` delegieren
-10d. Nicht-blockierende Design-Findings die User-Input brauchen → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
-11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
-12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
-13. Ship it: Commit + Deploy — Zusammenfassung zeigt geparkte Design-Findings aus 10c
-14. Reflection (optional): `/reflect` — MiniMax analysiert Session auf Token-Waste,
-    Orchestrator ergaenzt, `/reviewer` prueft, User gibt frei. Skip mit "skip"
+Vollstaendiger Workflow (Schritte 1-14): Siehe [docs/workflow.md](docs/workflow.md)
 
 ### Stuetzraeder-Protokoll (Graduierte Autonomie)
 
@@ -238,16 +151,7 @@ Der User kann jeden Agent auch direkt aufrufen — das ueberschreibt die automat
 
 ### Config-Aenderungs-Protokoll (IMMER einhalten!)
 
-Bei jeder Aenderung an `openclaw.json`:
-1. **Backup:** `cp ~/.openclaw/openclaw.json ~/.openclaw/openclaw.json.bak`
-2. **Aendern**
-3. **Validieren:** `jq . < ~/.openclaw/openclaw.json > /dev/null` (muss fehlerfrei sein)
-4. **Diff pruefen:** `diff ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json`
-5. **Gateway neustarten:** `systemctl --user restart openclaw-gateway`
-6. **Health-Check:** `curl -s http://localhost:18789/health`
-7. **Git:** Aenderung committen (Config ist versioniert → jede Aenderung nachvollziehbar)
-
-Bei Fehler nach Schritt 3-6: `cp ~/.openclaw/openclaw.json.bak ~/.openclaw/openclaw.json` → sofortiger Rollback
+Schritte: Siehe [docs/config-protocol.md](docs/config-protocol.md)
 
 ## CLAUDE.md Pflege
 
@@ -291,6 +195,7 @@ Architektur-Erklaerungen) gehoeren in eigene Dateien (`docs/`, `benchmarks/READM
 | `/plan-review` | Konsultationsrunde an betroffene Agenten | — |
 | `/reflect` | Session Self-Reflection (Token-Waste Analyse) | — |
 | `/bench` | LLM-Benchmark (interaktiv, Ergebnisse in `benchmarks/`) | Sonnet |
+| `/audit` | System-Audit (10 Kategorien, Ergebnisse in `docs/audits/`) | Haiku |
 
 ## ENV-Substitution
 
@@ -311,4 +216,5 @@ OpenClaw unterstuetzt `${VAR_NAME}` in openclaw.json:
 ~/models/                          # GGUF Modell-Dateien (lokal)
 ~/.config/systemd/user/            # systemd User-Services
 ~/.claude/projects/.../*.jsonl     # Claude Code Session-JSONLs (fuer /reflect)
+docs/audits/                       # Audit-Ergebnisse (Checklisten, Reife-Score)
 ```

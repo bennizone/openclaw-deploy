@@ -1,0 +1,34 @@
+# {{NAME}}
+
+## Zweck
+
+{{ZWECK_1_BIS_3_SAETZE}}
+
+## Architektur
+
+{{ARCHITEKTUR_ODER_ABLAUF}}
+
+## Abhaengigkeiten
+
+**Braucht:**
+{{ABHAENGIGKEITEN_LISTE}}
+
+**Wird gebraucht von:**
+{{GEBRAUCHT_VON_LISTE}}
+
+## Schnittstellen
+
+**Eingabe:** {{EINGABE}}
+**Ausgabe:** {{AUSGABE}}
+
+## Konfiguration
+
+{{KONFIGURATION_ODER_ENTFAELLT}}
+
+## Bekannte Einschraenkungen
+
+{{EINSCHRAENKUNGEN}}
+
+## Neues Feature hinzufuegen
+
+{{ANLEITUNG_NEUES_FEATURE}}

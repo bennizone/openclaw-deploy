@@ -1,0 +1,21 @@
+# Test-Anweisungen: {{NAME}}
+
+## Voraussetzungen
+
+{{VORAUSSETZUNGEN}}
+
+## Health-Check
+
+```bash
+{{HEALTH_CHECK_COMMANDS}}
+```
+
+## Funktions-Tests
+
+### Test: {{TEST_NAME_1}}
+{{TEST_BESCHREIBUNG_1}}
+
+## Integrations-Tests
+
+### Test: {{INTEGRATION_TEST_NAME_1}}
+{{INTEGRATION_TEST_BESCHREIBUNG_1}}
