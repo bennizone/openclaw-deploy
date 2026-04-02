@@ -52,3 +52,8 @@ Kein Build — Reviewer ist ein uebergreifender Agent ohne eigenen Code.
 | DECISIONS.md schreiben | **protokollant** |
 | Code schreiben/fixen | **coder** (wird nach Review bei Problemen aufgerufen) |
 | Alle description.md lesen | Bei Bedarf, fuer Kontext der betroffenen Komponente |
+
+## Tokenfresser (MiniMax Chunking)
+
+Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
+`consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).

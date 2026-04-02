@@ -24,3 +24,8 @@
 - `/tester` fuehrt Tests aus (curl, API-Calls) — `/audit` analysiert und bewertet
 - `/reviewer` prueft Code-Aenderungen — `/audit` prueft Gesamtsystem
 - `/reflect` analysiert eine Session — `/audit` analysiert das ganze Projekt
+
+## Tokenfresser (MiniMax Chunking)
+
+Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
+`consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).

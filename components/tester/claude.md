@@ -66,3 +66,8 @@ Kein Build — Tester ist ein uebergreifender Agent ohne eigenen Code.
 | Code fixen | **coder** |
 | Test-Anweisungen schreiben | Jeweilige Komponente (in testinstruct.md) |
 | DECISIONS.md | **protokollant** |
+
+## Tokenfresser (MiniMax Chunking)
+
+Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
+`consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
