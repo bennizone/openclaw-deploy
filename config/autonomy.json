@@ -20,8 +20,8 @@
       }
     },
     "ha-integration": {
-      "current": 0,
-      "since": "2026-04-01",
+      "current": 1,
+      "since": "2026-04-02",
       "metrics": {
         "sessions_total": 3,
         "sessions_error_free": 3,
