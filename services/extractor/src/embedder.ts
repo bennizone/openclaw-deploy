@@ -1,6 +1,6 @@
 import { config, log } from './config.js';
 
-export interface EmbedResult {
+interface EmbedResult {
   vector: number[];
   source: 'gpu' | 'local';
 }

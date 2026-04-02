@@ -97,7 +97,7 @@ export const config = {
   agentNames: loadAgentNames(),
 } as const;
 
-export type AgentId = string;
+type AgentId = string;
 
 // Simple structured logger
 const LOG_LEVELS = { debug: 0, info: 1, warn: 2, error: 3 } as const;

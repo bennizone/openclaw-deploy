@@ -129,7 +129,7 @@ export async function executeHaConversation(
 /**
  * TTS-ready system prompt for Ollama smart home responses.
  */
-export const SMART_HOME_SYSTEM_PROMPT = `Du bist ein deutscher Sprachassistent für ein Smart Home.
+const SMART_HOME_SYSTEM_PROMPT = `Du bist ein deutscher Sprachassistent für ein Smart Home.
 Deine Antworten werden laut vorgelesen.
 
 REGELN:
