@@ -35,10 +35,11 @@ Dies passiert im `before_model_resolve` Hook.
 - KV-Cache: Q4_0 (spart ~1.5 GB VRAM vs F16, gehoert zur ctx-size Optimierung)
 - Flash-Attention: auto (reduziert VRAM fuer Attention)
 - Parallel: 1-2 Slots (im Onboarding mit User abstimmbar)
-- Reasoning-Budget: 2048 (Server-Maximum, per API-Request steuerbar)
-- `enable_thinking: false` via `chat_template_kwargs` (IMMER!)
-- Throughput: ~51 t/s single (RTX 2070s), ~36 t/s (GTX 1080 Ti)
-- VRAM: ~5.700 MB (Modell) + ctx-abhaengiger KV-Cache
+- Reasoning-Budget: 3000 Server-Cap (~60s bei 50 t/s), per API-Request steuerbar
+- Reasoning-Budget-Message: `"Okay, I have enough information to answer."` (englisch, Qwen-Training)
+- home-llm sendet eigenes Budget (Default 256, 0=deaktiviert via `enable_thinking: false`)
+- Throughput: ~55 t/s single (RTX 2070s), ~36 t/s (GTX 1080 Ti)
+- VRAM: ~5.700 MB (Modell) + ctx-abhaengiger KV-Cache (~7.7 GB total bei 196K ctx + Embed)
 
 ### bge-m3 (Q8_0)
 - Dimension: 1024 (NICHT 1536!)

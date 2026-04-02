@@ -1,0 +1,46 @@
+{
+  "meta": {
+    "timestamp": "2026-04-02T15:19:50Z",
+    "model": "Qwopus3.5-9B-v3-Q4_K_M.gguf",
+    "gpu": "NVIDIA GeForce RTX 2070 SUPER",
+    "gpu_vram": "8192 MiB",
+    "dataset": "ha",
+    "endpoint": "http://10.83.1.110:8080"
+  },
+  "performance": {
+    "speed_test": {
+      "cold": {
+        "prompt_tps": 1039.5226511985697,
+        "generation_tps": 54.142131321261225,
+        "prompt_tokens": 600,
+        "completion_tokens": 283,
+        "ttft_ms": 619,
+        "total_ms": 5846
+      },
+      "warm": {
+        "prompt_tps": 40.00640102416387,
+        "generation_tps": 54.372692056860245,
+        "prompt_tokens": 4,
+        "completion_tokens": 176,
+        "ttft_ms": 114,
+        "total_ms": 3351
+      }
+    },
+    "ttft_ms": {
+      "avg": 0,
+      "p50": 0,
+      "p95": 0
+    },
+    "tokens_per_sec_avg": 0,
+    "avg_prompt_tokens": 0,
+    "avg_completion_tokens": 0,
+    "parallel": {}
+  },
+  "summary": {
+    "total_tests": 0,
+    "tool_call_tests": 0,
+    "tool_calls_valid": 0,
+    "errors": 0
+  },
+  "results": []
+}

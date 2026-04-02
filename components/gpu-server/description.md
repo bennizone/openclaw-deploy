@@ -15,10 +15,10 @@ GPU-Server (${GPU_SERVER_IP})
 │   ├── ctx-size: VRAM-abhaengig (8GB: 32768, 11GB: 196608), parallel halbiert pro Slot
 │   ├── kv-cache: q4_0 (spart ~1.5GB VRAM vs F16, gehoert zur ctx-size Optimierung)
 │   ├── flash-attn: auto (reduziert VRAM fuer Attention)
-│   ├── reasoning-budget: 2048 (Server-Maximum, per API-Request steuerbar)
+│   ├── reasoning-budget: 3000 (~60s Cap), Message: "Okay, I have enough information to answer."
 │   ├── threads: 1 (Inference), threads-batch: nproc-2 (dynamisch)
 │   ├── jinja: Template-Support fuer Chat-Formate
-│   └── Throughput: ~49 t/s single (RTX 2070s, ctx 65536), ~36 t/s (GTX 1080 Ti)
+│   └── Throughput: ~55 t/s single (RTX 2070s, ctx 196608), ~36 t/s (GTX 1080 Ti)
 │
 ├── llama-server :8081 — bge-m3 Q8_0 (Embedding, CUDA)
 │   ├── Modell: bge-m3-q8_0.gguf (634 MB)
@@ -84,7 +84,7 @@ setup/gpu-server/
 
 - **Kein Hot-Reload** — Modellwechsel erfordert Service-Restart
 - **VRAM-Limit** — Qwen 3.5 9B + bge-m3 muessen zusammen in GPU-VRAM passen
-- **reasoning-budget: 2048** — Server-Maximum, per API-Request steuerbar
+- **reasoning-budget: 3000** — Server-Cap (~60s bei 50 t/s), per API-Request steuerbar. Budget-Message fuer sauberen Abbruch
 - **parallel: 2** — Halbiert ctx pro Slot. Bei knappem VRAM ggf. parallel=1 waehlen
 - **CUDA_ARCHITECTURES** — Build muss zur GPU-Architektur passen (61=Pascal, 75=Turing, 86=Ampere, 89=Ada). Falscher Build crasht!
 - **Ollama-Konflikt** — Ollama belegt GPU-VRAM. Vor llama.cpp-Nutzung deaktivieren

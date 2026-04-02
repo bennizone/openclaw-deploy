@@ -11,17 +11,23 @@ HA-Benchmark: 10/10 Sensoren, 10/10 Tool Calls, 5/5 Konversation, 40.4 t/s.
 **Alternativen verworfen:**
 - Original Qwen 3.5 9B — gleiches VRAM, aber weniger effizientes Reasoning
 
-## 2026-04-02 — reasoning-budget: 1024 → 2048
+## 2026-04-02 — ctx-size 196608, reasoning-budget 3000 + budget-message
 
-**Kontext:** Budget war 1024, zu knapp fuer komplexeres Reasoning. GPU-Wechsel
-von 1080 Ti auf 2070 SUPER bot Anlass zur Neubewertung.
+**Kontext:** ctx-size war 32768 (Onboarding-Default), Budget 1024→2048.
+VRAM-Tests zeigten: 196608 ctx + bge-m3 Embed passt mit 488 MiB Puffer auf RTX 2070 SUPER.
+llama.cpp Update brachte `--reasoning-budget-message`.
 
-**Entscheidung:** `--reasoning-budget 2048` als Server-Maximum. Per API-Request steuerbar.
-Verdopplung erlaubt tieferes Reasoning ohne Endlos-Risiko.
+**Entscheidung:**
+- `--ctx-size 196608` mit parallel=2 → 98304 pro Slot
+- `--reasoning-budget 3000` (~60s bei 50 t/s) als Server-Cap
+- `--reasoning-budget-message "Okay, I have enough information to answer."` (englisch, Qwen-Training)
+- home-llm steuert eigenes Budget per Request (Default 256)
+- OpenClaw-Fallback bekommt volles Server-Budget (3000) fuer maximale Qualitaet
 
 **Alternativen verworfen:**
-- 1024 beibehalten — zu restriktiv fuer Qwen Reasoning-Distilled
-- Kein Budget — Risiko von Endlos-Thinking bleibt
+- Unlimitiertes Budget (-1) — Risiko von Endlos-Thinking
+- 2048 beibehalten — OpenClaw-Fallback profitiert von mehr Thinking-Raum
+- Deutsche Budget-Message — Qwen auf englischen Think-Tokens trainiert
 
 ## 2026-04-02 — GPU-Erkenntnisse ins Onboarding
 

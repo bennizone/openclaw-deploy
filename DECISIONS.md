@@ -15,11 +15,14 @@
 - Tool-Call-Fehler → Retry als HA Intent (agent_id=conversation.home_assistant)
 - Tool-Call-Logging (TOOL_CALL_SUCCESS/FAIL) fuer spaetere Intent-System-Erweiterung
 
-### GPU-Server: Reasoning-Budget 2048
+### GPU-Server: ctx-size 196608, Reasoning-Budget 3000
 
-- **Kontext:** Budget war 1024, zu eng fuer Thinking-Modelle.
-  `--think-budget-message` Flag existiert nicht in aktueller llama.cpp Version.
-- **Entscheidung:** `--reasoning-budget 2048` als Server-Obergrenze. Per API pro Request steuerbar.
+- **Kontext:** Budget war 1024→2048, ctx-size war 32768. llama.cpp Update brachte `--reasoning-budget-message`.
+- **Entscheidung:**
+  - `--ctx-size 196608` (192K) mit parallel=2 → 98304 pro Slot. VRAM: 7704/8192 MiB (488 MiB Puffer)
+  - `--reasoning-budget 3000` (~60s bei 50 t/s) als Server-Cap gegen Endlos-Thinking
+  - `--reasoning-budget-message "Okay, I have enough information to answer."` (englisch, Qwen-Training)
+  - home-llm steuert eigenes Budget per Request (Default 256). OpenClaw-Fallback bekommt volles Budget.
 
 ### /bench LLM-Benchmark Slash-Command
 

@@ -1,0 +1,323 @@
+{
+  "meta": {
+    "timestamp": "2026-04-02T15:20:07Z",
+    "model": "Qwopus3.5-9B-v3-Q4_K_M.gguf",
+    "gpu": "NVIDIA GeForce RTX 2070 SUPER",
+    "gpu_vram": "8192 MiB",
+    "dataset": "ha",
+    "endpoint": "http://10.83.1.110:8080"
+  },
+  "performance": {
+    "speed_test": {
+      "cold": {
+        "prompt_tps": 1051.3238795953805,
+        "generation_tps": 54.511412887465134,
+        "prompt_tokens": 600,
+        "completion_tokens": 124,
+        "ttft_ms": 603,
+        "total_ms": 2878
+      },
+      "warm": {
+        "prompt_tps": 40.55478952064239,
+        "generation_tps": 54.33121871827552,
+        "prompt_tokens": 4,
+        "completion_tokens": 181,
+        "ttft_ms": 112,
+        "total_ms": 3443
+      }
+    },
+    "ttft_ms": {
+      "avg": 7871,
+      "p50": 5503,
+      "p95": 27000
+    },
+    "tokens_per_sec_avg": 48.1,
+    "avg_prompt_tokens": 741,
+    "avg_completion_tokens": 393,
+    "parallel": {}
+  },
+  "summary": {
+    "total_tests": 14,
+    "tool_call_tests": 4,
+    "tool_calls_valid": 4,
+    "errors": 0
+  },
+  "results": [
+    {
+      "content": "Nein, die Lichter im Wohnzimmer sind aus.",
+      "thinking": "The user is asking if the light in the living room is on. I need to check the context data provided.\n\nLooking at the device data:\n- Deckenlampe Wohnzimmer (Wohnzimmer): off\n- Ambiente (Wohnzimmer): off\n\nSo the lights in the living room are currently off. I should answer in German, short and natural, as a smart home assistant.\n\nThe user asked in German, so I should respond in German.\n\nThe answer should be: No, the lights are off. Or simply state that they are off.\n\nSince this is a simple device status query, I don't need to use OPENCLAW. I just need to report the current state.\n\nLet me formulate a natural response: \"Nein, die Lichter im Wohnzimmer sind aus.\" or \"Die Deckenlampe und die Ambiente im Wohnzimmer sind aktuell aus.\"\n\nBut I should keep it short and natural. \"Nein, die Lichter im Wohnzimmer sind aus.\" or simply \"Die Lichter im Wohnzimmer sind aus.\"\n\nActually, looking at the data:\n- Deckenlampe Wohnzimmer: off\n- Ambiente Wohnzimmer: off\n\nSo both are off. I can say \"Nein, die Lichter im Wohnzimmer sind aus.\" or \"Die Lichter im Wohnzimmer sind aus.\"\n\nI'll go with a natural, short response.",
+      "ttft_ms": 5503,
+      "total_ms": 5503,
+      "prompt_tokens": 600,
+      "completion_tokens": 293,
+      "thinking_tokens": 277,
+      "tokens_per_sec": 53.2,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Schlafzimmer sind es 19,2 Grad.",
+      "thinking": "The user is asking about the temperature in the bedroom (Schlafzimmer). I need to check the context data provided.\n\nLooking at the sensor data:\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n- Luftfeuchtigkeit Schlafzimmer (Schlafzimmer): 48 %\n\nSo the temperature in the bedroom is 19.2 Grad Celsius.\n\nI need to answer in German, short and natural (like speech output, no markdown), and write out units (Grad statt °C, Prozent statt %).\n\nThe answer should be: \"Im Schlafzimmer sind es 19,2 Grad.\" or similar.\n\nWait, I need to check the format requirements:\n- Fließtext (flowing text)\n- Maximal 1-2 Sätze\n- Kein Markdown, keine Listen, keine Aufzählungszeichen\n- Einheiten ausschreiben: Grad statt °C, Prozent statt %\n\nSo: \"Im Schlafzimmer sind es 19,2 Grad.\"\n\nOr more natural: \"Im Schlafzimmer herrschen 19,2 Grad.\"\n\nOr: \"Es sind 19,2 Grad im Schlafzimmer.\"\n\nI'll go with a natural sounding response.",
+      "ttft_ms": 5369,
+      "total_ms": 5369,
+      "prompt_tokens": 599,
+      "completion_tokens": 265,
+      "thinking_tokens": 226,
+      "tokens_per_sec": 49.4,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Wohnzimmer sind es 21,8 Grad bei 43 Prozent Luftfeuchtigkeit.",
+      "thinking": "The user is asking about the climate/weather conditions in the living room (Wohnzimmer).\n\nLooking at the context data provided:\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer (Wohnzimmer): 43 %\n- Bewegungsmelder Küche (Küche): 17.4 °C (this is in the kitchen, not living room)\n- Heizung Wohnzimmer (Wohnzimmer): 22 °C (Soll)\n\nSo I have data for the living room:\n- Temperature: 21.8 °C\n- Humidity: 43 %\n\nI need to answer in German, short and natural (spoken output, no markdown). I should write out units: Grad statt °C, Prozent statt %.\n\nThe user asked \"Wie ist das Klima im Wohnzimmer?\" (What is the climate in the living room?)\n\nI should respond with the data from the context:\n- Temperature: 21.8 Grad\n- Humidity: 43 Prozent\n\nI should not invent data, and I have the data available.\n\nFormat: Fließtext, maximal 1-2 Sätze. Kein Markdown, keine Listen, keine Aufzählungszeichen. Einheiten ausschreiben.\n\nSo something like: \"Im Wohnzimmer sind es 21,8 Grad bei 43 Prozent Luftfeuchtigkeit.\" or \"Das Klima im Wohnzimmer beträgt 21,8 Grad mit 43 Prozent Luftfeuchtigkeit.\"\n\nWait, I need to check the exact values:\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Luftfeuchtigkeit Wohnzimmer (Wohnzimmer): 43 %\n\nSo: 21,8 Grad (or 21.8 Grad) and 43 Prozent.\n\nIn German, we usually use comma as decimal separator.\n\nSo: \"Im Wohnzimmer herrschen 21,8 Grad bei 43 Prozent Luftfeuchtigkeit.\"\n\nOr: \"Das Klima im Wohnzimmer beträgt 21,8 Grad mit 43 Prozent Luftfeuchtigkeit.\"\n\nBoth are fine. I'll go with the first one.\n\nAlso, the user asked about \"Klima\" which could mean weather or climate conditions. In this context, it's asking about the current conditions (temperature and humidity).\n\nI should not mention the heating setpoint (22 °C) unless asked, as that's the target, not the current state.\n\nSo final answer: \"Im Wohnzimmer herrschen 21,8 Grad bei 43 Prozent Luftfeuchtigkeit.\"\n\nOr to be more natural: \"Im Wohnzimmer sind es 21,8 Grad bei 43 Prozent Luftfeuchtigkeit.\"\n\nI'll use the second one as it sounds more natural.\n\nWait, I need to make sure I don't use markdown. Just plain text.\n\nAlso, the instruction says \"Einheiten ausschreiben: Grad statt °C, Prozent statt %.\"\n\nSo I should write \"Grad\" and \"Prozent\".\n\nFinal check:\n- German language: Yes\n- Short and natural: Yes\n- No markdown: Yes\n- Units written out: Yes (Grad, Prozent)\n- Max 1-2 sentences: Yes (1 sentence)\n- Only data from context: Yes (21.8 and 43 from the context)\n\nGood.",
+      "ttft_ms": 13941,
+      "total_ms": 13941,
+      "prompt_tokens": 599,
+      "completion_tokens": 728,
+      "thinking_tokens": 617,
+      "tokens_per_sec": 52.2,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "mode": "default"
+    },
+    {
+      "content": "Ich habe das Licht im Wohnzimmer eingeschaltet.",
+      "thinking": "The user wants me to turn on the light in the living room. Looking at the context:\n\n- Current time: 17:20 (5:20 PM)\n- Daytime, neutral light preferred\n- Living room ceiling lamp (Wohnzimmer): off\n- Living room ambient (Wohnzimmer): off\n\nThe user is asking to turn on the light in the living room. I need to:\n1. Turn on the living room ceiling lamp (Deckenlampe Wohnzimmer)\n2. Possibly also turn on the ambient light (Ambiente Wohnzimmer) since they're both off\n\nSince the user didn't specify which light, but there are two lights in the living room (ceiling lamp and ambient), I should probably turn on both or at least the main one. However, looking at the instructions: \"Minimale Bestätigung genügt\" (Minimal confirmation is enough).\n\nBut wait, I need to actually control the devices. The instructions say I'm a smart home assistant. I should respond with the action taken.\n\nActually, looking at the format requirements:\n- Answer in flowing text, max 1-2 sentences\n- No markdown, no lists\n- Write out units: Grad instead of °C, Prozent instead of %\n- Answer only with data from context above\n- For device control: minimal confirmation is enough (e.g., 'Erledigt.' or 'Licht an.')\n\nSince I'm turning on lights, I should confirm the action. But I need to be careful - I should not invent sensor values or device states. I'm just reporting what I'm doing.\n\nThe user asked to turn on the light in the living room. I should turn on the Deckenlampe Wohnzimmer (ceiling lamp) and possibly the Ambiente (ambient). Since both are currently off, and the user said \"das Licht\" (the light), I'll assume they want the main light (ceiling lamp) turned on.\n\nResponse should be something like: \"Ich habe die Deckenlampe im Wohnzimmer eingeschaltet.\" or simply \"Licht an.\"\n\nBut looking at the examples:\n- For simple questions: just answer\n- For device control: minimal confirmation\n\nI think \"Licht an.\" or \"Erledigt.\" is appropriate. But since there are two lights in the living room, and the user didn't specify which one, I should probably turn on the ceiling lamp (main light) and mention it.\n\nActually, looking at the instructions again: \"Wenn kein Raum genannt wird, frage nach welchem Raum gemeint ist.\" (If no room is mentioned, ask which room is meant.) But here the room IS mentioned (Wohnzimmer), so I can proceed.\n\nI'll respond with a simple confirmation.\n\nWait, I need to check if I should actually execute the command or just acknowledge it. The instructions say I'm a smart home assistant, and the user is asking me to turn on the light. I should respond as if I'm executing the command.\n\nResponse: \"Licht an.\" or \"Ich habe das Licht im Wohnzimmer eingeschaltet.\"\n\nGiven the constraint of 1-2 sentences and no markdown, I'll go with: \"Licht an.\"\n\nOr to be more natural: \"Ich habe die Deckenlampe im Wohnzimmer eingeschaltet.\"\n\nBut the instruction says \"Minimale Bestätigung genügt\" (minimal confirmation is enough), so \"Licht an.\" is fine.\n\nActually, looking at the examples again:\n- For questions requiring local/personal knowledge: OPENCLAW: <question>\n- For simple general knowledge: answer yourself\n\nFor device control: \"Minimale Bestätigung genügt (z.B. 'Erledigt.' oder 'Licht an.')\"\n\nSo I'll use \"Licht an.\" or similar.\n\nBut I should also consider that there are two lights in the living room. If I only turn on one, the user might be confused. But the instruction says to answer only with data from context, and I shouldn't invent values. I'm not inventing values, I'm just reporting what I'm doing.\n\nI'll go with: \"Licht an.\"\n\nOr to be slightly more descriptive but still minimal: \"Ich habe das Licht im Wohnzimmer eingeschaltet.\"\n\nGiven the 1-2 sentence limit and natural language requirement, I'll use: \"Licht an.\"\n\nActually, looking at the context again, the user said \"Mach das Licht im Wohnzimmer an\" (Turn on the light in the living room). I should respond with confirmation.\n\nFinal answer: \"Licht an.\"\n\nOr: \"Ich habe die Deckenlampe im Wohnzimmer eingeschaltet.\"\n\nI think the second one is better because it's more natural and confirms what was done.\n\nBut wait, I need to check if I should actually control the devices or just acknowledge the request. The instructions imply I should control the devices. The examples show OPENCLAW for external questions, and for device control, minimal confirmation is enough.\n\nI'll go with: \"Licht an.\"\n\nActually, looking at the instruction again: \"Gerätesteuerung: Minimale Bestätigung genügt (z.B. 'Erledigt.' oder 'Licht an.')\"\n\nSo \"Licht an.\" is perfect.\n\nBut I should also consider that the user might want both lights (ceiling and ambient). However, since the instruction says minimal confirmation, and I don't want to overcomplicate, I'll just say \"Licht an.\"\n\nOr to be safe: \"Ich habe das Licht im Wohnzimmer eingeschaltet.\"\n\nI'll go with the latter as it's more natural and confirms the action.\n\nWait, I need to check the language. The user asked in German, so I respond in German.\n\nFinal decision: \"Ich habe das Licht im Wohnzimmer eingeschaltet.\"\n\nOr simply: \"Licht an.\"\n\nI'll go with \"Licht an.\" as it's minimal and matches the examples.\n\nActually, looking at the instruction again, it says \"Einheiten ausschreiben: Grad statt °C, Prozent statt %.\" This is for sensor data, not for device control.\n\nSo for device control, I just need minimal confirmation.\n\nI'll respond: \"Licht an.\"\n\nBut to be slightly more complete: \"Licht an. Ich habe die Deckenlampe im Wohnzimmer eingeschaltet.\"\n\nNo, that's two sentences and might be too much. The instruction says max 1-2 sentences.\n\nI'll go with: \"Licht an.\"\n\nOr: \"Ich habe das Licht im Wohnzimmer eingeschaltet.\"\n\nI think the second one is better because it's a complete sentence and confirms the action.\n\nFinal answer: \"Ich habe das Licht im Wohnzimmer eingeschaltet.\"",
+      "ttft_ms": 27000,
+      "total_ms": 27000,
+      "prompt_tokens": 599,
+      "completion_tokens": 1420,
+      "thinking_tokens": 1443,
+      "tokens_per_sec": 52.6,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Gerätsteuerung: Licht einschalten",
+      "category": "entity-control",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Suche mir ein gutes veganes Restaurant in Sindelfingen",
+      "thinking": "The user is asking me to search for a good vegan restaurant in Sindelfingen. This requires current, local knowledge (restaurant hours, availability, etc.) which I should delegate to OpenClaw according to the instructions.\n\nThe format requires me to answer ONLY with: OPENCLAW: <Anfrage>\n\nNo text before or after.\n\nSo I need to construct the question for OpenClaw. The user wants a good vegan restaurant in Sindelfingen.\n\nI should phrase this appropriately for OpenClaw. Something like: \"Suche mir ein gutes veganes Restaurant in Sindelfingen\" or \"Empfehle ein veganes Restaurant in Sindelfingen\" or similar.\n\nLet me check the instructions again:\n- \"Fragen die aktuelles, lokales oder persönliches Wissen brauchen (Öffnungszeiten, Restaurants, Produktsuche, Nachrichten, Rezepte, Kalender, Medien-Bibliothek) delegierst du an OpenClaw.\"\n- \"Antworte dann NUR mit: OPENCLAW: <Anfrage>\"\n- \"Kein Text davor oder danach.\"\n\nSo I should write: OPENCLAW: Suche mir ein gutes veganes Restaurant in Sindelfingen\n\nOr perhaps slightly more natural: OPENCLAW: Empfiehl ein gutes veganes Restaurant in Sindelfingen\n\nI'll go with something clear and direct.",
+      "ttft_ms": 6197,
+      "total_ms": 6197,
+      "prompt_tokens": 604,
+      "completion_tokens": 296,
+      "thinking_tokens": 285,
+      "tokens_per_sec": 47.8,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Websuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Was steht morgen im Kalender?",
+      "thinking": "The user is asking about what's in the calendar for tomorrow. This requires access to calendar data, which is not available in the current context. According to the instructions, questions that require current, local, or personal knowledge (including calendar information) should be delegated to OpenClaw.\n\nI need to respond with just: OPENCLAW: <Anfrage>\n\nThe question is: \"Was steht morgen im Kalender?\" (What's in the calendar for tomorrow?)\n\nSo I should respond with: OPENCLAW: Was steht morgen im Kalender?",
+      "ttft_ms": 2796,
+      "total_ms": 2796,
+      "prompt_tokens": 598,
+      "completion_tokens": 125,
+      "thinking_tokens": 127,
+      "tokens_per_sec": 44.7,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Haben wir Severance in der Bibliothek?",
+      "thinking": "The user is asking if we have \"Severance\" in the library. This is a question about media/library content, which requires current, local knowledge or access to a media library. According to the instructions, I should delegate such questions to OpenClaw.\n\nThe format requires me to answer ONLY with: OPENCLAW: <Anfrage>\n\nSo I need to output: OPENCLAW: Haben wir Severance in der Bibliothek?\n\nNo other text, no markdown, no explanations.",
+      "ttft_ms": 2689,
+      "total_ms": 2689,
+      "prompt_tokens": 602,
+      "completion_tokens": 119,
+      "thinking_tokens": 108,
+      "tokens_per_sec": 44.3,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "In welchem Raum möchtest du Licht machen?",
+      "thinking": "The user is asking me to turn on lights (\"Mach mal Licht\"). This is a device control request.\n\nLooking at the context:\n- Current time: 17:21 (5:21 PM)\n- It's daytime with neutral light preferred\n- Various lights are currently off or on:\n  - Deckenlampe Wohnzimmer: off\n  - Ambiente Wohnzimmer: off\n  - Sternenhimmel Schlafzimmer: off\n  - Deckenlampe Schlafzimmer: off\n  - Stehlampe Büro: on\n\nThe user didn't specify which room or which lights. According to the instructions: \"Wenn kein Raum genannt wird, frage nach welchem Raum gemeint ist.\" (If no room is mentioned, ask which room is meant.)\n\nHowever, looking at the examples and the instruction about \"Gerätesteuerung\" (Device control): \"Minimale Bestätigung genügt (z.B. 'Erledigt.' oder 'Licht an.'). Gerät aus aber heller/wärmer gewünscht? Zuerst einschalten.\"\n\nBut since no specific room was mentioned, I should ask which room they want lights in.\n\nWait, let me reconsider. The instruction says: \"Wenn kein Raum genannt wird, frage nach welchem Raum gemeint ist.\" This applies to device control when no room is specified.\n\nSo I should ask which room they want lights in.\n\nBut looking at the format requirements: \"Antworte in Fließtext, maximal 1-2 Sätze.\"\n\nSo I should respond with a question asking which room they want lights in.\n\nActually, looking more carefully at the examples and the nature of the request - \"Mach mal Licht\" is a common way to ask for lights to be turned on. Since multiple lights exist in different rooms, I need to clarify which room.\n\nResponse should be in German, natural, short (1-2 sentences), no markdown.\n\nSo: \"Welchen Raum möchtest du beleuchten?\" or \"In welchem Raum soll ich Licht machen?\"\n\nBut wait - looking at the instruction again: \"Wenn kein Raum genannt wird, frage nach welchem Raum gemeint ist.\"\n\nYes, so I should ask which room.\n\nFinal check: No markdown, no lists, no bullet points. Just plain text.\n\nAnswer: \"In welchem Raum möchtest du Licht machen?\" or similar.\n\nActually, looking at the examples again, they show that for device control, if no room is specified, ask which room. So yes, I should ask.\n\nBut I could also be more conversational: \"Welchen Raum möchtest du beleuchten?\" or \"In welchem Raum soll ich Licht anmachen?\"\n\nI'll go with: \"In welchem Raum möchtest du Licht machen?\"",
+      "ttft_ms": 11166,
+      "total_ms": 11166,
+      "prompt_tokens": 596,
+      "completion_tokens": 577,
+      "thinking_tokens": 573,
+      "tokens_per_sec": 51.7,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "mode": "default"
+    },
+    {
+      "content": "Paris.",
+      "thinking": "The user is asking a simple general knowledge question: \"What is the capital of France?\"\n\nAccording to the instructions:\n- Simple general knowledge (geography, history, math) should be answered by myself\n- I should answer in German, short and natural (spoken output, no markdown)\n- Max 1-2 sentences\n- No markdown, no lists, no bullet points\n- Write out units (but this is not relevant here)\n\nThe answer is Paris.\n\nI should respond: \"Paris.\" or \"Die Hauptstadt von Frankreich ist Paris.\"\n\nSince the user asked in German, I should answer in German.\n\nSimple answer: \"Paris.\" or slightly more complete: \"Die Hauptstadt von Frankreich ist Paris.\"\n\nGiven the instruction says \"maximal 1-2 Sätze\" (max 1-2 sentences), and \"kurz und natürlich\" (short and natural), I'll go with a simple, natural response.\n\n\"Paris.\" is very short, but \"Die Hauptstadt von Frankreich ist Paris.\" is also fine and sounds natural.\n\nActually, looking at the examples:\n- For OPENCLAW delegation: \"OPENCLAW: <Anfrage>\"\n- For general knowledge: \"Paris.\"\n\nSo for general knowledge, I should just give the answer directly.\n\n\"Paris.\" is perfect.",
+      "ttft_ms": 5821,
+      "total_ms": 5821,
+      "prompt_tokens": 599,
+      "completion_tokens": 279,
+      "thinking_tokens": 277,
+      "tokens_per_sec": 47.9,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "mode": "default"
+    },
+    {
+      "content": "Im Wohnzimmer sind es 21,8 Grad Celsius, im Schlafzimmer 19,2 Grad Celsius und in der Küche 17,4 Grad Celsius. Die Heizung ist im Wohnzimmer auf 22 Grad und im Schlafzimmer auf 18 Grad eingestellt.",
+      "thinking": "The user is asking for an overview of all temperatures in the house. I need to look at the context data provided:\n\nCurrent sensor data:\n- Bewegungsmelder Küche (Küche): 17.4 °C\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n- Heizung Wohnzimmer (Wohnzimmer): 22 °C (Soll)\n- Heizung Schlafzimmer (Schlafzimmer): 18 °C (Soll)\n\nSo I have:\n- Küche: 17.4 Grad Celsius\n- Wohnzimmer: 21.8 Grad Celsius\n- Schlafzimmer: 19.2 Grad Celsius\n\nI also have heating setpoints (Soll):\n- Wohnzimmer: 22 Grad Celsius\n- Schlafzimmer: 18 Grad Celsius\n\nI should present this information clearly in German, using the full word \"Grad\" instead of the symbol °C, and \"Prozent\" instead of % (though there are no percentages here).\n\nThe user wants a short, natural response in German, 1-2 sentences max, no markdown.\n\nLet me formulate:\n\"Im Wohnzimmer sind es 21,8 Grad Celsius, im Schlafzimmer 19,2 Grad Celsius und in der Küche 17,4 Grad Celsius. Die Heizung ist im Wohnzimmer auf 22 Grad und im Schlafzimmer auf 18 Grad eingestellt.\"\n\nWait, I need to check the format requirements again:\n- Short and natural (speech output, no markdown)\n- Max 1-2 sentences\n- Write out units: Grad statt °C, Prozent statt %\n\nSo:\n\"Im Wohnzimmer sind es 21,8 Grad Celsius, im Schlafzimmer 19,2 Grad Celsius und in der Küche 17,4 Grad Celsius. Die Heizung ist im Wohnzimmer auf 22 Grad und im Schlafzimmer auf 18 Grad eingestellt.\"\n\nThat's 2 sentences, which is fine. It's natural German.\n\nActually, looking at the data again:\n- Bewegungsmelder Küche (Küche): 17.4 °C\n- Klimasensor Wohnzimmer (Wohnzimmer): 21.8 °C\n- Klimasensor Schlafzimmer (Schlafzimmer): 19.2 °C\n\nSo yes, those are the three temperature readings.\n\nI should also mention the heating setpoints since they are temperatures too.\n\nFinal check:\n- German language: Yes\n- Short and natural: Yes\n- No markdown: Yes\n- Units written out: Yes (Grad Celsius)\n- Max 1-2 sentences: Yes (2 sentences)\n- Only using provided data: Yes\n\nGood to go.",
+      "ttft_ms": 12131,
+      "total_ms": 12131,
+      "prompt_tokens": 602,
+      "completion_tokens": 629,
+      "thinking_tokens": 501,
+      "tokens_per_sec": 51.9,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "mode": "default"
+    },
+    {
+      "content": "",
+      "thinking": "The user wants me to turn on the light in the living room (Wohnzimmer). Looking at the available devices:\n\n- Deckenlampe Wohnzimmer (Wohnzimmer): off\n- Ambiente (Wohnzimmer): off\n\nI should turn on one of these. The Deckenlampe (ceiling lamp) is the main light. I'll use HassTurnOn with the name \"Deckenlampe Wohnzimmer\" and area \"Wohnzimmer\".\n\nWait, looking at the HassTurnOn function parameters:\n- name: Device friendly name\n- area: Area name  \n- floor: Floor name\n\nThe device name is \"Deckenlampe Wohnzimmer\" and area is \"Wohnzimmer\".\n\nI'll call HassTurnOn with these parameters.",
+      "ttft_ms": 4628,
+      "total_ms": 4628,
+      "prompt_tokens": 1092,
+      "completion_tokens": 193,
+      "thinking_tokens": 145,
+      "tokens_per_sec": 41.7,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOn",
+          "arguments": {
+            "name": "Deckenlampe Wohnzimmer",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Nutzer möchte das Licht im Arbeitszimmer heller machen. Ich muss zuerst prüfen, welche Lichter im Arbeitszimmer (oder Büro) an sind. Laut den Daten ist die Stehlampe im Büro an. Ich sollte diese heller machen.\n\nIch verwende HassLightSet mit name \"Stehlampe\", area \"Büro\" und eine höhere Helligkeit. Da die aktuelle Helligkeit nicht angegeben ist, nehme ich einen hohen Wert wie 90 oder 100.\n\nDie Antwort sollte kurz sein und bestätigen, dass das Licht heller gemacht wurde.",
+      "ttft_ms": 3493,
+      "total_ms": 3493,
+      "prompt_tokens": 1093,
+      "completion_tokens": 161,
+      "thinking_tokens": 119,
+      "tokens_per_sec": 46.1,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassLightSet",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro",
+            "brightness": "90"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "The user wants me to set the heating in the bedroom (Schlafzimmer) to 20 degrees.\n\nLooking at the context:\n- Current heating setting in Schlafzimmer is 18°C (Soll)\n- I need to use HassClimateSetTemperature function\n- The device name is \"Heizung Schlafzimmer\" based on the sensor data\n- Area is \"Schlafzimmer\"\n- Temperature is 20\n\nI should call HassClimateSetTemperature with:\n- name: \"Heizung Schlafzimmer\"\n- area: \"Schlafzimmer\"\n- temperature: \"20\"\n\nThe response should be in German, short and natural, no markdown, no lists.",
+      "ttft_ms": 4005,
+      "total_ms": 4005,
+      "prompt_tokens": 1096,
+      "completion_tokens": 188,
+      "thinking_tokens": 131,
+      "tokens_per_sec": 46.9,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassClimateSetTemperature",
+          "arguments": {
+            "name": "Heizung Schlafzimmer",
+            "area": "Schlafzimmer",
+            "temperature": "20"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "Der Nutzer möchte das Licht im Büro ausmachen und im Wohnzimmer anmachen.\n\nAus den Daten:\n- Stehlampe (Büro): on → soll aus\n- Deckenlampe Wohnzimmer (Wohnzimmer): off → soll an\n- Ambiente (Wohnzimmer): off → könnte auch an sein, aber der Nutzer sagt nur \"Licht im Wohnzimmer\", also wahrscheinlich die Deckenlampe\n\nIch sollte:\n1. Stehlampe (Büro) ausschalten\n2. Deckenlampe Wohnzimmer (Wohnzimmer) einschalten\n\nIch kann auch Ambiente einschalten, aber da der Nutzer nicht explizit danach gefragt hat, bleibe ich bei der Deckenlampe.\n\nFunktionsaufrufe:\n- HassTurnOff für Stehlampe (Büro)\n- HassTurnOn für Deckenlampe Wohnzimmer (Wohnzimmer)\n\nDie Antwort sollte kurz sein, da es eine Gerätesteuerung ist.",
+      "ttft_ms": 5463,
+      "total_ms": 5463,
+      "prompt_tokens": 1096,
+      "completion_tokens": 235,
+      "thinking_tokens": 175,
+      "tokens_per_sec": 43.0,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOff",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    }
+  ]
+}
