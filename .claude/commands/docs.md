@@ -55,6 +55,17 @@ Format:
 3. **Architektur-Aenderungen:** architecture.md + model-routing.md updaten
 4. **Neue Features:** creating-skills.md erweitern wenn noetig
 
+## Delegation an MiniMax (optional)
+
+Fuer einfache Doku-Updates kann die Arbeit an MiniMax delegiert werden:
+
+```bash
+node scripts/consult-sdk.mjs --question "<doku-aufgabe>" --component <name> --tools Read,Glob,Grep,Edit,Write --max-turns 15
+```
+
+Geeignet fuer: DECISIONS.md Eintraege, description.md Updates, kleine Korrekturen.
+Nicht geeignet: Neue Dokumentationsstrukturen, komplexe Reviews, Troubleshooting-Guides.
+
 ## Verhalten
 - Deutsch
 - Praegnant — kein Fliesstext wenn Stichpunkte reichen

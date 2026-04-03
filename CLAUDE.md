@@ -99,6 +99,7 @@ Konsultation (MiniMax) und Implementierung (Claude/coder).
 | Aufgabe | Modell |
 |---------|--------|
 | Orchestrierung, Coding (`/coder`), Review (`/reviewer`) | Claude (Pro/Max) |
+| Leichtgewichtiges Coding (`/coder-light`) | MiniMax M2.7 (via SDK) |
 | Konsultation, Tests, Protokoll, Routine | MiniMax (via chatCompletions) |
 
 Konsultation via SDK-Script:
@@ -189,6 +190,7 @@ Architektur-Erklaerungen) gehoeren in eigene Dateien (`docs/`, `benchmarks/READM
 |---------|-------|--------------------|
 | `/onboard` | Komplett-Setup | Sonnet |
 | `/coder` | Code schreiben | Sonnet |
+| `/coder-light` | Leichtgewichtiger Code-Assistent (MiniMax) | Haiku |
 | `/helper` | Ueberblick + Hilfe | Haiku |
 | `/openclaw-expert` | System-Fragen | Sonnet |
 | `/openclaw-skill-creator` | Neue Skills | Sonnet |

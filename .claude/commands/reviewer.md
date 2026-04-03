@@ -42,25 +42,23 @@ und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
    - **Design-blockierend:** (Architektur, API-Bruch, Sicherheit) — mit `[BLOCKIEREND]` markieren, Workflow muss pausieren
    - **Design-nicht-blockierend:** (Verbesserungsvorschlaege, Stilfragen) — mit `[TODO]` markieren, wird geparkt
 
-## Tokenfresser-Delegation (bei grossen Diffs)
+## MiniMax-Delegation (Standard)
 
-Wenn der Diff > 6000 Zeichen ist, NICHT komplett selbst lesen.
-Stattdessen MiniMax fuer die Erstanalyse nutzen:
+Reviews IMMER an MiniMax delegieren — spart Orchestrator-Kontext:
 
 1. Diff in Temp-Datei: `git diff -- <dateien> > /tmp/review-diff.txt`
-2. Groesse pruefen: `wc -c /tmp/review-diff.txt`
-3. Wenn > 6000 Zeichen:
+2. Neue/untracked Dateien auflisten: `git ls-files --others --exclude-standard >> /tmp/review-diff.txt`
+3. Review an MiniMax:
    ```bash
    node scripts/consult-sdk.mjs \
      --component reviewer \
-     --question "Lies /tmp/review-diff.txt. Pruefe auf: Secrets, Breaking Changes, toter Code, Error-Handling. Liste Findings als Tabelle mit [mechanisch]/[BLOCKIEREND]/[TODO] mit Datei und Zeile." \
+     --question "Lies /tmp/review-diff.txt und alle geaenderten Dateien. Pruefe auf: Secrets, Breaking Changes, toter Code, Error-Handling, Konsistenz. Liste Findings als Tabelle mit [mechanisch]/[BLOCKIEREND]/[TODO] mit Datei und Zeile." \
      --input-file /tmp/review-diff.txt \
+     --tools Read,Glob,Grep \
      --usage-log /tmp/review-usage.log
    ```
-4. Nur die gemeldeten Stellen gezielt mit `Read` pruefen
-5. Pflicht-Checks (Secrets, Build, Plugin-Doctor, Breaking Changes, Version) weiterhin SELBST pruefen
-
-**Hinweis:** Diff-Inhalt bleibt lokal (localhost→GPU), aber pruefen ob offensichtliche Secrets vor Delegation entfernt werden koennen.
+4. Mechanische Findings direkt an `/coder-light` oder `/coder` weiterleiten
+5. Blockierende Findings → Workflow pausieren, User informieren
 
 ## Kontext
 

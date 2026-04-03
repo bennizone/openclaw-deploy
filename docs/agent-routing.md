@@ -98,5 +98,6 @@ siehe [CLAUDE.md](../CLAUDE.md) → Abschnitte "Modell-Zuweisung" und "Slash-Com
 | Aufgabe | Modell |
 |---------|--------|
 | Orchestrierung, Coding, Review | Claude (Pro/Max) |
+| Leichtgewichtiges Coding (Edit, Write, Bash) | MiniMax M2.7 (via `/coder-light`) |
 | Konsultation, Tests, Protokoll | MiniMax (via chatCompletions) |
 | Analyse grosser Datenmengen | MiniMax (via `consult-sdk.mjs --input-file`, SDK-Agent mit Read/Glob/Grep-Zugriff) |

@@ -13,6 +13,7 @@
 //     [--input-file <path>]
 //     [--usage-log <path>]
 //     [--max-turns <n>]
+//     [--tools Read,Glob,Grep,Edit,Write,Bash]
 
 import { readFileSync, appendFileSync, existsSync } from "node:fs";
 import { resolve, join } from "node:path";
@@ -28,6 +29,7 @@ let brief = false;
 let inputFile = "";
 let usageLog = "";
 let maxTurns = 15;
+let tools = "";
 
 for (let i = 0; i < args.length; i++) {
   switch (args[i]) {
@@ -52,31 +54,29 @@ for (let i = 0; i < args.length; i++) {
     case "--max-turns":
       maxTurns = parseInt(args[++i], 10);
       break;
+    case "--tools":
+      tools = args[++i];
+      break;
   }
 }
 
-if (!component || !question) {
+if (!question) {
   process.stderr.write(
-    "Usage: node consult-sdk.mjs --component <name> --question \"<prompt>\" [optionen]\n\n" +
+    "Usage: node consult-sdk.mjs --question \"<prompt>\" [optionen]\n\n" +
     "Optionen:\n" +
+    "  --component <name>   Komponente (laedt description.md als System-Prompt)\n" +
     "  --with-decisions     decisions.md an System-Prompt anhaengen\n" +
     "  --brief              Kompakte Antwort (max 5-8 Saetze)\n" +
     "  --input-file <path>  Agent liest diese Datei als Teil der Aufgabe\n" +
     "  --usage-log <path>   Token-Usage loggen (append)\n" +
-    "  --max-turns <n>      Max agentic turns (Default: 15)\n"
+    "  --max-turns <n>      Max agentic turns (Default: 15)\n" +
+    "  --tools <list>       Komma-separierte Tool-Liste (Default: Read,Glob,Grep)\n"
   );
   process.exit(1);
 }
 
 // --- Repo-Root und Komponenten-Pfade ---
 const repoDir = resolve(import.meta.dirname, "..");
-const compDir = join(repoDir, "components", component);
-const descFile = join(compDir, "description.md");
-
-if (!existsSync(descFile)) {
-  process.stderr.write(`ERROR: ${descFile} nicht gefunden\n`);
-  process.exit(1);
-}
 
 // --- MINIMAX_API_KEY aus ~/.openclaw/.env lesen ---
 const envFile = join(homedir(), ".openclaw", ".env");
@@ -96,12 +96,30 @@ if (!minimaxKey) {
 }
 
 // --- System-Prompt bauen ---
-let systemPrompt = readFileSync(descFile, "utf-8");
+let systemPrompt = "";
 
-if (withDecisions) {
-  const decisionsFile = join(compDir, "decisions.md");
-  if (existsSync(decisionsFile)) {
-    systemPrompt += "\n\n---\n\n# Decisions\n\n" + readFileSync(decisionsFile, "utf-8");
+if (component) {
+  const compDir = join(repoDir, "components", component);
+  const descFile = join(compDir, "description.md");
+  if (!existsSync(descFile)) {
+    process.stderr.write(`ERROR: ${descFile} nicht gefunden\n`);
+    process.exit(1);
+  }
+  systemPrompt = readFileSync(descFile, "utf-8");
+
+  if (withDecisions) {
+    const decisionsFile = join(compDir, "decisions.md");
+    if (existsSync(decisionsFile)) {
+      systemPrompt += "\n\n---\n\n# Decisions\n\n" + readFileSync(decisionsFile, "utf-8");
+    }
+  }
+} else {
+  // Generischer Code-Assistent: coder.md als System-Prompt
+  const coderFile = join(repoDir, ".claude", "commands", "coder.md");
+  if (existsSync(coderFile)) {
+    systemPrompt = readFileSync(coderFile, "utf-8");
+  } else {
+    systemPrompt = "Du bist ein Code-Assistent fuer das OpenClaw-Projekt. Lies relevante Dateien bevor du Code aenderst.";
   }
 }
 
@@ -147,13 +165,17 @@ for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     totalInputTokens = 0;
     totalOutputTokens = 0;
 
+    const allowedTools = tools
+      ? tools.split(",").map((t) => t.trim())
+      : ["Read", "Glob", "Grep"];
+
     for await (const message of query({
       prompt: fullPrompt,
       options: {
         systemPrompt: systemPrompt,
         cwd: repoDir,
         env: env,
-        allowedTools: ["Read", "Glob", "Grep"],
+        allowedTools: allowedTools,
         maxTurns: maxTurns,
         permissionMode: "bypassPermissions",
       },
@@ -215,6 +237,6 @@ if (result) {
 // --- Usage-Log ---
 if (usageLog) {
   const ts = new Date().toISOString();
-  const logLine = `${ts} ${component} sdk prompt=${totalInputTokens} completion=${totalOutputTokens}\n`;
+  const logLine = `${ts} ${component || "generic"} sdk prompt=${totalInputTokens} completion=${totalOutputTokens}\n`;
   appendFileSync(usageLog, logLine);
 }
