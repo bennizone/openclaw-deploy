@@ -155,7 +155,9 @@ if (inputFile) {
 }
 
 // --- Session-Log ---
-const resolvedSessionLogDir = sessionLogDir;
+// Auto-Default: Wenn ~/.openclaw/sdk-sessions/ existiert, logge automatisch
+const defaultSessionDir = join(homedir(), ".openclaw", "sdk-sessions");
+const resolvedSessionLogDir = sessionLogDir || (existsSync(defaultSessionDir) ? defaultSessionDir : null);
 
 let sessionLogEnabled = false;
 let sessionLogFile = null;
