@@ -6,7 +6,7 @@
 #
 # Das Script:
 #   1. Fuehrt aggregate-sessions.py --minimax aus
-#   2. Sendet Ergebnis via consult-agent.sh reviewer an MiniMax
+#   2. Sendet Ergebnis via consult-sdk.mjs reviewer an MiniMax
 #   3. Gibt MiniMax-Antwort (Meta-Analyse) aus
 
 set -euo pipefail
@@ -46,4 +46,4 @@ Format: 'In DATEI nach STELLE ergaenzen: TEXT'
 ${AGGREGATION}
 ENDQUESTION
 
-"$SCRIPT_DIR/consult-agent.sh" reviewer "$QUESTION"
+node "$SCRIPT_DIR/consult-sdk.mjs" --component reviewer --question "$QUESTION"

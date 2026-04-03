@@ -67,7 +67,7 @@ Kein Build — Tester ist ein uebergreifender Agent ohne eigenen Code.
 | Test-Anweisungen schreiben | Jeweilige Komponente (in testinstruct.md) |
 | DECISIONS.md | **protokollant** |
 
-## Tokenfresser (MiniMax Chunking)
+## MiniMax SDK-Delegation
 
-Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
-`consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
+Bei grossen Datenmengen: `consult-sdk.mjs --input-file` statt Claude nutzen.
+Der SDK-Agent hat Read/Glob/Grep-Zugriff. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).

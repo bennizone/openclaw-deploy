@@ -1,7 +1,7 @@
 # /reflect — Session Self-Reflection
 
 Analysiert eine Claude Code Session auf Token-Waste und schlaegt Patches fuer Checklisten vor.
-Die schwere Analyse laeuft via MiniMax (chunked), Claude reviewt nur das kompakte Ergebnis.
+Die schwere Analyse laeuft via MiniMax SDK-Agent, Claude reviewt nur das kompakte Ergebnis.
 
 ## Input
 
@@ -15,7 +15,7 @@ Wenn leer: Frage nach dem JSONL-Pfad. Tipp: JSONL-Sessions liegen unter
 | Rolle | Wer | Aufgabe |
 |-------|-----|---------|
 | Extraktion + Audit | Python-Scripts (lokal) | JSONL → Tool-Calls, Orchestrator-Audit |
-| Analyse + Patches | MiniMax (chunked via consult-agent.sh) | Patterns finden, Patches vorschlagen, konsolidieren |
+| Analyse + Patches | MiniMax (via consult-sdk.mjs) | Patterns finden, Patches vorschlagen, konsolidieren |
 | Autonomie-Updates | Python-Script (lokal) | Metriken mechanisch aktualisieren |
 | Review + Luecken | Claude (Orchestrator) | Kompaktes Ergebnis bewerten, KEIN-FIX Patterns ergaenzen |
 | Freigabe | User | Finale Entscheidung was angewendet wird |
@@ -31,7 +31,7 @@ scripts/reflect-auto.sh "$JSONL_PATH" --output-dir /tmp/reflect-current
 Das Script macht automatisch:
 1. Tool-Calls extrahieren (`extract-session-calls.py`)
 2. Orchestrator Self-Audit (`orchestrator-audit.py`)
-3. MiniMax-Analyse mit Chunking (`consult-agent.sh --input-file --reduce-prompt`)
+3. MiniMax-Analyse via SDK-Agent (`consult-sdk.mjs --input-file`)
 4. Autonomie-Metriken aktualisieren
 5. Ergebnis-Datei schreiben: `/tmp/reflect-current/reflect-result.md`
 

@@ -61,7 +61,7 @@ Proxmox / Bare-Metal
 | `setup/gpu-server/` | GPU Setup-Scripts + systemd | GPU-Server |
 | `agents/` | Agent-Workspace-Templates | LXC: ~/.openclaw/workspace-*/ |
 | `config/` | Config-Templates + Versions | Generiert nach ~/.openclaw/ |
-| `scripts/` | consult-agent (MiniMax + Chunking), reflect-auto, orchestrator-audit, autonomy-status | LXC: Repo |
+| `scripts/` | consult-sdk (MiniMax SDK), reflect-auto, orchestrator-audit, autonomy-status | LXC: Repo |
 
 ## Modell-Routing
 
@@ -101,24 +101,19 @@ Konsultation (MiniMax) und Implementierung (Claude/coder).
 | Orchestrierung, Coding (`/coder`), Review (`/reviewer`) | Claude (Pro/Max) |
 | Konsultation, Tests, Protokoll, Routine | MiniMax (via chatCompletions) |
 
-Konsultation via Helper-Script:
+Konsultation via SDK-Script:
 ```bash
-scripts/consult-agent.sh <komponente> "<frage>"
-scripts/consult-agent.sh <komponente> "<frage>" --with-decisions
+node scripts/consult-sdk.mjs --component <komponente> --question "<frage>"
+node scripts/consult-sdk.mjs --component <komponente> --question "<frage>" --with-decisions
 ```
 
-Das Script liest Token, description.md und Scopes-Header automatisch.
+Das Script liest MINIMAX_API_KEY, description.md und startet einen SDK-Agent auf MiniMax M2.7.
+Der Agent hat Read/Glob/Grep-Zugriff und kann grosse Dateien selbst lesen (kein manuelles Chunking noetig).
 
-Chunked Map-Reduce fuer grosse Datenmengen:
+Fuer grosse Datenmengen:
 ```bash
-scripts/consult-agent.sh <komponente> "<map-prompt>" \
-  --input-file <daten.txt> \
-  --reduce-prompt "<konsolidierungs-prompt>" \
-  --delay 3 --overlap 5
+node scripts/consult-sdk.mjs --component <komponente> --question "<analyse-prompt>" --input-file <daten.txt>
 ```
-
-Das Script chunkt die Datei automatisch, sendet Chunks parallel an MiniMax,
-und konsolidiert die Ergebnisse. Nutzen statt Claude fuer Analyse-Aufgaben.
 
 ### Workflow-Tracking (PFLICHT)
 

@@ -465,24 +465,23 @@ Bei Folge-Audits: Vergleiche mit dem letzten Audit und zeige Fortschritt:
 - Bei Config-Problemen: Empfehlung ausgeben, NICHT automatisch fixen
 - Ergebnis kann als Grundlage fuer Wartungsarbeiten dienen
 
-## Tokenfresser-Delegation (PFLICHT bei grossen Datenmengen)
+## MiniMax SDK-Delegation (PFLICHT bei grossen Datenmengen)
 
-Wenn eine Kategorie Daten > 6000 Zeichen erzeugt, NICHT selbst lesen und analysieren.
-Stattdessen: Daten in Temp-Datei sammeln, via `consult-agent.sh --input-file` an MiniMax delegieren,
-nur das MiniMax-Ergebnis lesen.
+Bei Kategorien mit grossen Datenmengen: An MiniMax SDK-Agent delegieren statt selbst analysieren.
+Der SDK-Agent hat Read/Glob/Grep-Zugriff und kann Dateien selbst lesen und durchsuchen.
 
 ### Kategorien mit MiniMax-Delegation
 
-| Kategorie | Daten sammeln | MiniMax-Prompt |
-|-----------|--------------|----------------|
-| 5 (Compliance) | `python3 scripts/orchestrator-audit.py "$LATEST" > /tmp/audit-compliance.txt` | `consult-agent.sh audit "Bewerte Compliance-Daten, liste Violations als Tabelle" --input-file /tmp/audit-compliance.txt --brief` |
-| 6 (Code) | Grep-Output in Temp-Datei | `consult-agent.sh audit "Finde Redundanzen und Copy-Paste" --input-file /tmp/audit-code.txt --reduce-prompt "Konsolidiere als Tabelle"` |
-| 8 (Workflow) | Multi-Session orchestrator-audit.py Output | `consult-agent.sh audit "Aggregiere Violations, identifiziere haeufigste Patterns" --input-file /tmp/audit-workflow.txt --brief` |
-| 9 (Reflect) | workflow-patterns.md | `consult-agent.sh audit "Welche geloesten Patterns verifizieren, welche offenen sind dringend?" --input-file /tmp/audit-reflect.txt --brief` |
+| Kategorie | Vorgehen | MiniMax-Prompt |
+|-----------|----------|----------------|
+| 3 (Doku-Stimmigkeit) | SDK-Agent prueft selbst | `node scripts/consult-sdk.mjs --component audit --question "Lies alle components/*/description.md, claude.md und testinstruct.md. Pruefe auf Widersprueche zwischen Komponenten, fehlende Pflicht-Sektionen und Abgrenzungs-Konflikte. Liste Findings als Tabelle." --brief` |
+| 5 (Compliance) | Daten via Script sammeln | `node scripts/consult-sdk.mjs --component audit --question "Bewerte Compliance-Daten, liste Violations als Tabelle" --input-file /tmp/audit-compliance.txt --brief` |
+| 6 (Code) | SDK-Agent greift selbst | `node scripts/consult-sdk.mjs --component audit --question "Lies alle TypeScript-Dateien in plugins/*/src/ und services/*/src/. Finde Redundanzen, Copy-Paste-Code und unreferenzierte Exports. Konsolidiere als Tabelle."` |
+| 7 (Konsistenz) | SDK-Agent greift selbst | `node scripts/consult-sdk.mjs --component audit --question "Grep in allen TS- und PY-Dateien nach Naming-Patterns (camelCase vs snake_case), Error-Handling (try/catch vs .catch), Logging (console.log vs stderr). Bewerte Einheitlichkeit." --brief` |
+| 8 (Workflow) | Daten via Script sammeln | `node scripts/consult-sdk.mjs --component audit --question "Aggregiere Violations, identifiziere haeufigste Patterns" --input-file /tmp/audit-workflow.txt --brief` |
+| 9 (Reflect) | SDK-Agent liest selbst | `node scripts/consult-sdk.mjs --component audit --question "Lies docs/workflow-patterns.md. Welche geloesten Patterns verifizieren, welche offenen sind dringend?" --brief` |
 
 ### Kategorien OHNE Delegation (Claude direkt)
 
-Kategorien 1-2, 4 (Infrastruktur, Config, Memory): Erzeugen kompakte Outputs.
-Kategorie 3 (Doku): Normalerweise Claude (braucht Glob+Read), aber bei grossen Projekten mit vielen Komponenten: Ergebnisse der Vollstaendigkeits- und Template-Pruefung in Temp-Datei sammeln und MiniMax fuer Stimmigkeits-Analyse (3c) nutzen.
-Kategorie 7 (Konsistenz): Braucht Grep-Zugriff.
-Kategorie 10 (Gesamtbewertung): Braucht Claude-Urteilskraft.
+Kategorien 1-2, 4 (Infrastruktur, Config, Memory): Erzeugen kompakte Outputs, brauchen Bash-Zugriff.
+Kategorie 10 (Gesamtbewertung): Braucht Claude-Urteilskraft fuer Synthese aller Ergebnisse.

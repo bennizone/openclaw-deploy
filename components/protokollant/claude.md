@@ -69,7 +69,7 @@ Kein Build — Protokollant ist ein uebergreifender Agent ohne eigenen Code.
 | components/*/testinstruct.md | Jeweilige Komponente |
 | CLAUDE.md (Haupt-Config) | Nur von Orchestrator geaendert |
 
-## Tokenfresser (MiniMax Chunking)
+## MiniMax SDK-Delegation
 
-Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
-`consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
+Bei grossen Datenmengen: `consult-sdk.mjs --input-file` statt Claude nutzen.
+Der SDK-Agent hat Read/Glob/Grep-Zugriff. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).

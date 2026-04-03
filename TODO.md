@@ -43,11 +43,8 @@ Offene Punkte, nach Prioritaet sortiert.
 - Betrifft: Agent-Workspace (SOUL.md Anweisung), neue Datei fuer Request-Liste
 
 
-### Reviewer Tokenfresser-Delegation verbessern
-- MiniMax Chunk-Review produziert False Positives durch abgeschnittenen Kontext (4/4 bei Phase 2 Review)
-- Problem: Chunks schneiden mitten in Funktionen, MiniMax sieht z.B. kein `async` oder try/catch
-- Ideen: a) Overlap vergroessern (aktuell 3 Zeilen), b) Chunks an Datei-Grenzen schneiden statt Zeilen-Grenzen, c) Pre-Summary pro Datei mitgeben ("Diese Datei hat async function X mit try/catch"), d) Nur mechanische Checks delegieren, Design-Checks manuell
-- Betrifft: `/reviewer` Skill, `scripts/consult-agent.sh` Chunking-Logik
+### ~~Reviewer Tokenfresser-Delegation verbessern~~ (ERLEDIGT — SDK-Migration 2026-04-03)
+- Geloest durch Migration auf `consult-sdk.mjs`: SDK-Agent hat Read/Glob/Grep-Zugriff, kein manuelles Chunking mehr noetig. Agent liest Dateien nativ und sieht vollen Kontext.
 
 ### Workflow pruefen: Tester-Reihenfolge
 - Im 14-Schritte-Workflow (Schritt 9) laeuft `/tester` BEVOR Tests definiert sind

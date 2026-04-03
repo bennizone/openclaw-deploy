@@ -53,10 +53,10 @@ Kein Build — Reviewer ist ein uebergreifender Agent ohne eigenen Code.
 | Code schreiben/fixen | **coder** (wird nach Review bei Problemen aufgerufen) |
 | Alle description.md lesen | Bei Bedarf, fuer Kontext der betroffenen Komponente |
 
-## Tokenfresser (MiniMax Chunking)
+## MiniMax SDK-Delegation
 
-Bei grossen Datenmengen (Diffs, Logs, Session-Daten >6000 Zeichen):
-`consult-agent.sh --input-file` statt Claude nutzen. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
+Bei grossen Datenmengen: `consult-sdk.mjs --input-file` statt Claude nutzen.
+Der SDK-Agent hat Read/Glob/Grep-Zugriff. Siehe [docs/tokenfresser.md](../../docs/tokenfresser.md).
 
 **Konkret fuer Reviewer:**
 - Git-Diffs > 6000 Zeichen → MiniMax-Erstanalyse, dann gezielt pruefen

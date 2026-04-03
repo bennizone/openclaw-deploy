@@ -234,8 +234,8 @@ def update_pattern_status(patterns: list[dict], resolved_indices: list[int]) -> 
 
 
 def consult_minimax(pattern: str) -> str | None:
-    """Fallback: MiniMax via consult-agent.sh befragen fuer Komponenten-Zuordnung."""
-    script = REPO_ROOT / "scripts" / "consult-agent.sh"
+    """Fallback: MiniMax via consult-sdk.mjs befragen fuer Komponenten-Zuordnung."""
+    script = REPO_ROOT / "scripts" / "consult-sdk.mjs"
     if not script.exists():
         return None
     question = (
@@ -245,8 +245,8 @@ def consult_minimax(pattern: str) -> str | None:
     )
     try:
         result = subprocess.run(
-            [str(script), "protokollant", question, "--brief"],
-            capture_output=True, text=True, timeout=90,
+            ["node", str(script), "--component", "protokollant", "--question", question, "--brief"],
+            capture_output=True, text=True, timeout=120,
         )
         answer = result.stdout.strip().lower()
         for comp in COMPONENTS:

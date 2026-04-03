@@ -10,7 +10,7 @@
 
 ### Schritt 0: Session-Joiner (neu)
 - Joiner watcht `~/.openclaw/agents/*/sessions/*.jsonl`
-- Filtert consult-agent.sh Sessions raus (kein `[Erinnerungen]`/`[Regeln]` Prefix)
+- Filtert consult-agent.sh/consult-sdk.mjs Sessions raus (kein `[Erinnerungen]`/`[Regeln]` Prefix)
 - Erkennt Channel: WhatsApp, Matrix, Direct (aus Message-Content)
 - Aggregiert in Tages-Channel-Logs: `~/extractor/logs/YYYY-MM-DD_agent_channel.jsonl`
 - State: `~/extractor/logs/.joined-sessions` (bereits verarbeitete Session-IDs)

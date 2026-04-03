@@ -99,4 +99,4 @@ siehe [CLAUDE.md](../CLAUDE.md) → Abschnitte "Modell-Zuweisung" und "Slash-Com
 |---------|--------|
 | Orchestrierung, Coding, Review | Claude (Pro/Max) |
 | Konsultation, Tests, Protokoll | MiniMax (via chatCompletions) |
-| Analyse grosser Datenmengen | MiniMax (via `consult-agent.sh --input-file`, automatisches Chunking mit paralleler Verarbeitung) |
+| Analyse grosser Datenmengen | MiniMax (via `consult-sdk.mjs --input-file`, SDK-Agent mit Read/Glob/Grep-Zugriff) |

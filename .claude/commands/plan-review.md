@@ -23,7 +23,7 @@ Perspektive machbar ist und was beachtet werden muss.
 
 ```bash
 # Pro Komponente (mit decisions.md fuer vollen Kontext):
-scripts/consult-agent.sh <komponente> "Geplante Aenderung: <Beschreibung>. Was muss in deinem Bereich beachtet werden? Gibt es Einschraenkungen oder Konflikte?" --with-decisions
+node scripts/consult-sdk.mjs --component <komponente> --question "Geplante Aenderung: <Beschreibung>. Was muss in deinem Bereich beachtet werden? Gibt es Einschraenkungen oder Konflikte?" --with-decisions
 ```
 
 Alle Komponenten-Konsultationen koennen parallel ausgefuehrt werden.

@@ -176,7 +176,7 @@ def check_violations(calls: list[dict], segments: list[dict]) -> list[dict]:
                 had_tester = True
             elif skill == "docs":
                 had_docs = True
-        elif call["name"] == "Bash" and "consult-agent.sh" in call.get("input", ""):
+        elif call["name"] == "Bash" and ("consult-agent.sh" in call.get("input", "") or "consult-sdk.mjs" in call.get("input", "")):
             had_consult = True
         elif call["name"] == "Read" and "components/" in call["input"] and "description.md" in call["input"]:
             had_description_read = True
@@ -336,7 +336,7 @@ def format_report(session_name: str, calls: list[dict], segments: list[dict],
         for c in calls
     )
     has_consult_bash = any(
-        c["name"] == "Bash" and "consult-agent.sh" in c.get("input", "")
+        c["name"] == "Bash" and ("consult-agent.sh" in c.get("input", "") or "consult-sdk.mjs" in c.get("input", ""))
         for c in calls
     )
     has_consult = bool(skills_used & {"consult", "plan-review"}) or has_consult_bash

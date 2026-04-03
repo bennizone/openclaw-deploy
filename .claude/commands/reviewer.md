@@ -51,10 +51,11 @@ Stattdessen MiniMax fuer die Erstanalyse nutzen:
 2. Groesse pruefen: `wc -c /tmp/review-diff.txt`
 3. Wenn > 6000 Zeichen:
    ```bash
-   scripts/consult-agent.sh reviewer \
-     "Pruefe diesen Diff auf: Secrets, Breaking Changes, toter Code, Error-Handling. Liste Findings als Tabelle mit [mechanisch]/[BLOCKIEREND]/[TODO]." \
+   node scripts/consult-sdk.mjs \
+     --component reviewer \
+     --question "Lies /tmp/review-diff.txt. Pruefe auf: Secrets, Breaking Changes, toter Code, Error-Handling. Liste Findings als Tabelle mit [mechanisch]/[BLOCKIEREND]/[TODO] mit Datei und Zeile." \
      --input-file /tmp/review-diff.txt \
-     --reduce-prompt "Konsolidiere: [mechanisch]/[BLOCKIEREND]/[TODO] mit Datei und Zeile"
+     --usage-log /tmp/review-usage.log
    ```
 4. Nur die gemeldeten Stellen gezielt mit `Read` pruefen
 5. Pflicht-Checks (Secrets, Build, Plugin-Doctor, Breaking Changes, Version) weiterhin SELBST pruefen

@@ -49,4 +49,4 @@ Keine eigenen Code-Dateien — arbeitet uebergreifend.
 - **Keine Runtime-Abhaengigkeiten** — rein analytischer Agent, kein Service, kein Port
 - **Keine eigenen Tests** — prueft Ergebnisse von `/tester`, fuehrt selbst keine aus
 - **Autonomie-Level 0** — alle Aktionen brauchen User-Freigabe
-- **Tokenfresser-Delegation aktiv** — Git-Diffs >6000 Zeichen werden via consult-agent.sh --input-file an MiniMax zur Erstanalyse delegiert. Claude prueft nur gemeldete Stellen gezielt.
+- **MiniMax SDK-Delegation aktiv** — Git-Diffs werden via consult-sdk.mjs an MiniMax zur Erstanalyse delegiert. Der SDK-Agent hat Read/Glob/Grep-Zugriff und analysiert Diffs selbst.

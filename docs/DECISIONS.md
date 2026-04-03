@@ -3,6 +3,18 @@
 Systemweite und architekturuebergreifende Entscheidungen.
 Komponentenspezifische Entscheidungen stehen in `components/<name>/decisions.md`.
 
+## 2026-04-03: consult-agent.sh → consult-sdk.mjs (SDK Agents auf MiniMax)
+
+**Kontext:** consult-agent.sh war ein 388-Zeilen Bash-Script das MiniMax ueber den OpenClaw Gateway aufrief. Probleme: Gateway musste laufen, kein Tool-Zugriff, manuelles Chunking.
+
+**Entscheidung:** Ersetzt durch `scripts/consult-sdk.mjs` — ein Node.js Wrapper um die Claude Code SDK (`@anthropic-ai/claude-agent-sdk`). Der SDK-Agent laeuft direkt auf MiniMax M2.7 als Backend, hat Read/Glob/Grep-Zugriff und braucht kein manuelles Chunking.
+
+**Konsequenzen:**
+- Gateway muss NICHT mehr laufen fuer Konsultationen
+- Kein Chunking/Map-Reduce mehr noetig (Agent liest Dateien selbst)
+- consult-agent.sh bleibt als Fallback, ist aber deprecated
+- Betroffene Skills: /consult, /plan-review, /reviewer, /audit, /reflect
+
 ## 2026-04-02 — System-Prompt Optimierung (home-llm)
 
 **Kontext:** Baseline-Bench zeigte: OPENCLAW-Delegation 50%, Format-Compliance 0%,

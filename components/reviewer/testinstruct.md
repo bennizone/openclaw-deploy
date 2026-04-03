@@ -35,10 +35,10 @@ ls components/*/claude.md | wc -l
 - Reviewer meldet Architektur-Problem
 - Erwartet: Orchestrator holt User-Input
 
-### Test: Tokenfresser-Delegation
+### Test: SDK-Delegation
 ```bash
-# consult-agent.sh mit --input-file funktioniert fuer Reviewer
+# consult-sdk.mjs mit --input-file funktioniert fuer Reviewer
 echo "Test-Diff fuer Review" > /tmp/test-reviewer-tokenfresser.txt
-scripts/consult-agent.sh reviewer "Pruefe auf Probleme" --input-file /tmp/test-reviewer-tokenfresser.txt --brief
+node scripts/consult-sdk.mjs --component reviewer --question "Pruefe auf Probleme" --input-file /tmp/test-reviewer-tokenfresser.txt --brief
 # Erwartet: MiniMax-Antwort (Pipeline-Test, Inhalt sekundaer)
 ```

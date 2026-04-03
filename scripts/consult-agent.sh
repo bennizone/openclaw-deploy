@@ -29,6 +29,8 @@
 #   - Bei langen Fragen (>3000 Zeichen): Automatisches Chunking
 #   - --input-file: Map-Reduce Modus (Datei chunken, pro Chunk analysieren, konsolidieren)
 
+echo "DEPRECATED: consult-agent.sh wird durch consult-sdk.mjs ersetzt. Siehe docs/plans/next-session-sdk-agents.md" >&2
+
 set -euo pipefail
 
 COMPONENT="${1:-}"

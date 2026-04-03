@@ -7,7 +7,7 @@
 # Führt die /reflect Analyse durch mit minimalen Claude-Tokens:
 # 1. Tool-Calls extrahieren (Python)
 # 2. Orchestrator Self-Audit (Python)
-# 3. Session-Analyse via MiniMax (chunked)
+# 3. Session-Analyse via MiniMax (SDK-Agent)
 # 4. Autonomie-Metriken aktualisieren
 # 5. Ergebnis-Datei schreiben für Claude-Review
 #
@@ -67,8 +67,8 @@ python3 "$SCRIPT_DIR/orchestrator-audit.py" "$JSONL" \
 VIOLATIONS=$(grep -c "^| [0-9]" "$OUTPUT_DIR/audit.txt" 2>/dev/null || echo "0")
 echo "  → $VIOLATIONS Violations" >&2
 
-# --- Schritt 3: MiniMax-Analyse (chunked) ---
-echo "Schritt 3: MiniMax-Analyse (chunked)..." >&2
+# --- Schritt 3: MiniMax-Analyse (SDK-Agent) ---
+echo "Schritt 3: MiniMax-Analyse (SDK-Agent)..." >&2
 
 MAP_PROMPT="Analysiere diesen Ausschnitt einer Claude Code Session auf Token-Waste.
 
@@ -94,12 +94,13 @@ DEINE AUFGABE: Konsolidiere zu EINER Gesamtanalyse. Antworte NUR mit dem Ergebni
    | Datum | Feature | Pattern | Fix | Status | Anzahl |
 5) Liste betroffene Komponenten-Namen (nur Namen, kommasepariert)"
 
-"$SCRIPT_DIR/consult-agent.sh" reviewer \
-  "$MAP_PROMPT" \
+node "$SCRIPT_DIR/consult-sdk.mjs" \
+  --component reviewer \
+  --question "$MAP_PROMPT
+
+Konsolidiere das Ergebnis: $REDUCE_PROMPT" \
   --input-file "$OUTPUT_DIR/calls.txt" \
-  --reduce-prompt "$REDUCE_PROMPT" \
   --usage-log "$USAGE_LOG" \
-  --overlap 5 \
   > "$OUTPUT_DIR/analysis.txt" 2>"$OUTPUT_DIR/chunking.log"
 
 echo "  → Analyse fertig ($(wc -l < "$OUTPUT_DIR/analysis.txt") Zeilen)" >&2

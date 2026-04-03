@@ -1,6 +1,6 @@
 # /consult — Komponenten-Agent befragen
 
-Befrage einen einzelnen Komponenten-Agent via MiniMax (chatCompletions API).
+Befrage einen einzelnen Komponenten-Agent via Claude Code SDK (MiniMax M2.7).
 Der Agent bekommt sein Wissen (description.md + decisions.md) als System-Prompt
 und beantwortet deine Frage aus seiner Perspektive.
 
@@ -12,16 +12,15 @@ und beantwortet deine Frage aus seiner Perspektive.
 
 ```bash
 # Nur description.md als Kontext:
-scripts/consult-agent.sh <komponente> "<frage>"
+node scripts/consult-sdk.mjs --component <komponente> --question "<frage>"
 
 # Mit decisions.md als zusaetzlichem Kontext:
-scripts/consult-agent.sh <komponente> "<frage>" --with-decisions
+node scripts/consult-sdk.mjs --component <komponente> --question "<frage>" --with-decisions
 ```
 
-Das Script (`scripts/consult-agent.sh`) uebernimmt automatisch:
-- Token aus `~/.openclaw/.env` lesen
+Das Script (`scripts/consult-sdk.mjs`) uebernimmt automatisch:
+- MINIMAX_API_KEY aus `~/.openclaw/.env` lesen
 - `description.md` (+ optional `decisions.md`) als System-Prompt laden
-- `X-OpenClaw-Scopes: operator.write` Header setzen
 - Antwort-Text extrahieren
 
 3. **Antwort auswerten:** Ergebnis dem User oder Orchestrator zurueckgeben
