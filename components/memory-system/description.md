@@ -21,6 +21,7 @@ Memory-System (3 Komponenten)
    │   ├── window.ts          # Sliding Window (3 vor, 2 nach)
    │   ├── pipeline.ts        # Extraction Pipeline Orchestrierung
    │   ├── extractor.ts       # LLM Fact Extraction (MiniMax M2.7)
+   │   ├── behavior-extractor.ts # LLM Behavior-Extraction via MiniMax (Two-Pass)
    │   ├── embedder.ts        # bge-m3 Embedding (GPU + CPU Fallback)
    │   ├── qdrant.ts          # Qdrant Upsert (Dense + BM25)
    │   ├── offset.ts          # SQLite Offset-Tracking
@@ -30,8 +31,10 @@ Memory-System (3 Komponenten)
 
 2. Qdrant (Docker, Port 6333)
    Collections: memories_benni, memories_domi, memories_household
+                instructions_benni, instructions_domi, instructions_household
    Vektoren: dense (bge-m3, 1024-dim, Cosine) + bm25 (sparse, idf)
-   Payload: fact, type, confidence, agentId, scope, timestamp
+   Payload: fact, type, confidence, agentId, scope, timestamp (memories_*)
+            oder: instruction, criteria, confidence, agentId, scope, timestamp (instructions_*)
 
 3. Memory-Recall Plugin (~/.openclaw/extensions/openclaw-memory-recall/)
    plugins/openclaw-memory-recall/
@@ -49,14 +52,16 @@ Konversation → JSONL-Log → Extractor
   → Sliding Window (3+2 Turns Kontext)
   → Stage 1: MiniMax M2.7 extrahiert Fakten (nur User-Messages)
   → Stage 2: MiniMax M2.7 verifiziert (Confidence >= 0.5)
+  → Stage 3: MiniMax M2.7 extrahiert Behavior-Instructions (nur User-Messages, bereinigter Kontext)
+  → Stage 4: MiniMax M2.7 verifiziert Behavior (Confidence >= 0.7, 4 Kriterien)
   → bge-m3 Embedding (1024-dim)
-  → Dedup: Cosine > 0.92 → Update statt Insert
-  → Qdrant: Dense + BM25 Sparse Vektoren
+  → Dedup: Cosine > 0.92 → identisch zu Facts
+  → Qdrant: memories_* Dense + BM25, instructions_* Dense + BM25 Sparse Vektoren
 
 Neue Nachricht → Memory-Recall Plugin (before_prompt_build)
   → Query → bge-m3 Embedding
   → Qdrant Hybrid-Search (Dense + BM25 + RRF Fusion)
-  → Top-K=5 → In System-Prompt injiziert
+  → Top-K=5 → In System-Prompt injiziert (both memories_* und instructions_*)
 ```
 
 ## Abhaengigkeiten
@@ -87,9 +92,9 @@ Neue Nachricht → Memory-Recall Plugin (before_prompt_build)
 
 | Agent | Durchsucht | Warum |
 |-------|-----------|-------|
-| benni | memories_benni + memories_household | Eigene + geteilte Fakten |
-| domi | memories_domi + memories_household | Eigene + geteilte Fakten |
-| household | NUR memories_household | Kein Zugriff auf persoenliche Erinnerungen |
+| benni | memories_benni + memories_household + instructions_benni + instructions_household | Eigene + geteilte Fakten + Anweisungen |
+| domi | memories_domi + memories_household + instructions_domi + instructions_household | Eigene + geteilte Fakten + Anweisungen |
+| household | NUR memories_household + instructions_household | Kein Zugriff auf persoenliche Erinnerungen |
 
 ## Konfiguration
 
@@ -140,8 +145,9 @@ LOG_LEVEL=info
 5. Services neustarten: `systemctl --user restart openclaw-extractor openclaw-gateway`
 
 ### Extraction-Logik aendern
-1. `services/extractor/src/extractor.ts` — Prompt/Parsing aendern
-2. `services/extractor/src/pipeline.ts` — Pipeline-Flow aendern
-3. Build: `npm run build` im Extractor
-4. Restart: `systemctl --user restart openclaw-extractor`
-5. Test: Nachricht senden, Log pruefen, Qdrant-Collection pruefen
+1. `services/extractor/src/extractor.ts` — Prompt/Parsing fuer Fakten aendern
+2. `services/extractor/src/behavior-extractor.ts` — Prompt/Parsing fuer Behavior-Instructions aendern
+3. `services/extractor/src/pipeline.ts` — Pipeline-Flow aendern
+4. Build: `npm run build` im Extractor
+5. Restart: `systemctl --user restart openclaw-extractor`
+6. Test: Nachricht senden, Log pruefen, Qdrant-Collections pruefen

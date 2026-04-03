@@ -14,12 +14,37 @@ export function collectionName(agentId: string): string {
   return `memories_${agentId}`;
 }
 
+export function instructionCollectionName(agentId: string): string {
+  return `instructions_${agentId}`;
+}
+
+export function targetInstructionCollections(agentId: string, scope: string): string[] {
+  return scope === 'household'
+    ? [instructionCollectionName('household')]
+    : [instructionCollectionName(agentId)];
+}
+
 /**
  * Ensure collections exist for all configured agents.
  */
 export async function ensureCollections(): Promise<void> {
   for (const agent of config.agents) {
     const name = collectionName(agent);
+    try {
+      await client.getCollection(name);
+      log('info', 'qdrant', `Collection ${name}: exists`);
+    } catch {
+      await client.createCollection(name, {
+        vectors: { dense: { size: 1024, distance: 'Cosine' } },
+        sparse_vectors: { bm25: { modifier: 'idf' as never } },
+      });
+      log('info', 'qdrant', `Collection ${name}: created (hybrid dense+bm25)`);
+    }
+  }
+
+  // Instruction collections for behavior extraction
+  for (const agent of config.agents) {
+    const name = instructionCollectionName(agent);
     try {
       await client.getCollection(name);
       log('info', 'qdrant', `Collection ${name}: exists`);

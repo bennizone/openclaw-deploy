@@ -140,6 +140,84 @@ export async function verifyFactQwenThink(
   }
 }
 
+const BEHAVIOR_VERIFIER_PROMPT = `Du bist ein kritischer Pruefer fuer Verhaltensanweisungen. Dir wird eine angebliche Anweisung und die zugehoerige Konversation gezeigt.
+
+Pruefe kritisch:
+1. Hat der USER diese Anweisung SELBST gegeben? (Assistenten-Vorschlaege allein reichen NICHT)
+2. Ist es eine DAUERHAFTE Arbeitsregel oder eine einmalige Bitte?
+3. Hat der User die Anweisung in Folge-Turns zurueckgenommen?
+4. Wuerde der User erwarten dass diese Regel auch in ZUKUENFTIGEN Gespraechen gilt?
+
+Antworte mit genau einem JSON-Objekt, NICHTS anderes:
+{"verified": true, "reason": "kurze Begruendung"}
+oder
+{"verified": false, "reason": "kurze Begruendung"}`;
+
+function buildBehaviorVerifierUserPrompt(instruction: string, sourceContext: string, window: ExtractionWindow): string {
+  const userName = window.agentDisplayName;
+  let prompt = `Der User in dieser Konversation heisst "${userName}".\n\n`;
+  prompt += `Behauptete Anweisung: "${instruction}"\n`;
+  prompt += `Originalzitat: "${sourceContext}"\n\nKonversation:\n`;
+
+  for (const t of window.context) {
+    prompt += `${userName}: ${t.userText}\nAssistent: ${t.assistantText}\n\n`;
+  }
+
+  prompt += `>>> AKTUELLER TURN:\n${userName}: ${window.current.userText}\nAssistent: ${window.current.assistantText}\n\n`;
+
+  for (const t of window.followup) {
+    prompt += `${userName}: ${t.userText}\nAssistent: ${t.assistantText}\n\n`;
+  }
+
+  prompt += `\nIst aus dieser Konversation SICHER ableitbar, dass diese Anweisung eine dauerhafte Verhaltensregel ist?`;
+  return prompt;
+}
+
+/**
+ * Verify a behavioral instruction using MiniMax API.
+ */
+export async function verifyBehaviorMiniMax(
+  instruction: string,
+  sourceContext: string,
+  window: ExtractionWindow,
+  _retryCount: number = 0,
+): Promise<VerificationResult> {
+  try {
+    const resp = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${config.minimaxApiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.extractionModel,
+        messages: [
+          { role: 'system', content: BEHAVIOR_VERIFIER_PROMPT },
+          { role: 'user', content: buildBehaviorVerifierUserPrompt(instruction, sourceContext, window) },
+        ],
+        max_tokens: 500,
+        temperature: 0.1,
+      }),
+      signal: AbortSignal.timeout(30000),
+    });
+
+    if (resp.status === 429 && _retryCount < 2) {
+      log('warn', 'verifier', `MiniMax behavior verifier rate limited, waiting 60s (retry ${_retryCount + 1}/2)...`);
+      await new Promise(r => setTimeout(r, 60000));
+      return verifyBehaviorMiniMax(instruction, sourceContext, window, _retryCount + 1);
+    }
+
+    if (!resp.ok) {
+      return { verified: false, reason: `minimax_behavior_http_${resp.status}` };
+    }
+
+    const data = (await resp.json()) as { choices: { message: { content: string } }[] };
+    return parseVerifierResponse(data.choices[0].message.content);
+  } catch (err) {
+    return { verified: false, reason: `minimax_behavior_error: ${(err as Error).message}` };
+  }
+}
+
 /**
  * Verify a fact using MiniMax API.
  */

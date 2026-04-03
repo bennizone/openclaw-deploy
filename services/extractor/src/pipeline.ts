@@ -2,11 +2,12 @@ import { config, log } from './config.js';
 import type { Turn } from './parser.js';
 import { buildWindow } from './window.js';
 import { extractFacts } from './extractor.js';
+import { extractBehavior, cleanWindowForBehavior } from './behavior-extractor.js';
 import { embed } from './embedder.js';
-import { checkDuplicate, upsertFact, collectionName, searchSimilar, type FactPayload } from './qdrant.js';
+import { checkDuplicate, upsertFact, collectionName, searchSimilar, targetInstructionCollections, type FactPayload } from './qdrant.js';
 import { setOffset, logProcessing } from './offset.js';
 import { validateFact } from './validator.js';
-import { verifyFactMiniMax } from './verifier.js';
+import { verifyFactMiniMax, verifyBehaviorMiniMax } from './verifier.js';
 
 function targetCollections(agentId: string, scope: string): string[] {
   return scope === 'household'
@@ -42,6 +43,10 @@ export async function processTurn(
   let validatorRejected = 0;
   let verifierRejected = 0;
   let semanticDupes = 0;
+  let behaviorExtracted = 0;
+  let behaviorWritten = 0;
+  let behaviorVerifierRejected = 0;
+  let behaviorSemanticDupes = 0;
 
   try {
     // Step 1: Embed turn text and fetch known facts (parallel across collections)
@@ -151,13 +156,95 @@ export async function processTurn(
       }
     }
 
+    // --- Pass 2: Behavior Extraction ---
+    try {
+      const cleanedWindow = cleanWindowForBehavior(window);
+      const behaviors = await extractBehavior(cleanedWindow);
+      behaviorExtracted = behaviors.length;
+
+      if (behaviors.length > 0) {
+        log('info', 'pipeline', `Turn ${turn.turnIndex}: ${behaviors.length} behavior candidates`);
+      }
+
+      for (const behavior of behaviors) {
+        // Validate
+        if (behavior.instruction.length < 5 || behavior.instruction.length > 500) continue;
+        if (behavior.confidence < 0.7) continue;
+
+        // Verify
+        const verification = await verifyBehaviorMiniMax(
+          behavior.instruction,
+          behavior.sourceContext,
+          cleanedWindow,
+        );
+        if (!verification.verified) {
+          behaviorVerifierRejected++;
+          log('info', 'pipeline', `Behavior rejected: "${behavior.instruction.slice(0, 50)}" (${verification.reason})`);
+          continue;
+        }
+
+        // Embed
+        let embeddingResult;
+        try {
+          embeddingResult = await embed(behavior.instruction);
+        } catch (err) {
+          log('warn', 'pipeline', `Behavior embedding failed: ${(err as Error).message}`);
+          continue;
+        }
+
+        // Target collections
+        const targets = targetInstructionCollections(turn.agentId, behavior.scope ?? 'personal');
+
+        for (const collection of targets) {
+          // Dedup (exact + semantic in parallel)
+          const [isDup, similarFacts] = await Promise.all([
+            checkDuplicate(collection, turn.sessionId, turn.turnIndex, behavior.instruction),
+            searchSimilar(collection, embeddingResult.vector, 3, config.semanticDedupThreshold)
+              .catch((err) => { log('warn', 'pipeline', `Behavior dedup failed: ${(err as Error).message}`); return []; }),
+          ]);
+
+          if (isDup) {
+            behaviorSemanticDupes++;
+            continue;
+          }
+
+          if (similarFacts.length > 0) {
+            behaviorSemanticDupes++;
+            log('info', 'pipeline', `Behavior semantic dupe (${similarFacts[0].score.toFixed(3)}): "${behavior.instruction.slice(0, 50)}"`);
+            continue;
+          }
+
+          // Upsert
+          const payload: FactPayload = {
+            fact: behavior.instruction,
+            type: 'behavior',
+            confidence: behavior.confidence,
+            sourceContext: behavior.sourceContext,
+            agentId: turn.agentId,
+            sessionId: turn.sessionId,
+            turnIndex: turn.turnIndex,
+            timestamp: turn.timestamp,
+            extractedAt: new Date().toISOString(),
+            embeddingSource: embeddingResult.source,
+            scope: behavior.scope ?? 'personal',
+          };
+
+          await upsertFact(collection, { vector: embeddingResult.vector, payload });
+          behaviorWritten++;
+          log('info', 'pipeline', `Behavior written to ${collection}: ${behavior.instruction.slice(0, 60)}`);
+        }
+      }
+    } catch (err) {
+      log('warn', 'pipeline', `Behavior pass failed (non-fatal): ${(err as Error).message}`);
+    }
+
     setOffset(filePath, byteOffset, turn.turnIndex);
-    logProcessing({ filePath, turnIndex: turn.turnIndex, factsExtracted: extracted, factsWritten: written, skippedDup: skipped, validatorRejected, verifierRejected, semanticDupes });
+    logProcessing({ filePath, turnIndex: turn.turnIndex, factsExtracted: extracted, factsWritten: written, skippedDup: skipped, validatorRejected, verifierRejected, semanticDupes, behaviorExtracted, behaviorWritten, behaviorVerifierRejected, behaviorSemanticDupes });
 
   } catch (err) {
     const msg = (err as Error).message;
     log('error', 'pipeline', `Turn ${turn.turnIndex} in ${filePath}: ${msg}`);
-    logProcessing({ filePath, turnIndex: turn.turnIndex, factsExtracted: extracted, factsWritten: written, skippedDup: skipped, validatorRejected, verifierRejected, semanticDupes, error: msg });
+    logProcessing({ filePath, turnIndex: turn.turnIndex, factsExtracted: extracted, factsWritten: written, skippedDup: skipped, validatorRejected, verifierRejected, semanticDupes, behaviorExtracted, behaviorWritten, behaviorVerifierRejected, behaviorSemanticDupes, error: msg });
   }
 
   return { extracted, written, skipped };

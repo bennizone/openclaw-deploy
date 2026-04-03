@@ -43,6 +43,18 @@ Offene Punkte, nach Prioritaet sortiert.
 - Betrifft: Agent-Workspace (SOUL.md Anweisung), neue Datei fuer Request-Liste
 
 
+### Reviewer Tokenfresser-Delegation verbessern
+- MiniMax Chunk-Review produziert False Positives durch abgeschnittenen Kontext (4/4 bei Phase 2 Review)
+- Problem: Chunks schneiden mitten in Funktionen, MiniMax sieht z.B. kein `async` oder try/catch
+- Ideen: a) Overlap vergroessern (aktuell 3 Zeilen), b) Chunks an Datei-Grenzen schneiden statt Zeilen-Grenzen, c) Pre-Summary pro Datei mitgeben ("Diese Datei hat async function X mit try/catch"), d) Nur mechanische Checks delegieren, Design-Checks manuell
+- Betrifft: `/reviewer` Skill, `scripts/consult-agent.sh` Chunking-Logik
+
+### Workflow pruefen: Tester-Reihenfolge
+- Im 14-Schritte-Workflow (Schritt 9) laeuft `/tester` BEVOR Tests definiert sind
+- Frage: Soll der Tester anhand der Session/Aenderungen die Tests selbst definieren und fuer sich dokumentieren?
+- Oder muessen Tests vorab in `testinstruct.md` stehen?
+- Betrifft: `docs/workflow.md` Schritt 9, `components/*/testinstruct.md`
+
 ### Plugin `openclaw-sonarr-radarr` entfernen
 - Plugin-Code liegt noch im Repo unter `plugins/openclaw-sonarr-radarr/` als Rollback-Referenz
 - Ab 2026-04-07 loeschen, wenn MCP-Migration stabil laeuft

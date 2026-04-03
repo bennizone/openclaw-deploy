@@ -33,6 +33,10 @@ export function initDb(): void {
   try { db.exec('ALTER TABLE processing_log ADD COLUMN validator_rejected INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE processing_log ADD COLUMN verifier_rejected INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
   try { db.exec('ALTER TABLE processing_log ADD COLUMN semantic_dupes INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE processing_log ADD COLUMN behavior_extracted INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE processing_log ADD COLUMN behavior_written INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE processing_log ADD COLUMN behavior_verifier_rejected INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
+  try { db.exec('ALTER TABLE processing_log ADD COLUMN behavior_semantic_dupes INTEGER NOT NULL DEFAULT 0'); } catch { /* already exists */ }
   log('info', 'offset', `SQLite initialized at ${config.stateDbPath}`);
 }
 
@@ -78,16 +82,21 @@ export interface ProcessingLogEntry {
   validatorRejected?: number;
   verifierRejected?: number;
   semanticDupes?: number;
+  behaviorExtracted?: number;
+  behaviorWritten?: number;
+  behaviorVerifierRejected?: number;
+  behaviorSemanticDupes?: number;
   error?: string;
 }
 
 export function logProcessing(entry: ProcessingLogEntry): void {
   db.prepare(`
-    INSERT INTO processing_log (file_path, turn_index, facts_extracted, facts_written, skipped_dup, validator_rejected, verifier_rejected, semantic_dupes, processed_at, error)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO processing_log (file_path, turn_index, facts_extracted, facts_written, skipped_dup, validator_rejected, verifier_rejected, semantic_dupes, behavior_extracted, behavior_written, behavior_verifier_rejected, behavior_semantic_dupes, processed_at, error)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `).run(
     entry.filePath, entry.turnIndex, entry.factsExtracted, entry.factsWritten, entry.skippedDup,
     entry.validatorRejected ?? 0, entry.verifierRejected ?? 0, entry.semanticDupes ?? 0,
+    entry.behaviorExtracted ?? 0, entry.behaviorWritten ?? 0, entry.behaviorVerifierRejected ?? 0, entry.behaviorSemanticDupes ?? 0,
     new Date().toISOString(), entry.error ?? null,
   );
 }

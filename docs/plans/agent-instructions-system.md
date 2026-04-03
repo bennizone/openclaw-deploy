@@ -20,7 +20,7 @@ Ziel: 3-Ebenen-System:
 |-------|-----|--------|
 | 0 | Machbarkeitstest (MiniMax behavior-Extraction + Recall) | offen |
 | 1 | SOUL.md / RULES.md Trennung | erledigt (2026-04-03) |
-| 2 | Extractor erweitern (behavior → instructions_*) | offen |
+| 2 | Extractor erweitern (behavior → instructions_*) | erledigt (2026-04-03) |
 | 3 | Memory-Recall Plugin erweitern ([Anweisungen] Block) | offen |
 | 4 | Zeitbasierte Instructions (Geburtstage, Advent) | offen |
 

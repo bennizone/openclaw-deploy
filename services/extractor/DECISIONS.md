@@ -128,3 +128,44 @@ als natives Qwen-Thinking. reasoning-budget 1024 als Sicherheit.
 - Qwen 3.5 9B ungeeignet als Extractor-Fallback (Halluzination, 1/74 Facts ohne Thinking)
 - Qwen Thinking-Mode braucht max_tokens ≥8192 (Reasoning allein 1000-7000 Tokens)
 - Household-Facts exklusiv in memories_household (nicht zusaetzlich in Agent-Collection)
+
+## 2026-04-03: Phase 2 — Two-Pass Behavior-Extraction
+
+### Two-Pass statt Combined-Prompt
+**Status:** Geplant für Phase 2
+**Entscheidung:** Separate Extraktions-Passes für Facts (Pass 1) und Behavior (Pass 2)
+**Warum:** Phase 0 hat gezeigt dass ein kombinierter Fact+Behavior Prompt bei MiniMax
+instabil ist (hohe Varianz zwischen Runs). Two-Pass-Strategie:
+- Pass 1: Facts (unverändert, bestehender Pipeline)
+- Pass 2: Behavior-Rules mit eigenem Prompt + Verifier
+Vorteil: Null Regressionsrisiko auf bestehende Fact-Extraktion. Behavior läuft
+orthogonal auf separatem Code-Pfad.
+
+### Getrennte targetInstructionCollections()
+**Entscheidung:** Eigene Funktion statt isBehavior-Parameter in targetCollections()
+**Warum:** Konsultations-Empfehlung aus Phase 0. Domains sind disjoint:
+- Facts: memories_benni, memories_household, memories_domi
+- Behavior: instructions_benni, instructions_household, instructions_domi
+Getrennte Funktionen sind expliziter und reduzieren Fehler bei Collection-Naming.
+
+### Confidence 0.7 für Behavior-Regeln
+**Entscheidung:** Behavior-Schwelle höher als bei Facts (0.5 → 0.7)
+**Warum:** Phase 0 Full-Scan zeigte dass niedrige Schwellen einmalige Aufträge
+durchlassen ("Analysiere Token-Waste" sieht aus wie generelle Regel). Höhere
+Schwelle filtert Lärm raus und erhöht Präzision bei Rules, die den Agent
+konfigurieren sollen.
+
+### Verifier-Kriterium für Behavior
+**Entscheidung:** Standard-Verifier-Frage: "Würde der User erwarten dass diese Regel
+auch in ZUKÜNFTIGEN Gesprächen gilt?"
+**Warum:** Filtert einmalige Aufträge zuverlässig raus. Echte Verhaltens-Regeln
+("Nutze Emojis nicht", "Antworte auf Deutsch") müssen generaliserbar sein.
+Konversations-Kontext für Verifier wird aus cleanWindowForBehavior() gewonnen.
+
+### Context-Cleaning vor Behavior-Pass
+**Entscheidung:** cleanWindowForBehavior() entfernt [Erinnerungen], [Regeln],
+TTS-Metadata, WhatsApp-Wrapper vor Behavior-Extraktion
+**Warum:** Reduziert Prompt-Größe ~50%, verhindert False Positives aus injiziertem
+Kontext. Beispiel: [Regel: "Nutze stets Emojis"] würde sonst selbst als zu
+extrahierende Regel erkannt. Reine User-Nachrichten + Assistant-Replies bleiben
+für Kontext-Fenster erhalten.
