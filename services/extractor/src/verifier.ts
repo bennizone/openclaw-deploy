@@ -1,9 +1,22 @@
 import { config, log } from './config.js';
+import { MiniMaxChatClient, parseJsonObject } from '@openclaw/minimax-client';
 import type { ExtractionWindow } from './window.js';
 
 export interface VerificationResult {
   verified: boolean;
   reason: string;
+}
+
+let _minimax: MiniMaxChatClient | null = null;
+function getMiniMax(): MiniMaxChatClient {
+  if (!_minimax) {
+    _minimax = new MiniMaxChatClient({
+      apiKey: config.minimaxApiKey,
+      baseUrl: config.minimaxBaseUrl,
+      logFn: (level, msg) => log(level, 'minimax', msg),
+    });
+  }
+  return _minimax;
 }
 
 const VERIFIER_PROMPT = `Du bist ein kritischer Faktenpruefer. Dir wird ein angeblicher Fakt und die zugehoerige Konversation gezeigt.
@@ -38,28 +51,28 @@ function buildVerifierUserPrompt(fact: string, window: ExtractionWindow): string
 }
 
 function parseVerifierResponse(raw: string): VerificationResult {
-  let cleaned = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
-
-  // Strip markdown code fences
-  const fenceMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) cleaned = fenceMatch[1].trim();
-
-  // Find JSON object
-  const start = cleaned.indexOf('{');
-  const end = cleaned.lastIndexOf('}');
-  if (start === -1 || end === -1) {
-    return { verified: false, reason: 'unparseable_response' };
-  }
-
-  try {
-    const obj = JSON.parse(cleaned.slice(start, end + 1));
+  const obj = parseJsonObject<{ verified: boolean; reason: string }>(raw);
+  if (obj) {
     return {
       verified: Boolean(obj.verified),
       reason: String(obj.reason ?? 'no_reason'),
     };
-  } catch {
-    return { verified: false, reason: 'json_parse_error' };
   }
+
+  // Fallback: MiniMax sometimes responds with plain text instead of JSON.
+  // Try to infer verification from text content.
+  const cleaned = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim().toLowerCase();
+  if (cleaned.includes('"verified": true') || cleaned.includes('"verified":true')) {
+    return { verified: true, reason: 'parsed_from_text' };
+  }
+  if (cleaned.includes('ja') && !cleaned.includes('nein') && cleaned.length < 500) {
+    return { verified: true, reason: 'inferred_yes' };
+  }
+  // If the response is a detailed rejection reason (not JSON), treat as rejected with the reason
+  if (cleaned.length > 20) {
+    return { verified: false, reason: cleaned.slice(0, 200) };
+  }
+  return { verified: false, reason: 'unparseable_response' };
 }
 
 export async function verifyFact(
@@ -124,9 +137,8 @@ export async function verifyFactQwenThink(
         ],
         max_tokens: 8192,
         temperature: 0.6,
-        // No chat_template_kwargs → thinking enabled by default
       }),
-      signal: AbortSignal.timeout(60000), // thinking takes longer
+      signal: AbortSignal.timeout(60000),
     });
 
     if (!resp.ok) {
@@ -174,89 +186,45 @@ function buildBehaviorVerifierUserPrompt(instruction: string, sourceContext: str
 }
 
 /**
- * Verify a behavioral instruction using MiniMax API.
+ * Verify a behavioral instruction using MiniMax (shared client with retry + throttling).
  */
 export async function verifyBehaviorMiniMax(
   instruction: string,
   sourceContext: string,
   window: ExtractionWindow,
-  _retryCount: number = 0,
 ): Promise<VerificationResult> {
   try {
-    const resp = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.minimaxApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.extractionModel,
-        messages: [
-          { role: 'system', content: BEHAVIOR_VERIFIER_PROMPT },
-          { role: 'user', content: buildBehaviorVerifierUserPrompt(instruction, sourceContext, window) },
-        ],
-        max_tokens: 500,
-        temperature: 0.1,
-      }),
-      signal: AbortSignal.timeout(30000),
+    const result = await getMiniMax().chat({
+      systemPrompt: BEHAVIOR_VERIFIER_PROMPT,
+      userPrompt: buildBehaviorVerifierUserPrompt(instruction, sourceContext, window),
+      maxTokens: 500,
+      temperature: 0.1,
+      tag: 'behavior-verifier',
+      timeoutMs: 30_000,
     });
-
-    if (resp.status === 429 && _retryCount < 2) {
-      log('warn', 'verifier', `MiniMax behavior verifier rate limited, waiting 60s (retry ${_retryCount + 1}/2)...`);
-      await new Promise(r => setTimeout(r, 60000));
-      return verifyBehaviorMiniMax(instruction, sourceContext, window, _retryCount + 1);
-    }
-
-    if (!resp.ok) {
-      return { verified: false, reason: `minimax_behavior_http_${resp.status}` };
-    }
-
-    const data = (await resp.json()) as { choices: { message: { content: string } }[] };
-    return parseVerifierResponse(data.choices[0].message.content);
+    return parseVerifierResponse(result.content);
   } catch (err) {
     return { verified: false, reason: `minimax_behavior_error: ${(err as Error).message}` };
   }
 }
 
 /**
- * Verify a fact using MiniMax API.
+ * Verify a fact using MiniMax (shared client with retry + throttling).
  */
 export async function verifyFactMiniMax(
   fact: string,
   window: ExtractionWindow,
-  _retryCount: number = 0,
 ): Promise<VerificationResult> {
   try {
-    const resp = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.minimaxApiKey}`,
-      },
-      body: JSON.stringify({
-        model: config.extractionModel,
-        messages: [
-          { role: 'system', content: VERIFIER_PROMPT },
-          { role: 'user', content: buildVerifierUserPrompt(fact, window) },
-        ],
-        max_tokens: 500,
-        temperature: 0.1,
-      }),
-      signal: AbortSignal.timeout(30000),
+    const result = await getMiniMax().chat({
+      systemPrompt: VERIFIER_PROMPT,
+      userPrompt: buildVerifierUserPrompt(fact, window),
+      maxTokens: 500,
+      temperature: 0.1,
+      tag: 'fact-verifier',
+      timeoutMs: 30_000,
     });
-
-    if (resp.status === 429 && _retryCount < 2) {
-      log('warn', 'verifier', `MiniMax rate limited, waiting 60s (retry ${_retryCount + 1}/2)...`);
-      await new Promise(r => setTimeout(r, 60000));
-      return verifyFactMiniMax(fact, window, _retryCount + 1);
-    }
-
-    if (!resp.ok) {
-      return { verified: false, reason: `minimax_http_${resp.status}` };
-    }
-
-    const data = (await resp.json()) as { choices: { message: { content: string } }[] };
-    return parseVerifierResponse(data.choices[0].message.content);
+    return parseVerifierResponse(result.content);
   } catch (err) {
     return { verified: false, reason: `minimax_error: ${(err as Error).message}` };
   }

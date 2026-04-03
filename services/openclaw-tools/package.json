@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.28.0",
+    "@openclaw/minimax-client": "file:../../shared/minimax-client",
     "duck-duck-scrape": "^2.2.7",
     "tsdav": "^2.1.8",
     "zod": "^3.23.0"

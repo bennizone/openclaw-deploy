@@ -1,4 +1,5 @@
 import { config, log } from './config.js';
+import { MiniMaxChatClient, parseJsonArray, stripThinkTags } from '@openclaw/minimax-client';
 import type { ExtractionWindow } from './window.js';
 import { formatWindowPrompt } from './window.js';
 
@@ -61,88 +62,20 @@ Verwende den Namen der Person im Fact wenn bekannt.
 Wenn keine extrahierbaren Fakten: leeres Array [].
 Sprache: Deutsch wenn Konversation Deutsch ist.`;
 
-interface OpenAIResponse {
-  choices: { message: { content: string } }[];
-}
-
-async function callMiniMaxWithPrompt(userPrompt: string, systemPrompt: string): Promise<string> {
-  const body = {
-    model: config.extractionModel,
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: userPrompt },
-    ],
-    max_tokens: 2000,
-    temperature: 0.1,
-  };
-
-  const resp = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.minimaxApiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (resp.status === 429) {
-    log('warn', 'extractor', 'Rate limited (429), waiting 60s...');
-    await new Promise(r => setTimeout(r, 60000));
-    const retry = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.minimaxApiKey}`,
-      },
-      body: JSON.stringify(body),
+let _minimax: MiniMaxChatClient | null = null;
+function getMiniMax(): MiniMaxChatClient {
+  if (!_minimax) {
+    _minimax = new MiniMaxChatClient({
+      apiKey: config.minimaxApiKey,
+      baseUrl: config.minimaxBaseUrl,
+      logFn: (level, msg) => log(level, 'minimax', msg),
     });
-    if (!retry.ok) throw new Error(`MiniMax retry failed: ${retry.status}`);
-    const data = (await retry.json()) as OpenAIResponse;
-    return data.choices[0].message.content;
   }
-
-  if (resp.status >= 500) {
-    throw new Error(`MiniMax server error: ${resp.status}`);
-  }
-
-  if (!resp.ok) {
-    const body = await resp.text();
-    throw new Error(`MiniMax error ${resp.status}: ${body}`);
-  }
-
-  const data = (await resp.json()) as OpenAIResponse;
-  return data.choices[0].message.content;
+  return _minimax;
 }
 
-async function callMiniMax(userPrompt: string): Promise<string> {
-  return callMiniMaxWithPrompt(userPrompt, SYSTEM_PROMPT);
-}
-
-function stripThinkTags(content: string): string {
-  return content.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
-}
-
-function parseFactsJson(raw: string): ExtractedFact[] {
-  const cleaned = stripThinkTags(raw);
-
-  // Try to find JSON array in the response
-  let jsonStr = cleaned;
-
-  // Strip markdown code fences if present
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
-  // Find array boundaries
-  const arrStart = jsonStr.indexOf('[');
-  const arrEnd = jsonStr.lastIndexOf(']');
-  if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
-    jsonStr = jsonStr.slice(arrStart, arrEnd + 1);
-  }
-
-  const parsed = JSON.parse(jsonStr);
-  if (!Array.isArray(parsed)) return [];
-
-  return parsed.map((item: Record<string, unknown>) => ({
+function validateFacts(parsed: Record<string, unknown>[]): ExtractedFact[] {
+  return parsed.map(item => ({
     fact: String(item.fact ?? ''),
     type: String(item.type ?? 'personal') as ExtractedFact['type'],
     confidence: Number(item.confidence ?? 0.5),
@@ -162,8 +95,15 @@ export async function extractFacts(window: ExtractionWindow): Promise<ExtractedF
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const raw = await callMiniMax(prompt);
-      const facts = parseFactsJson(raw);
+      const result = await getMiniMax().chat({
+        systemPrompt: SYSTEM_PROMPT,
+        userPrompt: prompt,
+        maxTokens: 2000,
+        temperature: 0.1,
+        tag: 'extractor',
+      });
+      const parsed = parseJsonArray<Record<string, unknown>>(stripThinkTags(result.content));
+      const facts = validateFacts(parsed);
       log('debug', 'extractor', `Extracted ${facts.length} facts from turn ${window.turnIndex}`, {
         facts: facts.map(f => `[${f.scope}/${f.type}] ${f.fact}`),
       });

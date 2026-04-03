@@ -1,43 +1,29 @@
 import { readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { basename, join } from 'path';
 import chokidar from 'chokidar';
 import { config, log } from './config.js';
-import { parseFile, agentIdFromPath } from './parser.js';
+import { parseFile, parseDayLog, agentIdFromPath, type Turn } from './parser.js';
 import { getOffset, setOffset } from './offset.js';
-import { processTurn } from './pipeline.js';
+import { processTurn, processTurnBatch } from './pipeline.js';
+import { getLogsDir } from './joiner.js';
 
 // Track pending last-turns waiting for followup (watch mode only)
 const pendingLastTurns: Map<string, { timeout: NodeJS.Timeout; filePath: string; turnIndex: number }> = new Map();
 
 /**
- * Find all JSONL session files across all agents.
+ * Find all joined day-log files in ~/extractor/logs/.
  */
-function findAllSessionFiles(): string[] {
-  const files: string[] = [];
-  const agentsDir = join(config.openclawStateDir, 'agents');
-
-  let agents: string[];
+function findAllLogFiles(): string[] {
+  const logsDir = getLogsDir();
   try {
-    agents = readdirSync(agentsDir);
+    return readdirSync(logsDir)
+      .filter(f => f.endsWith('.jsonl') && !f.startsWith('.'))
+      .map(f => join(logsDir, f))
+      .sort();
   } catch {
-    log('warn', 'watcher', `Cannot read agents dir: ${agentsDir}`);
-    return files;
+    log('warn', 'watcher', `Cannot read logs dir: ${logsDir}`);
+    return [];
   }
-
-  for (const agent of agents) {
-    const sessDir = join(agentsDir, agent, 'sessions');
-    let sessions: string[];
-    try {
-      sessions = readdirSync(sessDir).filter(f => f.endsWith('.jsonl'));
-    } catch {
-      continue;
-    }
-    for (const s of sessions) {
-      files.push(join(sessDir, s));
-    }
-  }
-
-  return files.sort();
 }
 
 /**
@@ -70,14 +56,29 @@ async function processFile(
   const holdBack = mode === 'backfill' ? 0 : config.slidingWindowAfter;
   const processCount = Math.max(0, turns.length - holdBack);
 
-  for (let i = 0; i < processCount; i++) {
-    const result = await processTurn(turns, i, filePath, bytesRead);
-    totalFacts += result.extracted;
-    totalWritten += result.written;
+  const batchSize = parseInt(process.env.EXTRACTION_BATCH_SIZE ?? '10', 10);
 
-    if (mode === 'backfill') {
+  if (mode === 'backfill' && processCount >= 2 && batchSize > 1) {
+    // Batch mode: process turns in groups
+    for (let i = 0; i < processCount; i += batchSize) {
+      const count = Math.min(batchSize, processCount - i);
+      const result = await processTurnBatch(turns, i, count, filePath, bytesRead);
+      totalFacts += result.extracted;
+      totalWritten += result.written;
       const agentId = agentIdFromPath(filePath);
-      log('info', 'backfill', `[${agentId}] Turn ${turns[i].turnIndex}: ${result.extracted} facts, ${result.written} written`);
+      log('info', 'backfill', `[${agentId}] Batch ${i}-${i + count - 1}: ${result.extracted} facts, ${result.written} written`);
+    }
+  } else {
+    // Single-turn mode (watch mode or small batches)
+    for (let i = 0; i < processCount; i++) {
+      const result = await processTurn(turns, i, filePath, bytesRead);
+      totalFacts += result.extracted;
+      totalWritten += result.written;
+
+      if (mode === 'backfill') {
+        const agentId = agentIdFromPath(filePath);
+        log('info', 'backfill', `[${agentId}] Turn ${turns[i].turnIndex}: ${result.extracted} facts, ${result.written} written`);
+      }
     }
   }
 
@@ -113,51 +114,61 @@ async function processFile(
 }
 
 /**
- * Run backfill: process all existing session files.
+ * Run backfill on joined day-logs.
+ * Processes day-logs sequentially (one day at a time), turns within each day serially.
+ * This gives the best quality: each turn has growing context + known_facts from previous turns.
  */
 export async function runBackfill(): Promise<void> {
-  const files = findAllSessionFiles();
-  log('info', 'backfill', `Starting backfill: ${files.length} files found`);
+  const files = findAllLogFiles();
+  log('info', 'backfill', `Starting backfill: ${files.length} day-logs found`);
 
   let totalTurns = 0;
   let totalFacts = 0;
   let totalWritten = 0;
 
-  for (let i = 0; i < files.length; i++) {
-    const file = files[i];
-    const agentId = agentIdFromPath(file);
-
-    // Skip agents we don't track
-    if (!config.agents.includes(agentId as typeof config.agents[number])) {
-      log('debug', 'backfill', `Skipping unknown agent: ${agentId}`);
-      continue;
-    }
+  for (let fi = 0; fi < files.length; fi++) {
+    const file = files[fi];
+    const fileName = basename(file);
 
     const state = getOffset(file);
     const fileSize = statSync(file).size;
 
-    // Skip fully processed files
     if (state && state.lastByteOffset >= fileSize) {
-      log('debug', 'backfill', `Skipping fully processed: ${file}`);
+      log('debug', 'backfill', `Skipping fully processed: ${fileName}`);
       continue;
     }
 
-    log('info', 'backfill', `[${i + 1}/${files.length}] ${agentId}/${file.split('/').pop()}`);
-    const result = await processFile(file, 'backfill');
-    totalTurns += result.turns;
-    totalFacts += result.facts;
-    totalWritten += result.written;
+    const { turns, bytesRead } = parseDayLog(file, state?.lastByteOffset ?? 0);
+    if (turns.length === 0) {
+      if (!state && bytesRead > 0) setOffset(file, bytesRead, 0);
+      continue;
+    }
+
+    log('info', 'backfill', `[${fi + 1}/${files.length}] ${fileName}: ${turns.length} turns`);
+
+    // Process each turn serially — growing context within the day
+    for (let i = 0; i < turns.length; i++) {
+      const result = await processTurn(turns, i, file, bytesRead);
+      totalFacts += result.extracted;
+      totalWritten += result.written;
+      totalTurns++;
+    }
+
+    // Mark day-log as processed
+    setOffset(file, bytesRead, turns[turns.length - 1].turnIndex);
+    log('info', 'backfill', `[${fileName}] Done: ${turns.length} turns, ${totalFacts} facts total`);
   }
 
-  log('info', 'backfill', `Done: ${files.length} files, ${totalTurns} turns, ${totalFacts} facts extracted, ${totalWritten} written to Qdrant`);
+  log('info', 'backfill', `Backfill complete: ${totalTurns} turns, ${totalFacts} facts extracted, ${totalWritten} written to Qdrant`);
 }
 
 /**
  * Start watching for new session data.
  */
 export function startWatch(): void {
-  const watchPattern = join(config.openclawStateDir, 'agents', '*', 'sessions', '*.jsonl');
-  log('info', 'watcher', `Watching: ${watchPattern}`);
+  const logsDir = getLogsDir();
+  const watchPattern = join(logsDir, '*.jsonl');
+  log('info', 'watcher', `Watching day-logs: ${watchPattern}`);
 
   const watcher = chokidar.watch(watchPattern, {
     persistent: true,
@@ -170,59 +181,36 @@ export function startWatch(): void {
     },
   });
 
-  watcher.on('change', async (filePath: string) => {
-    const agentId = agentIdFromPath(filePath);
-    if (!config.agents.includes(agentId as typeof config.agents[number])) return;
-
-    log('debug', 'watcher', `File changed: ${filePath}`);
-
-    // Process any pending held-back turns NOW — followup data has arrived
-    for (const [key, pending] of pendingLastTurns.entries()) {
-      if (key.startsWith(filePath + ':')) {
-        clearTimeout(pending.timeout);
-        pendingLastTurns.delete(key);
-        log('debug', 'watcher', `Followup arrived, processing held turn ${pending.turnIndex}`);
-        // Re-parse file to get full context including new followup
-        try {
-          const state = getOffset(pending.filePath);
-          const byteOffset = state?.lastByteOffset ?? 0;
-          const startTurnIndex = state?.lastTurnIndex ? state.lastTurnIndex + 1 : 0;
-          const { turns, bytesRead } = parseFile(pending.filePath, byteOffset, startTurnIndex);
-          const turnIdx = turns.findIndex(t => t.turnIndex === pending.turnIndex);
-          if (turnIdx >= 0) {
-            const result = await processTurn(turns, turnIdx, pending.filePath, bytesRead);
-            if (result.written > 0) {
-              log('info', 'watcher', `[${agentId}] Held turn ${pending.turnIndex}: ${result.extracted} facts, ${result.written} written`);
-            }
-            setOffset(pending.filePath, bytesRead, pending.turnIndex);
-          }
-        } catch (err) {
-          log('error', 'watcher', `Error processing held turn: ${(err as Error).message}`);
-        }
-      }
-    }
+  const processDayLog = async (filePath: string) => {
+    const fileName = basename(filePath);
+    log('debug', 'watcher', `Day-log changed: ${fileName}`);
 
     try {
-      const result = await processFile(filePath, 'watch');
-      if (result.turns > 0) {
-        log('info', 'watcher', `[${agentId}] ${result.turns} turns → ${result.facts} facts, ${result.written} written`);
+      const state = getOffset(filePath);
+      const fileSize = statSync(filePath).size;
+      if (state && state.lastByteOffset >= fileSize) return;
+
+      const { turns, bytesRead } = parseDayLog(filePath, state?.lastByteOffset ?? 0);
+      if (turns.length === 0) return;
+
+      // Process new turns serially (full context from day-log)
+      let written = 0;
+      for (let i = 0; i < turns.length; i++) {
+        const result = await processTurn(turns, i, filePath, bytesRead);
+        written += result.written;
+      }
+
+      setOffset(filePath, bytesRead, turns[turns.length - 1].turnIndex);
+      if (written > 0) {
+        log('info', 'watcher', `[${fileName}] ${turns.length} new turns → ${written} facts written`);
       }
     } catch (err) {
-      log('error', 'watcher', `Error processing ${filePath}: ${(err as Error).message}`);
+      log('error', 'watcher', `Error processing ${fileName}: ${(err as Error).message}`);
     }
-  });
+  };
 
-  watcher.on('add', async (filePath: string) => {
-    const agentId = agentIdFromPath(filePath);
-    if (!config.agents.includes(agentId as typeof config.agents[number])) return;
-
-    log('info', 'watcher', `New session file: ${filePath}`);
-    try {
-      await processFile(filePath, 'watch');
-    } catch (err) {
-      log('error', 'watcher', `Error processing new file ${filePath}: ${(err as Error).message}`);
-    }
-  });
+  watcher.on('change', processDayLog);
+  watcher.on('add', processDayLog);
 }
 
 /**

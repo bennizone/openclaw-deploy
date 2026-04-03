@@ -145,7 +145,7 @@ export function parseBuffer(buffer: string, filePath: string, startTurnIndex: nu
 }
 
 /**
- * Parse a complete JSONL file from disk.
+ * Parse a complete JSONL file from disk (OpenClaw session format).
  */
 export function parseFile(filePath: string, byteOffset: number = 0, startTurnIndex: number = 0): { turns: Turn[]; bytesRead: number } {
   const fullBuffer = readFileSync(filePath, 'utf-8');
@@ -153,6 +153,50 @@ export function parseFile(filePath: string, byteOffset: number = 0, startTurnInd
   const turns = parseBuffer(buffer, filePath, startTurnIndex);
 
   log('debug', 'parser', `Parsed ${filePath}: ${turns.length} turns from offset ${byteOffset}`);
+
+  return {
+    turns,
+    bytesRead: Buffer.byteLength(fullBuffer, 'utf-8'),
+  };
+}
+
+/**
+ * Parse a joined day-log file (simplified JoinedTurn format).
+ * Each line is a JSON object: {turnIndex, userText, assistantText, timestamp, sessionId, agentId, channel}
+ */
+export function parseDayLog(filePath: string, byteOffset: number = 0): { turns: Turn[]; bytesRead: number } {
+  const fullBuffer = readFileSync(filePath, 'utf-8');
+  const buffer = byteOffset > 0 ? fullBuffer.slice(byteOffset) : fullBuffer;
+  const lines = buffer.split('\n').filter(l => l.trim());
+
+  const turns: Turn[] = [];
+  for (const line of lines) {
+    try {
+      const obj = JSON.parse(line) as {
+        turnIndex: number;
+        userText: string;
+        assistantText: string;
+        timestamp: string;
+        sessionId: string;
+        agentId: string;
+        channel?: string;
+      };
+      if (obj.userText && obj.assistantText) {
+        turns.push({
+          turnIndex: obj.turnIndex,
+          userText: obj.userText,
+          assistantText: obj.assistantText,
+          timestamp: obj.timestamp,
+          sessionId: obj.sessionId,
+          agentId: obj.agentId,
+        });
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  log('debug', 'parser', `Parsed day-log ${basename(filePath)}: ${turns.length} turns from offset ${byteOffset}`);
 
   return {
     turns,

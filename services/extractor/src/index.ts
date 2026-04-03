@@ -2,6 +2,7 @@ import { config, log } from './config.js';
 import { initDb, closeDb } from './offset.js';
 import { initQdrant, ensureCollections } from './qdrant.js';
 import { runBackfill, startWatch, flushPending } from './watcher.js';
+import { joinBackfill, startJoinWatch } from './joiner.js';
 
 let shuttingDown = false;
 
@@ -88,12 +89,18 @@ async function main(): Promise<void> {
   initQdrant();
   await ensureCollections();
 
-  // 4. Backfill
-  log('info', 'startup', 'Starting backfill...');
+  // 4. Join sessions into day-logs
+  log('info', 'startup', 'Joining sessions into day-logs...');
+  const joinResult = joinBackfill();
+  log('info', 'startup', `Join done: ${joinResult.processed} sessions, ${joinResult.turns} turns`);
+
+  // 5. Backfill extractor on joined logs
+  log('info', 'startup', 'Starting extraction backfill...');
   await runBackfill();
 
-  // 5. Start watcher
-  log('info', 'startup', 'Starting file watcher...');
+  // 6. Start watchers (joiner + extractor)
+  log('info', 'startup', 'Starting watchers...');
+  startJoinWatch();
   startWatch();
 
   log('info', 'startup', 'Extractor running. Waiting for new session data...');

@@ -8,6 +8,7 @@ import { checkDuplicate, upsertFact, collectionName, searchSimilar, targetInstru
 import { setOffset, logProcessing } from './offset.js';
 import { validateFact } from './validator.js';
 import { verifyFactMiniMax, verifyBehaviorMiniMax } from './verifier.js';
+import { batchExtractFacts, batchExtractBehavior, batchVerifyFacts, batchVerifyBehaviors } from './batch.js';
 
 function targetCollections(agentId: string, scope: string): string[] {
   return scope === 'household'
@@ -248,4 +249,256 @@ export async function processTurn(
   }
 
   return { extracted, written, skipped };
+}
+
+/**
+ * Process a batch of turns through the extraction pipeline.
+ * Uses batch MiniMax calls: 1 request for N turns extraction + 1 for verification.
+ * Falls back to single-turn processing if batch parsing fails.
+ */
+export async function processTurnBatch(
+  turns: Turn[],
+  startIndex: number,
+  count: number,
+  filePath: string,
+  byteOffset: number,
+): Promise<{ extracted: number; written: number; skipped: number }> {
+  const endIndex = Math.min(startIndex + count, turns.length);
+  const batchTurns = turns.slice(startIndex, endIndex);
+
+  if (batchTurns.length === 0) return { extracted: 0, written: 0, skipped: 0 };
+  if (batchTurns.length === 1) return processTurn(turns, startIndex, filePath, byteOffset);
+
+  log('info', 'batch', `Processing batch of ${batchTurns.length} turns (${startIndex}-${endIndex - 1})`);
+
+  // Build windows for all turns in the batch
+  const windows = batchTurns.map((_, i) => {
+    const window = buildWindow(turns, startIndex + i);
+    const turn = turns[startIndex + i];
+    window.agentDisplayName = config.agentNames[turn.agentId] ?? turn.agentId;
+    return window;
+  });
+
+  // Fetch known facts for all turns (parallel, deduplicated)
+  const knownFactsSet = new Set<string>();
+  try {
+    const embedPromises = batchTurns.map(turn => {
+      const text = `${turn.userText} ${turn.assistantText}`.slice(0, 500);
+      return embed(text).catch(() => null);
+    });
+    const embedResults = await Promise.all(embedPromises);
+
+    for (const turn of batchTurns) {
+      const collections = searchCollections(turn.agentId);
+      for (const embedResult of embedResults) {
+        if (!embedResult) continue;
+        const results = await Promise.all(
+          collections.map(coll =>
+            searchSimilar(coll, embedResult.vector, config.knownFactsLimit, config.knownFactsScoreThreshold)
+              .catch(() => [])
+          )
+        );
+        for (const hits of results) {
+          for (const s of hits) knownFactsSet.add(s.fact);
+        }
+        break; // One embedding search per agent is enough for known facts
+      }
+    }
+  } catch (err) {
+    log('debug', 'batch', `Known facts lookup failed: ${(err as Error).message}`);
+  }
+
+  // Assign known facts to all windows
+  const knownFacts = [...knownFactsSet];
+  for (const w of windows) w.knownFacts = knownFacts;
+
+  let totalExtracted = 0;
+  let totalWritten = 0;
+  let totalSkipped = 0;
+
+  // --- Batch Fact Extraction ---
+  let allFacts: Array<{ turnIndex: number; facts: Array<{ fact: string; type: string; confidence: number; sourceContext: string; scope?: string }> }>;
+  try {
+    allFacts = await batchExtractFacts(windows);
+  } catch (err) {
+    log('warn', 'batch', `Batch extraction failed, falling back to single-turn: ${(err as Error).message}`);
+    // Fallback to single-turn processing
+    for (let i = startIndex; i < endIndex; i++) {
+      const result = await processTurn(turns, i, filePath, byteOffset);
+      totalExtracted += result.extracted;
+      totalWritten += result.written;
+      totalSkipped += result.skipped;
+    }
+    return { extracted: totalExtracted, written: totalWritten, skipped: totalSkipped };
+  }
+
+  // Collect all candidates for batch verification
+  const verificationCandidates: Array<{ fact: string; turnIdx: number; windowIdx: number }> = [];
+  for (const entry of allFacts) {
+    for (const fact of entry.facts) {
+      const validation = validateFact({
+        fact: fact.fact,
+        type: fact.type as 'preference' | 'personal' | 'decision' | 'correction' | 'project' | 'deadline',
+        confidence: fact.confidence,
+        sourceContext: fact.sourceContext,
+        scope: (fact.scope ?? 'personal') as 'personal' | 'household',
+      });
+      if (validation.valid) {
+        const windowIdx = windows.findIndex(w => w.turnIndex === entry.turnIndex);
+        if (windowIdx >= 0) {
+          verificationCandidates.push({ fact: fact.fact, turnIdx: entry.turnIndex, windowIdx });
+        }
+      }
+    }
+    totalExtracted += entry.facts.length;
+  }
+
+  // Batch verify all facts
+  let verifiedFlags: boolean[];
+  try {
+    verifiedFlags = await batchVerifyFacts(verificationCandidates.map(c => c.fact), windows[0]);
+  } catch {
+    // Fallback: verify individually
+    verifiedFlags = [];
+    for (const c of verificationCandidates) {
+      const v = await verifyFactMiniMax(c.fact, windows[c.windowIdx]);
+      verifiedFlags.push(v.verified);
+    }
+  }
+
+  // Write verified facts
+  for (let i = 0; i < verificationCandidates.length; i++) {
+    if (!verifiedFlags[i]) continue;
+
+    const candidate = verificationCandidates[i];
+    const turnEntry = allFacts.find(e => e.turnIndex === candidate.turnIdx);
+    const factData = turnEntry?.facts.find(f => f.fact === candidate.fact);
+    if (!factData) continue;
+
+    const turn = batchTurns.find(t => t.turnIndex === candidate.turnIdx);
+    if (!turn) continue;
+
+    let embeddingResult;
+    try {
+      embeddingResult = await embed(candidate.fact);
+    } catch (err) {
+      log('warn', 'batch', `Embedding failed: ${(err as Error).message}`);
+      continue;
+    }
+
+    const targets = targetCollections(turn.agentId, factData.scope ?? 'personal');
+    for (const collection of targets) {
+      const [isDup, similarFacts] = await Promise.all([
+        checkDuplicate(collection, turn.sessionId, turn.turnIndex, candidate.fact),
+        searchSimilar(collection, embeddingResult.vector, 3, config.semanticDedupThreshold).catch(() => []),
+      ]);
+
+      if (isDup || similarFacts.length > 0) {
+        totalSkipped++;
+        continue;
+      }
+
+      const payload: FactPayload = {
+        fact: candidate.fact,
+        type: factData.type as FactPayload['type'],
+        confidence: factData.confidence,
+        sourceContext: factData.sourceContext,
+        agentId: turn.agentId,
+        sessionId: turn.sessionId,
+        turnIndex: turn.turnIndex,
+        timestamp: turn.timestamp,
+        extractedAt: new Date().toISOString(),
+        embeddingSource: embeddingResult.source,
+      };
+      if (factData.scope === 'household') payload.scope = 'household';
+
+      await upsertFact(collection, { vector: embeddingResult.vector, payload });
+      totalWritten++;
+      log('info', 'batch', `Written: [${factData.scope}/${factData.type}] ${candidate.fact.slice(0, 60)}`);
+    }
+  }
+
+  // --- Batch Behavior Extraction ---
+  try {
+    const cleanedWindows = windows.map(w => cleanWindowForBehavior(w));
+    const allBehaviors = await batchExtractBehavior(cleanedWindows);
+
+    const behaviorCandidates: Array<{ instruction: string; sourceContext: string; turnIdx: number; windowIdx: number; scope: string; confidence: number }> = [];
+    for (const entry of allBehaviors) {
+      for (const b of entry.behaviors) {
+        if (b.instruction.length < 5 || b.instruction.length > 500) continue;
+        if (b.confidence < 0.7) continue;
+        const windowIdx = cleanedWindows.findIndex(w => w.turnIndex === entry.turnIndex);
+        if (windowIdx >= 0) {
+          behaviorCandidates.push({ ...b, turnIdx: entry.turnIndex, windowIdx });
+        }
+      }
+    }
+
+    // Batch verify behaviors
+    let behaviorVerified: boolean[];
+    try {
+      behaviorVerified = await batchVerifyBehaviors(
+        behaviorCandidates.map(c => ({ instruction: c.instruction, sourceContext: c.sourceContext })),
+        cleanedWindows[0],
+      );
+    } catch {
+      behaviorVerified = [];
+      for (const c of behaviorCandidates) {
+        const v = await verifyBehaviorMiniMax(c.instruction, c.sourceContext, cleanedWindows[c.windowIdx]);
+        behaviorVerified.push(v.verified);
+      }
+    }
+
+    for (let i = 0; i < behaviorCandidates.length; i++) {
+      if (!behaviorVerified[i]) continue;
+
+      const c = behaviorCandidates[i];
+      const turn = batchTurns.find(t => t.turnIndex === c.turnIdx);
+      if (!turn) continue;
+
+      let embeddingResult;
+      try {
+        embeddingResult = await embed(c.instruction);
+      } catch { continue; }
+
+      const targets = targetInstructionCollections(turn.agentId, c.scope ?? 'personal');
+      for (const collection of targets) {
+        const [isDup, similar] = await Promise.all([
+          checkDuplicate(collection, turn.sessionId, turn.turnIndex, c.instruction),
+          searchSimilar(collection, embeddingResult.vector, 3, config.semanticDedupThreshold).catch(() => []),
+        ]);
+
+        if (isDup || similar.length > 0) continue;
+
+        await upsertFact(collection, {
+          vector: embeddingResult.vector,
+          payload: {
+            fact: c.instruction,
+            type: 'behavior',
+            confidence: c.confidence,
+            sourceContext: c.sourceContext,
+            agentId: turn.agentId,
+            sessionId: turn.sessionId,
+            turnIndex: turn.turnIndex,
+            timestamp: turn.timestamp,
+            extractedAt: new Date().toISOString(),
+            embeddingSource: embeddingResult.source,
+            scope: c.scope ?? 'personal',
+          },
+        });
+        totalWritten++;
+        log('info', 'batch', `Behavior written: ${c.instruction.slice(0, 60)}`);
+      }
+    }
+  } catch (err) {
+    log('warn', 'batch', `Batch behavior pass failed (non-fatal): ${(err as Error).message}`);
+  }
+
+  // Update offset to last turn in batch
+  const lastTurn = batchTurns[batchTurns.length - 1];
+  setOffset(filePath, byteOffset, lastTurn.turnIndex);
+
+  log('info', 'batch', `Batch done: ${totalExtracted} extracted, ${totalWritten} written, ${totalSkipped} skipped`);
+  return { extracted: totalExtracted, written: totalWritten, skipped: totalSkipped };
 }

@@ -1,4 +1,5 @@
 import { config, log } from './config.js';
+import { MiniMaxChatClient, parseJsonArray, stripThinkTags } from '@openclaw/minimax-client';
 import type { ExtractionWindow } from './window.js';
 import { formatWindowPrompt } from './window.js';
 
@@ -42,8 +43,16 @@ Wenn KEINE Verhaltensanweisung: leeres Array [].
 Formuliere als klare Regel: "Bei Serien-Releases nach Deutschland-Terminen suchen" statt "Benni moechte dass...".
 Sprache: Deutsch.`;
 
-interface OpenAIResponse {
-  choices: { message: { content: string } }[];
+let _minimax: MiniMaxChatClient | null = null;
+function getMiniMax(): MiniMaxChatClient {
+  if (!_minimax) {
+    _minimax = new MiniMaxChatClient({
+      apiKey: config.minimaxApiKey,
+      baseUrl: config.minimaxBaseUrl,
+      logFn: (level, msg) => log(level, 'minimax', msg),
+    });
+  }
+  return _minimax;
 }
 
 function cleanText(text: string): string {
@@ -69,84 +78,13 @@ export function cleanWindowForBehavior(window: ExtractionWindow): ExtractionWind
   };
 }
 
-function stripThinkTags(content: string): string {
-  return content.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim();
-}
-
-function parseInstructionsJson(raw: string): ExtractedInstruction[] {
-  const cleaned = stripThinkTags(raw);
-
-  let jsonStr = cleaned;
-
-  // Strip markdown code fences if present
-  const fenceMatch = jsonStr.match(/```(?:json)?\s*([\s\S]*?)```/);
-  if (fenceMatch) jsonStr = fenceMatch[1].trim();
-
-  // Find array boundaries
-  const arrStart = jsonStr.indexOf('[');
-  const arrEnd = jsonStr.lastIndexOf(']');
-  if (arrStart !== -1 && arrEnd !== -1 && arrEnd > arrStart) {
-    jsonStr = jsonStr.slice(arrStart, arrEnd + 1);
-  }
-
-  const parsed = JSON.parse(jsonStr);
-  if (!Array.isArray(parsed)) return [];
-
-  return parsed.map((item: Record<string, unknown>) => ({
+function validateInstructions(parsed: Record<string, unknown>[]): ExtractedInstruction[] {
+  return parsed.map(item => ({
     instruction: String(item.instruction ?? ''),
     confidence: Number(item.confidence ?? 0.5),
     sourceContext: String(item.sourceContext ?? '').slice(0, 100),
     scope: (item.scope === 'household' ? 'household' : 'personal') as 'household' | 'personal',
   })).filter(i => i.instruction.length > 0);
-}
-
-async function callMiniMaxBehavior(userPrompt: string): Promise<string> {
-  const body = {
-    model: config.extractionModel,
-    messages: [
-      { role: 'system', content: BEHAVIOR_SYSTEM_PROMPT },
-      { role: 'user', content: userPrompt },
-    ],
-    max_tokens: 2000,
-    temperature: 0.1,
-  };
-
-  const resp = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${config.minimaxApiKey}`,
-    },
-    body: JSON.stringify(body),
-  });
-
-  if (resp.status === 429) {
-    log('warn', 'behavior', 'Rate limited (429), waiting 60s...');
-    await new Promise(r => setTimeout(r, 60000));
-    const retry = await fetch(`${config.minimaxBaseUrl}/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${config.minimaxApiKey}`,
-      },
-      body: JSON.stringify(body),
-    });
-    if (!retry.ok) throw new Error(`MiniMax retry failed: ${retry.status}`);
-    const data = (await retry.json()) as OpenAIResponse;
-    return data.choices[0].message.content;
-  }
-
-  if (resp.status >= 500) {
-    throw new Error(`MiniMax server error: ${resp.status}`);
-  }
-
-  if (!resp.ok) {
-    const text = await resp.text();
-    throw new Error(`MiniMax error ${resp.status}: ${text}`);
-  }
-
-  const data = (await resp.json()) as OpenAIResponse;
-  return data.choices[0].message.content;
 }
 
 /**
@@ -161,8 +99,15 @@ export async function extractBehavior(window: ExtractionWindow): Promise<Extract
 
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     try {
-      const raw = await callMiniMaxBehavior(prompt);
-      const instructions = parseInstructionsJson(raw);
+      const result = await getMiniMax().chat({
+        systemPrompt: BEHAVIOR_SYSTEM_PROMPT,
+        userPrompt: prompt,
+        maxTokens: 2000,
+        temperature: 0.1,
+        tag: 'behavior',
+      });
+      const parsed = parseJsonArray<Record<string, unknown>>(stripThinkTags(result.content));
+      const instructions = validateInstructions(parsed);
       log('debug', 'behavior', `Extracted ${instructions.length} instructions from turn ${window.turnIndex}`, {
         instructions: instructions.map(i => `[${i.scope}] ${i.instruction}`),
       });

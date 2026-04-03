@@ -1,6 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { MiniMaxClient } from "./clients/minimax.js";
+import { createMiniMaxClient } from "./clients/minimax.js";
 import { SonarrClient } from "./clients/sonarr.js";
 import { RadarrClient } from "./clients/radarr.js";
 import { registerWebSearch } from "./tools/web-search.js";
@@ -45,7 +45,7 @@ function wrapWithLogging(server: McpServer): McpServer {
 async function main(): Promise<void> {
   log("Starting OpenClaw Tool-Hub MCP Server v1.2.0");
 
-  const minimax = new MiniMaxClient();
+  const minimax = createMiniMaxClient();
   const sonarr = new SonarrClient();
   const radarr = new RadarrClient();
 
