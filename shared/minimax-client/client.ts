@@ -1,14 +1,16 @@
 import type { MiniMaxClientConfig, MiniMaxChatOptions, MiniMaxChatResult, MiniMaxRemainsInfo } from './types.js';
 import { UsageLogger } from './usage-logger.js';
 
-interface OpenAIResponse {
-  choices: { message: { content: string } }[];
-  usage?: { prompt_tokens: number; completion_tokens: number };
+/** Anthropic Messages API response format */
+interface AnthropicResponse {
+  content: Array<{ type: 'text' | 'thinking'; text?: string; thinking?: string }>;
+  usage?: { input_tokens: number; output_tokens: number };
+  error?: { type: string; message: string };
 }
 
 export class MiniMaxChatClient {
   private apiKey: string;
-  private baseUrl: string;
+  private apiHost: string;
   private log: (level: 'debug' | 'info' | 'warn' | 'error', msg: string) => void;
   readonly usage: UsageLogger;
 
@@ -17,7 +19,7 @@ export class MiniMaxChatClient {
 
   constructor(config: MiniMaxClientConfig) {
     this.apiKey = config.apiKey;
-    this.baseUrl = config.baseUrl ?? 'https://api.minimax.io/v1';
+    this.apiHost = (config.baseUrl ?? 'https://api.minimax.io').replace(/\/v1\/?$/, '');
     this.log = config.logFn ?? ((level, msg) => process.stderr.write(`[minimax:${level}] ${msg}\n`));
     this.usage = new UsageLogger(config.logFn);
   }
@@ -25,7 +27,6 @@ export class MiniMaxChatClient {
   /** Burst protection — wait if we've sent too many requests recently. */
   private async throttle(): Promise<void> {
     const now = Date.now();
-    // Prune old entries — keep only last second (bounded to maxBurstPerSecond entries)
     while (this.recentRequests.length > 0 && now - this.recentRequests[0] >= 1000) {
       this.recentRequests.shift();
     }
@@ -39,7 +40,11 @@ export class MiniMaxChatClient {
     this.recentRequests.push(now);
   }
 
-  /** Single chat completion with automatic retry + rate limiting. */
+  /**
+   * Single chat completion via Anthropic Messages API.
+   * Uses /anthropic/v1/messages — thinking is returned as separate block,
+   * content is clean text without <think> tags.
+   */
   async chat(opts: MiniMaxChatOptions): Promise<MiniMaxChatResult> {
     const {
       systemPrompt,
@@ -51,14 +56,16 @@ export class MiniMaxChatClient {
       tag = 'unknown',
     } = opts;
 
+    // Anthropic API requires temperature >= 1.0 when thinking is enabled.
+    // MiniMax always has thinking on, so we set temp=1.0 and rely on the prompt for determinism.
     const body = {
       model,
+      system: systemPrompt,
       messages: [
-        { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       max_tokens: maxTokens,
-      temperature,
+      temperature: Math.max(temperature, 1.0),
     };
 
     const maxRetries = 3;
@@ -68,11 +75,12 @@ export class MiniMaxChatClient {
       await this.throttle();
 
       try {
-        const resp = await fetch(`${this.baseUrl}/chat/completions`, {
+        const resp = await fetch(`${this.apiHost}/anthropic/v1/messages`, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`,
+            'content-type': 'application/json',
+            'x-api-key': this.apiKey,
+            'anthropic-version': '2023-06-01',
           },
           body: JSON.stringify(body),
           signal: AbortSignal.timeout(timeoutMs),
@@ -98,10 +106,21 @@ export class MiniMaxChatClient {
           throw new Error(`MiniMax error ${resp.status}: ${text}`);
         }
 
-        const data = (await resp.json()) as OpenAIResponse;
-        const content = data.choices?.[0]?.message?.content ?? '';
+        const data = (await resp.json()) as AnthropicResponse;
+
+        if (data.error) {
+          throw new Error(`MiniMax API error: ${data.error.message}`);
+        }
+
+        // Extract text blocks only (skip thinking blocks)
+        const content = data.content
+          .filter(b => b.type === 'text')
+          .map(b => b.text ?? '')
+          .join('\n')
+          .trim();
+
         const usage = data.usage
-          ? { promptTokens: data.usage.prompt_tokens, completionTokens: data.usage.completion_tokens }
+          ? { promptTokens: data.usage.input_tokens, completionTokens: data.usage.output_tokens }
           : undefined;
 
         this.usage.record(tag, usage);
@@ -132,8 +151,7 @@ export class MiniMaxChatClient {
    */
   async getRemains(): Promise<MiniMaxRemainsInfo | null> {
     try {
-      const apiHost = this.baseUrl.replace(/\/v1\/?$/, '');
-      const resp = await fetch(`${apiHost}/v1/coding_plan/remains`, {
+      const resp = await fetch(`${this.apiHost}/v1/coding_plan/remains`, {
         headers: { 'Authorization': `Bearer ${this.apiKey}` },
         signal: AbortSignal.timeout(10_000),
       });
