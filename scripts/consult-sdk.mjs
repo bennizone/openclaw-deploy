@@ -91,17 +91,20 @@ if (!question) {
 
 // --- Repo-Root und Komponenten-Pfade ---
 const repoDir = resolve(import.meta.dirname, "..");
+const toolHubPath = join(repoDir, "services", "openclaw-tools", "dist", "index.js");
 
-// --- MINIMAX_API_KEY aus ~/.openclaw/.env lesen ---
+// --- ENV aus ~/.openclaw/.env lesen ---
 const envFile = join(homedir(), ".openclaw", ".env");
+const openclawEnv = {};
 let minimaxKey = "";
 
 if (existsSync(envFile)) {
   const envContent = readFileSync(envFile, "utf-8");
-  const match = envContent.match(/^MINIMAX_API_KEY=(.+)$/m);
-  if (match) {
-    minimaxKey = match[1].trim();
+  for (const line of envContent.split("\n")) {
+    const m = line.match(/^([A-Z_][A-Z0-9_]*)=(.+)$/);
+    if (m) openclawEnv[m[1]] = m[2].trim();
   }
+  minimaxKey = openclawEnv.MINIMAX_API_KEY || "";
 }
 
 if (!minimaxKey) {
@@ -215,6 +218,18 @@ for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       ? tools.split(",").map((t) => t.trim())
       : ["Read", "Glob", "Grep"];
 
+    // Tool-Hub MCP Server (web_search, weather, etc.) — immer verfuegbar
+    const mcpServers = existsSync(toolHubPath)
+      ? {
+          "openclaw-tools": {
+            type: "stdio",
+            command: "node",
+            args: [toolHubPath],
+            env: { ...process.env, ...openclawEnv },
+          },
+        }
+      : undefined;
+
     for await (const message of query({
       prompt: fullPrompt,
       options: {
@@ -224,6 +239,7 @@ for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         allowedTools: allowedTools,
         maxTurns: maxTurns,
         permissionMode: "bypassPermissions",
+        ...(mcpServers && { mcpServers }),
       },
     })) {
       sessionLog(message);
