@@ -14,20 +14,31 @@ Memory-System (3 Komponenten)
 1. Extractor Service (~/extractor/, systemd user service)
    services/extractor/
    ├── src/
-   │   ├── index.ts           # Service Entry Point
+   │   ├── index.ts           # Service Entry Point (Joiner → Backfill → Watch)
    │   ├── config.ts          # ENV-Konfiguration
-   │   ├── watcher.ts         # JSONL File Watcher (chokidar)
-   │   ├── parser.ts          # Session-Log Parser
+   │   ├── joiner.ts          # Session-Joiner: aggregiert Sessions in Tages-Channel-Logs
+   │   ├── watcher.ts         # Tages-Log Watcher (chokidar, watcht ~/extractor/logs/)
+   │   ├── parser.ts          # Session-Log + Day-Log Parser
    │   ├── window.ts          # Sliding Window (3 vor, 2 nach)
    │   ├── pipeline.ts        # Extraction Pipeline Orchestrierung
-   │   ├── extractor.ts       # LLM Fact Extraction (MiniMax M2.7)
-   │   ├── behavior-extractor.ts # LLM Behavior-Extraction via MiniMax (Two-Pass)
+   │   ├── batch.ts           # Batch-Extraction + Batch-Verification (Multi-Turn)
+   │   ├── extractor.ts       # LLM Fact Extraction via @openclaw/minimax-client
+   │   ├── behavior-extractor.ts # LLM Behavior-Extraction via @openclaw/minimax-client
    │   ├── embedder.ts        # bge-m3 Embedding (GPU + CPU Fallback)
    │   ├── qdrant.ts          # Qdrant Upsert (Dense + BM25)
    │   ├── offset.ts          # SQLite Offset-Tracking
    │   └── bm25-tokenizer.ts  # FNV-1a Hashing (shared mit Recall)
-   ├── package.json           # v1.0.0, Deps: @qdrant/js-client-rest, better-sqlite3, chokidar
+   ├── package.json           # v1.0.0, Deps: @openclaw/minimax-client, @qdrant/js-client-rest, better-sqlite3, chokidar
    └── tsconfig.json
+
+   Shared MiniMax Client:
+   shared/minimax-client/       # @openclaw/minimax-client
+   ├── client.ts               # MiniMaxChatClient (Anthropic Messages API)
+   ├── platform-client.ts      # MiniMaxPlatformClient (Search + VLM)
+   ├── response-parser.ts      # parseJsonArray, parseJsonObject, stripThinkTags
+   ├── usage-logger.ts         # In-Process Request-Counter
+   ├── types.ts                # Shared Types
+   └── index.ts                # Re-Exports
 
 2. Qdrant (Docker, Port 6333)
    Collections: memories_benni, memories_domi, memories_household
@@ -48,11 +59,13 @@ Memory-System (3 Komponenten)
 ### Datenfluss
 
 ```
-Konversation → JSONL-Log → Extractor
-  → Sliding Window (3+2 Turns Kontext)
-  → Stage 1: MiniMax M2.7 extrahiert Fakten (nur User-Messages)
-  → Stage 2: MiniMax M2.7 verifiziert (Confidence >= 0.5)
-  → Stage 3: MiniMax M2.7 extrahiert Behavior-Instructions (nur User-Messages, bereinigter Kontext)
+Konversation → JSONL-Session → Joiner → Tages-Channel-Log → Extractor
+  → Joiner filtert consult-agent.sh Sessions, erkennt Channel (whatsapp/matrix/direct)
+  → Tages-Logs: ~/extractor/logs/YYYY-MM-DD_agent_channel.jsonl
+  → Sliding Window (3+2 Turns Kontext, jetzt ueber Session-Grenzen hinweg)
+  → Stage 1: MiniMax M2.7 extrahiert Fakten (Anthropic API, nur User-Messages)
+  → Stage 2: MiniMax M2.7 verifiziert (Confidence >= 0.5, PII-Filter)
+  → Stage 3: MiniMax M2.7 extrahiert Behavior-Instructions (bereinigter Kontext)
   → Stage 4: MiniMax M2.7 verifiziert Behavior (Confidence >= 0.7, 4 Kriterien)
   → bge-m3 Embedding (1024-dim)
   → Dedup: Cosine > 0.92 → identisch zu Facts
@@ -72,7 +85,7 @@ Neue Nachricht → Memory-Recall Plugin (before_prompt_build)
   - **gpu-server** — bge-m3 Embedding-Server (Port 8081), Primaer
   - LXC localhost:8081 — bge-m3 CPU-Fallback
   - Qdrant (Docker, Port 6333) — Vektor-Datenbank
-  - MiniMax API — Fakten-Extraktion + Verifizierung (kein Qwen-Fallback!)
+  - MiniMax API via `@openclaw/minimax-client` — Anthropic Messages API fuer Extraction + Verification
 - **Wird gebraucht von:**
   - **gateway** — Memory-Recall Plugin laeuft als Gateway-Plugin
   - **ha-integration** — HA-Voice Household-Agent nutzt memories_household
@@ -80,8 +93,12 @@ Neue Nachricht → Memory-Recall Plugin (before_prompt_build)
 
 ## Schnittstellen
 
+- **Eingabe (Joiner):**
+  - JSONL-Session-Logs aus `~/.openclaw/agents/*/sessions/` (via chokidar File Watcher)
+  - Filtert consult-agent.sh Calls automatisch raus
+  - Output: Tages-Channel-Logs in `~/extractor/logs/`
 - **Eingabe (Extractor):**
-  - JSONL-Session-Logs aus `~/.openclaw/completions/` (via chokidar File Watcher)
+  - Tages-Channel-Logs aus `~/extractor/logs/` (via chokidar File Watcher)
   - SQLite State-DB (`~/extractor/state.db`) fuer Offset-Tracking
 - **Eingabe (Recall):**
   - User-Nachricht (via before_prompt_build Hook)

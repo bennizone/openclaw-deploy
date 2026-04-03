@@ -77,3 +77,50 @@ die faelschlicherweise als Fakten extrahiert wurden.
 
 **Alternativen verworfen:**
 - Alle Messages — zu viel Noise aus HA-Statusmeldungen
+
+## 2026-04-03 — Unified MiniMax Client (@openclaw/minimax-client)
+
+**Kontext:** MiniMax-API-Aufrufe waren 5x dupliziert (extractor, behavior-extractor, verifier 2x, openclaw-tools).
+Jeder mit eigenem Error-Handling und Retry-Logik.
+
+**Entscheidung:** Shared package `@openclaw/minimax-client` mit MiniMaxChatClient (Anthropic Messages API)
+und MiniMaxPlatformClient (Search + VLM). Nutzt `/anthropic/v1/messages` statt OpenAI-kompatible API.
+Vorteil: Thinking als separater Block, sauberes JSON-Parsing ohne stripThinkTags.
+
+**Alternativen verworfen:**
+- OpenAI-kompatible API beibehalten — `<think>` Tags im Content, 50% unparseable Verifier-Responses
+
+## 2026-04-03 — Session-Joiner (Tages-Channel-Logs)
+
+**Kontext:** OpenClaw erzeugt pro Konversation eine Session-JSONL (UUID). 89 von 145 Sessions
+waren consult-agent.sh Calls, keine User-Konversationen. Meiste Sessions = 1 Turn, kein Kontext.
+
+**Entscheidung:** Joiner aggregiert Sessions in Tages-Channel-Logs (`~/extractor/logs/YYYY-MM-DD_agent_channel.jsonl`).
+Filtert consult-Calls raus. Erkennt Channel aus Message-Content (WhatsApp/Matrix/Direct).
+Extractor arbeitet auf Tages-Logs → voller Tages-Kontext statt 1-Turn-Sessions.
+
+**Alternativen verworfen:**
+- Direkt auf Sessions arbeiten — kein Cross-Session-Kontext, Noise durch consult-Calls
+
+## 2026-04-03 — Extraction-Prompts: Menschen statt Arbeit
+
+**Kontext:** Alter Prompt extrahierte technische Details (Error-Counts, Datei-Pfade, Patch-Vorschlaege)
+als Fakten. 35 von 50 geschriebenen Fakten waren Muell.
+
+**Entscheidung:** Prompt-Testfrage: "Beschreibt das den MENSCHEN oder seine ARBEIT?"
+Extractor ueberschiesst bewusst ~20%, Verifier filtert mit Beispielen (verified=true/false).
+PII-Filter aktiv (Telefonnummern, Adressen → rejected). Ergebnis: 10/12 korrekte Verifier-Entscheidungen.
+
+## 2026-04-03 — max_tokens grosszuegig (8192)
+
+**Kontext:** Bei Anthropic API zaehlen Thinking-Tokens zum max_tokens Budget.
+max_tokens=500 schnitt JSON-Responses mitten im Text ab → unparseable.
+
+**Entscheidung:** max_tokens=8192 fuer alle MiniMax-Calls. MiniMax reguliert Thinking-Laenge selbst.
+
+## 2026-04-03 — Remains-API zaehlt als Request
+
+**Kontext:** `GET /v1/coding_plan/remains` zaehlt gegen das 5h-Fenster (1500 Requests Starter Plan).
+Automatisches Pollen wuerde Budget verschwenden.
+
+**Entscheidung:** `getRemains()` nur on-demand aufrufen (CLI-Command), nie in automatischen Loops.

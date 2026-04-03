@@ -8,20 +8,29 @@
 
 ## Extraktions-Pipeline
 
+### Schritt 0: Session-Joiner (neu)
+- Joiner watcht `~/.openclaw/agents/*/sessions/*.jsonl`
+- Filtert consult-agent.sh Sessions raus (kein `[Erinnerungen]`/`[Regeln]` Prefix)
+- Erkennt Channel: WhatsApp, Matrix, Direct (aus Message-Content)
+- Aggregiert in Tages-Channel-Logs: `~/extractor/logs/YYYY-MM-DD_agent_channel.jsonl`
+- State: `~/extractor/logs/.joined-sessions` (bereits verarbeitete Session-IDs)
+
 ### Schritt 1: Log-Monitoring
-- Extractor beobachtet `~/.openclaw/completions/` (JSONL)
+- Extractor beobachtet `~/extractor/logs/*.jsonl` (Tages-Channel-Logs)
 - Sliding Window: 3 Turns davor, 2 danach fuer Kontext
+- Kontext geht jetzt ueber Session-Grenzen (weil Turns in einem Tages-Log)
 - Nur User-Nachrichten werden extrahiert (nicht Assistant-Antworten)
 
 ### Schritt 2: Fakten-Extraktion
-- LLM: MiniMax M2.7 (Qwen 3.5 NICHT verwenden — halluziniert bei Extraktion)
-- Prompt: "Extrahiere bestaendige Fakten aus dieser Nachricht"
+- LLM: MiniMax M2.7 via `@openclaw/minimax-client` (Anthropic Messages API)
+- Prompt-Fokus: Menschen-Fakten, nicht technische Arbeit. PII-Filter aktiv.
 - Output: Liste von Fakten mit Scope (personal/household)
 
 ### Schritt 3: Verifizierung
-- Jede extrahierte Fakt wird nochmals von MiniMax verifiziert
+- Jeder Kandidat wird von MiniMax verifiziert (Anthropic API, sauberes JSON)
+- Beispiel-basierter Verifier-Prompt (verified=true/false mit Begruendung)
 - Confidence-Schwelle: >= 0.5
-- Unter Schwelle: Fakt wird verworfen
+- PII (Telefonnummern, Adressen) → automatisch rejected
 
 ### Schritt 4: Embedding + Speicherung
 - Embedding: bge-m3 (1024 Dimensionen)

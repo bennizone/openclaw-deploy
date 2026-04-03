@@ -23,7 +23,7 @@ services/openclaw-tools/
 │   │   │                     #   contacts_birthdays
 │   │   └── weather.ts        # weather (Open-Meteo: Geocoding + Forecast)
 │   ├── clients/
-│   │   ├── minimax.ts        # MiniMax API Client (Search + VLM)
+│   │   ├── minimax.ts        # MiniMax Client (re-export von @openclaw/minimax-client MiniMaxPlatformClient)
 │   │   ├── duckduckgo.ts     # DuckDuckGo Scraper
 │   │   ├── sonarr.ts         # Sonarr REST Client
 │   │   ├── radarr.ts         # Radarr REST Client
@@ -37,7 +37,7 @@ services/openclaw-tools/
 │   │   └── types.ts          # Gemeinsame TypeScript-Typen
 │   └── config/
 │       └── pim.json          # PIM-Quellen + Agent-Berechtigungen
-├── package.json              # v1.2.0, Dependencies: @modelcontextprotocol/sdk, tsdav, duck-duck-scrape, zod
+├── package.json              # v1.2.0, Dependencies: @openclaw/minimax-client, @modelcontextprotocol/sdk, tsdav, duck-duck-scrape, zod
 ├── tsconfig.json
 └── dist/                     # Build-Output (wird von Gateway gestartet)
 ```
