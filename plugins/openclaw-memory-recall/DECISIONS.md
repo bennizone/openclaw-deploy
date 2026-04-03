@@ -67,3 +67,36 @@ fuer alle Agenten relevant. Persoenliches bleibt getrennt.
 ## Qdrant Collections
 - Named Vectors: `dense` (1024-dim Cosine) + `bm25` (sparse, idf modifier)
 - Collections: `memories_benni`, `memories_domi`, `memories_household`
+- Collections: `instructions_benni`, `instructions_domi`, `instructions_household`
+
+## Zeitbasierte Instructions (Phase 4, 2026-04-03)
+
+**Entscheidung:** JSON-Datei statt Qdrant Payload-Filter
+**Warum:** Zeitbasierte Instructions sind deterministisch (immer injizieren wenn Datum passt),
+nicht semantisch. Qdrant-Payload-Filter fuer Datumsbereiche erzeugt Komplexitaet ohne Mehrwert.
+JSON-Datei passt zum bestehenden Filesystem-Pattern (RULES.md).
+
+**Dateipfad:** `~/.openclaw/workspace-<agentId>/timed-instructions.json`
+(analog zu RULES.md im selben Verzeichnis)
+
+**Schema:**
+```json
+[
+  {
+    "label": "Domis Geburtstag",
+    "month": 5,
+    "day": 15,
+    "daysWindow": 7,
+    "instruction": "Domis Geburtstag naht (15. Mai)"
+  },
+  {
+    "label": "Adventszeit",
+    "activeFrom": "2026-12-01",
+    "activeTo": "2026-12-24",
+    "instruction": "Wir sind in der Adventszeit"
+  }
+]
+```
+- Wiederkehrend (jaehrlich): `month` + `day` + `daysWindow` (Tage vorher aktiv)
+- Einmalig/Saisonal: `activeFrom` + `activeTo` (ISO-Datum)
+- Injection als `[Zeitbasierte Hinweise]` Block VOR `[Anweisungen]`

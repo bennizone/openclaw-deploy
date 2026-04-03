@@ -1,0 +1,15 @@
+[
+  {
+    "label": "Beispiel: Geburtstag",
+    "month": 5,
+    "day": 15,
+    "daysWindow": 7,
+    "instruction": "XYs Geburtstag naht am 15. Mai — bei passender Gelegenheit erwaehnen"
+  },
+  {
+    "label": "Beispiel: Adventszeit",
+    "activeFrom": "2026-12-01",
+    "activeTo": "2026-12-24",
+    "instruction": "Wir sind in der Adventszeit — weihnachtliche Stimmung ist willkommen"
+  }
+]

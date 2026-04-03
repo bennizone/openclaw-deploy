@@ -10,6 +10,16 @@ import { readFileSync } from 'fs';
 import { join } from 'path';
 import { textToSparse } from '@openclaw/bm25-tokenizer';
 
+interface TimedInstruction {
+  label: string;
+  instruction: string;
+  month?: number;       // 1-12 (recurring yearly)
+  day?: number;         // 1-31 (recurring yearly)
+  daysWindow?: number;  // Days before the date when it becomes active (default: 0)
+  activeFrom?: string;  // ISO date YYYY-MM-DD (range mode)
+  activeTo?: string;    // ISO date YYYY-MM-DD (range mode)
+}
+
 interface PluginConfig {
   qdrantUrl: string;
   embedUrl: string;
@@ -88,6 +98,65 @@ function readRulesFile(agentId: string): string | null {
     return readFileSync(rulesPath, 'utf-8').trim();
   } catch {
     return null;
+  }
+}
+
+function isTimedInstructionActive(entry: TimedInstruction, today: Date): boolean {
+  // Range mode: activeFrom/activeTo
+  if (entry.activeFrom && entry.activeTo) {
+    const from = new Date(entry.activeFrom + 'T00:00:00');
+    const to = new Date(entry.activeTo + 'T23:59:59');
+    return today >= from && today <= to;
+  }
+
+  // Recurring mode: month + day + daysWindow
+  if (entry.month != null && entry.day != null) {
+    const window = entry.daysWindow ?? 0;
+    const year = today.getFullYear();
+
+    // Target date this year
+    const target = new Date(year, entry.month - 1, entry.day);
+    // Start of active window
+    const windowStart = new Date(target);
+    windowStart.setDate(windowStart.getDate() - window);
+
+    // Normalize today to midnight for comparison
+    const todayMidnight = new Date(year, today.getMonth(), today.getDate());
+
+    // Check this year's window
+    if (todayMidnight >= windowStart && todayMidnight <= target) return true;
+
+    // Handle year wrap: if window crosses into previous year (e.g., Jan 3 with daysWindow=10)
+    const targetPrevYear = new Date(year - 1, entry.month - 1, entry.day);
+    const windowStartPrev = new Date(targetPrevYear);
+    windowStartPrev.setDate(windowStartPrev.getDate() - window);
+    if (todayMidnight >= windowStartPrev && todayMidnight <= targetPrevYear) return true;
+
+    // Handle year wrap: next year target with window reaching into this year
+    const targetNextYear = new Date(year + 1, entry.month - 1, entry.day);
+    const windowStartNext = new Date(targetNextYear);
+    windowStartNext.setDate(windowStartNext.getDate() - window);
+    if (todayMidnight >= windowStartNext && todayMidnight <= targetNextYear) return true;
+
+    return false;
+  }
+
+  return false;
+}
+
+function readTimedInstructions(agentId: string): string[] {
+  try {
+    const filePath = join(getWorkspacePath(agentId), 'timed-instructions.json');
+    const raw = readFileSync(filePath, 'utf-8');
+    const entries = JSON.parse(raw) as TimedInstruction[];
+    if (!Array.isArray(entries)) return [];
+
+    const today = new Date();
+    return entries
+      .filter(e => e.instruction && isTimedInstructionActive(e, today))
+      .map(e => e.instruction);
+  } catch {
+    return [];
   }
 }
 
@@ -321,7 +390,19 @@ export default {
         }
       }
 
-      // 2. Instructions injection (from instructions_* collections)
+      // 2. Timed instructions (from workspace JSON file)
+      const timedInstructions = readTimedInstructions(agentId);
+      if (timedInstructions.length > 0) {
+        const timedLines = timedInstructions.map(i => `- ${i}`).join('\n');
+        api.logger.debug(`[memory-recall] ${timedInstructions.length} timed instructions active for ${agentId}`);
+        parts.push([
+          '[Zeitbasierte Hinweise]',
+          timedLines,
+          '[/Zeitbasierte Hinweise]',
+        ].join('\n'));
+      }
+
+      // 3. Instructions injection (from instructions_* collections)
       if (topInstructions.length > 0) {
         const instructionLines = topInstructions.map(i => `- ${i.fact}`).join('\n');
         api.logger.debug(`[memory-recall] Injecting ${topInstructions.length} instructions for ${agentId}: ${topInstructions.map(i => i.fact.slice(0, 40)).join(', ')}`);
@@ -332,7 +413,7 @@ export default {
         ].join('\n'));
       }
 
-      // 3. Memory facts injection
+      // 4. Memory facts injection
       if (topFacts.length > 0) {
         const factLines = topFacts.map(f => `- ${f.fact}`).join('\n');
         api.logger.debug(`[memory-recall] Injecting ${topFacts.length} facts for ${agentId}: ${topFacts.map(f => f.fact.slice(0, 40)).join(', ')}`);
