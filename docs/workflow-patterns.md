@@ -67,3 +67,5 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-03 | Tokenfresser-Migration | ORCH-FIX nach Review (Kat.3-Hinweis selbst editiert) | Auch nicht-blockierende Findings an /coder delegieren | offen | 1 |
 | 2026-04-03 | Tokenfresser-Migration | Write+Read-Redundanz nach Datei-Erstellung | Write+Read Anti-Pattern: nach Write direkt weiterarbeiten | offen | 1 |
 | 2026-04-03 | Tokenfresser-Migration | Batch-Read statt sequentielle Einzel-Reads | Mehrere Dateien desselben Verzeichnisses zusammenfassen | offen | 1 |
+| 2026-04-04 | consult-sdk | Read-Edit ist das zuverlaessigste Pattern fuer MiniMax SDK | Default fuer /coder-light nutzen | offen | 1 |
+| 2026-04-04 | consult-sdk | Triviale Fragen (Bestaetigung, OK) nicht ueber SDK-Agent | Verbraucht 22k Cache-Tokens fuer nichts | offen | 1 |
