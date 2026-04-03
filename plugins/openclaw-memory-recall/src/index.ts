@@ -6,6 +6,8 @@
  * Each agent gets their personal facts + household facts.
  */
 
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { textToSparse } from '@openclaw/bm25-tokenizer';
 
 interface PluginConfig {
@@ -14,6 +16,7 @@ interface PluginConfig {
   embedFallbackUrl: string;
   embeddingModel: string;
   topK: number;
+  enableRules: boolean;
 }
 
 interface ContentBlock {
@@ -65,6 +68,20 @@ function extractLastUserText(messages: Message[]): string | null {
     }
   }
   return null;
+}
+
+function getWorkspacePath(agentId: string): string {
+  const home = process.env.HOME ?? '/home/openclaw';
+  return join(home, '.openclaw', `workspace-${agentId}`);
+}
+
+function readRulesFile(agentId: string): string | null {
+  try {
+    const rulesPath = join(getWorkspacePath(agentId), 'RULES.md');
+    return readFileSync(rulesPath, 'utf-8').trim();
+  } catch {
+    return null;
+  }
 }
 
 async function getEmbedding(
@@ -139,6 +156,7 @@ export default {
       embedFallbackUrl: { type: 'string', default: 'http://localhost:8081' },
       embeddingModel: { type: 'string', default: 'bge-m3' },
       topK: { type: 'number', default: 5 },
+      enableRules: { type: 'boolean', default: true },
     },
   },
 
@@ -157,9 +175,10 @@ export default {
       embedFallbackUrl: api.pluginConfig?.embedFallbackUrl ?? 'http://localhost:8081',
       embeddingModel: api.pluginConfig?.embeddingModel ?? 'bge-m3',
       topK: api.pluginConfig?.topK ?? 5,
+      enableRules: api.pluginConfig?.enableRules ?? true,
     };
 
-    api.logger.info(`[memory-recall] Registered — Qdrant: ${cfg.qdrantUrl}, topK: ${cfg.topK}, hybrid: dense+bm25+rrf`);
+    api.logger.info(`[memory-recall] Registered — Qdrant: ${cfg.qdrantUrl}, topK: ${cfg.topK}, hybrid: dense+bm25+rrf, rules: ${cfg.enableRules}`);
 
     api.on('before_prompt_build', async (event: unknown, ctx: unknown) => {
       const ev = event as Record<string, unknown>;
@@ -220,7 +239,17 @@ export default {
         return { prependContext: MEMORY_OFFLINE_HINT };
       }
 
-      if (allFacts.length === 0) return;
+      if (allFacts.length === 0) {
+        // Still inject rules even without facts
+        if (cfg.enableRules) {
+          const rules = readRulesFile(agentId);
+          if (rules) {
+            api.logger.debug(`[memory-recall] Injecting RULES.md for ${agentId} (no facts)`);
+            return { prependContext: rules };
+          }
+        }
+        return;
+      }
 
       // Deduplicate by fact text (keep highest score)
       const deduped = new Map<string, typeof allFacts[0]>();
@@ -236,17 +265,32 @@ export default {
         .sort((a, b) => b.score - a.score)
         .slice(0, cfg.topK);
 
-      const factLines = topFacts.map(f => `- ${f.fact}`).join('\n');
+      // Build prependContext parts
+      const parts: string[] = [];
 
-      api.logger.debug(`[memory-recall] Injecting ${topFacts.length} facts for ${agentId}: ${topFacts.map(f => f.fact.slice(0, 40)).join(', ')}`);
+      // Rules injection (static from workspace RULES.md)
+      if (cfg.enableRules) {
+        const rules = readRulesFile(agentId);
+        if (rules) {
+          parts.push(rules);
+          api.logger.debug(`[memory-recall] Injecting RULES.md for ${agentId}`);
+        }
+      }
 
-      return {
-        prependContext: [
+      // Memory facts injection
+      if (topFacts.length > 0) {
+        const factLines = topFacts.map(f => `- ${f.fact}`).join('\n');
+        api.logger.debug(`[memory-recall] Injecting ${topFacts.length} facts for ${agentId}: ${topFacts.map(f => f.fact.slice(0, 40)).join(', ')}`);
+        parts.push([
           '[Erinnerungen — relevante Fakten aus früheren Gesprächen]',
           factLines,
           '[/Erinnerungen]',
-        ].join('\n'),
-      };
+        ].join('\n'));
+      }
+
+      if (parts.length === 0) return;
+
+      return { prependContext: parts.join('\n\n') };
     }, { priority: 50 });
   },
 };
