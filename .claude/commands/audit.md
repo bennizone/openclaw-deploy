@@ -481,7 +481,14 @@ Der SDK-Agent hat Read/Glob/Grep-Zugriff und kann Dateien selbst lesen und durch
 | 8 (Workflow) | Daten via Script sammeln | `node scripts/consult-sdk.mjs --component audit --question "Aggregiere Violations, identifiziere haeufigste Patterns" --input-file /tmp/audit-workflow.txt --brief` |
 | 9 (Reflect) | SDK-Agent liest selbst | `node scripts/consult-sdk.mjs --component audit --question "Lies docs/workflow-patterns.md. Welche geloesten Patterns verifizieren, welche offenen sind dringend?" --brief` |
 
-### Kategorien OHNE Delegation (Claude direkt)
+### Kategorien OHNE Delegation (nur Bash lokal)
 
-Kategorien 1-2, 4 (Infrastruktur, Config, Memory): Erzeugen kompakte Outputs, brauchen Bash-Zugriff.
-Kategorie 10 (Gesamtbewertung): Braucht Claude-Urteilskraft fuer Synthese aller Ergebnisse.
+Kategorien 1 (Infrastruktur) und 4 (Memory): Brauchen `systemctl`, `curl`, `docker` — muessen lokal via Bash laufen.
+
+### Alle anderen Kategorien: IMMER an MiniMax delegieren
+
+Kategorien 2, 3, 5, 6, 7, 8, 9, 10 — alle standardmaessig an MiniMax via:
+```bash
+node scripts/consult-sdk.mjs --component audit --question "<kategorie-prompt>" --tools Read,Glob,Grep --brief
+```
+Kategorie 10 (Gesamtbewertung): MiniMax erstellt Entwurf, Claude konsolidiert nur falls noetig.

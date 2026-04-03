@@ -1,7 +1,13 @@
 # Workflow bei neuen Features / Aenderungen
 
+**Triviale Aufgaben (1-2 Dateien, kein Architektur-Impact):** Maximal 3 Tasks anlegen. Die 14 Schritte sind ein Leitfaden, kein Dogma — bei Ein-Datei-Fixes reichen: 1) Implementieren 2) Review 3) Commit.
+
 1. Ziel klaeren mit User
-2. Betroffene Komponenten identifizieren (`components/*/description.md` lesen — PFLICHT, nicht ueberspringen!)
+2. Betroffene Komponenten identifizieren — `node scripts/identify-components.mjs --question "<user-anfrage>"` statt alle description.md selbst lesen (spart Kontext):
+   ```bash
+   node scripts/identify-components.mjs --question "User wants to add wake-word detection"
+   ```
+   Das Script liest description.md der Reihe nach und gibt betroffene Komponenten zurueck. Danach nur die relevanten description.md selbst lesen.
 3. Plan-Entwurf mit Checkliste:
    - [ ] Ziel definiert
    - [ ] Nutzer/Zielgruppe

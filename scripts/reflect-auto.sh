@@ -70,38 +70,29 @@ echo "  → $VIOLATIONS Violations" >&2
 # --- Schritt 3: MiniMax-Analyse (SDK-Agent) ---
 echo "Schritt 3: MiniMax-Analyse (SDK-Agent)..." >&2
 
-MAP_PROMPT="Analysiere diesen Ausschnitt einer Claude Code Session auf Token-Waste.
+ANALYSIS_PROMPT="Analysiere diese Claude Code Session-Datei auf Token-Waste.
 
-Finde:
+Finde und liste fuer jedes Pattern:
 1) Fehlgeschlagene Calls — wo haette die Info stehen muessen?
 2) Wiederholte Reads gleicher Datei — warum nicht beim ersten Mal?
 3) Exploratorische Ketten (ls, grep, head) — was fehlte?
 4) Bekannte Fehler wiederholt — wo war es dokumentiert?
 
-Fuer jedes Pattern: Schlage einen konkreten Patch vor.
+Fuer jedes gefundene Pattern: Schlage einen konkreten Patch vor.
 Format: 'In DATEI nach STELLE ergaenzen: TEXT'
-Falls kein Fix moeglich: 'KEIN FIX — <Grund>'"
+Falls kein Fix moeglich: 'KEIN FIX — <Grund>'
 
-REDUCE_PROMPT="Du bekommst Teilergebnisse einer Token-Waste-Analyse. Jedes Teilergebnis analysiert einen anderen Abschnitt derselben Session.
-
-DEINE AUFGABE: Konsolidiere zu EINER Gesamtanalyse. Antworte NUR mit dem Ergebnis, stelle KEINE Rueckfragen.
-
-1) Entferne Redundanzen (gleiches Pattern in mehreren Chunks = 1x listen)
-2) Pruefe Cross-Chunk-Patterns (Error in Teil 1 + Fix-Versuch in Teil 3 = zusammengehoeriges Pattern)
-3) Erstelle finale Patch-Tabelle:
-   | # | Pattern | Betroffene Datei | Vorgeschlagener Patch |
-4) Erstelle fertige workflow-patterns.md Zeilen:
-   | Datum | Feature | Pattern | Fix | Status | Anzahl |
-5) Liste betroffene Komponenten-Namen (nur Namen, kommasepariert)"
+Erstelle abschliessend:
+- Eine Patch-Tabelle: | # | Pattern | Betroffene Datei | Vorgeschlagener Patch |
+- Eine workflow-patterns.md Zeile: | Datum | Feature | Pattern | Fix | Status | Anzahl |
+- Eine kommaseparierte Liste der betroffenen Komponenten-Namen"
 
 node "$SCRIPT_DIR/consult-sdk.mjs" \
   --component reviewer \
-  --question "$MAP_PROMPT
-
-Konsolidiere das Ergebnis: $REDUCE_PROMPT" \
+  --question "$ANALYSIS_PROMPT" \
   --input-file "$OUTPUT_DIR/calls.txt" \
   --usage-log "$USAGE_LOG" \
-  > "$OUTPUT_DIR/analysis.txt" 2>"$OUTPUT_DIR/chunking.log"
+  > "$OUTPUT_DIR/analysis.txt"
 
 echo "  → Analyse fertig ($(wc -l < "$OUTPUT_DIR/analysis.txt") Zeilen)" >&2
 
