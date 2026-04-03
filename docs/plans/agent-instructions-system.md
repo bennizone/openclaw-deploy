@@ -18,7 +18,7 @@ Ziel: 3-Ebenen-System:
 
 | Phase | Was | Status |
 |-------|-----|--------|
-| 0 | Machbarkeitstest (MiniMax behavior-Extraction + Recall) | offen |
+| 0 | Machbarkeitstest (MiniMax behavior-Extraction + Recall) | erledigt (2026-04-03) |
 | 1 | SOUL.md / RULES.md Trennung | erledigt (2026-04-03) |
 | 2 | Extractor erweitern (behavior → instructions_*) | erledigt (2026-04-03) |
 | 3 | Memory-Recall Plugin erweitern ([Anweisungen] Block) | offen |

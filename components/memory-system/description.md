@@ -149,5 +149,6 @@ LOG_LEVEL=info
 2. `services/extractor/src/behavior-extractor.ts` — Prompt/Parsing fuer Behavior-Instructions aendern
 3. `services/extractor/src/pipeline.ts` — Pipeline-Flow aendern
 4. Build: `npm run build` im Extractor
-5. Restart: `systemctl --user restart openclaw-extractor`
-6. Test: Nachricht senden, Log pruefen, Qdrant-Collections pruefen
+5. Deps sync pruefen: `for pkg in ~/extractor/node_modules/@openclaw/*; do readlink -f "$pkg" && test -d "$pkg" || echo "MISSING: $pkg"; done`
+6. Restart: `systemctl --user restart openclaw-extractor`
+7. Test: Nachricht senden, Log pruefen, Qdrant-Collections pruefen

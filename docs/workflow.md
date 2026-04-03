@@ -18,6 +18,7 @@
 9. `/tester` liest `testinstruct.md`, fuehrt Tests aus — mindestens Health-Checks + Plugin-Doctor
 10. `/reviewer` prueft — listet Findings (mechanisch + Design)
 10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → SOFORT an `/coder` delegieren, nicht User fragen (NIE selbst fixen!)
+    Ausnahme: Tracking-Dateien (TODO.md, Plan-Status in docs/plans/) darf der Orchestrator direkt editieren — diese sind kein Code.
 10b. Design-Findings die den Workflow BLOCKIEREN (Architektur, API-Bruch, Sicherheit) → SOFORT User-Input holen
 10c. Nicht-blockierende Design-Findings die keine User-Entscheidung brauchen → SOFORT an `/coder` delegieren
 10d. Nicht-blockierende Design-Findings die User-Input brauchen → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
