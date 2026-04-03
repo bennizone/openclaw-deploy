@@ -19,17 +19,29 @@ function getMiniMax(): MiniMaxChatClient {
   return _minimax;
 }
 
-const VERIFIER_PROMPT = `Du bist ein kritischer Faktenpruefer. Dir wird ein angeblicher Fakt und die zugehoerige Konversation gezeigt.
+const VERIFIER_PROMPT = `Entscheide ob dieser Fakt dauerhaft und persoenlich ist.
 
-Pruefe kritisch:
-1. Hat der USER das selbst gesagt oder explizit bestaetigt? (Assistenten-Aussagen allein reichen NICHT)
-2. Ist es ein DAUERHAFTER Fakt oder ein momentaner Zustand? (Geraetezustaende, Sensorwerte, "ist an/aus" = NEIN)
-3. Hat der User das in den Folge-Turns zurueckgenommen oder relativiert?
+DAUERHAFT = gilt wahrscheinlich auch in 3 Monaten noch.
+PERSOENLICH = beschreibt einen Menschen, seine Vorlieben, Beziehungen, sein Zuhause.
 
-Antworte mit genau einem JSON-Objekt, NICHTS anderes:
-{"verified": true, "reason": "kurze Begruendung"}
+Beispiele fuer verified=true:
+- "Benni schaut gerne Scrubs" (dauerhafte Vorliebe)
+- "Domi hat am 22. April Geburtstag" (dauerhafter Fakt)
+- "Im Wohnzimmer steht eine Hue-Lampe" (Haushalt)
+
+Beispiele fuer verified=false:
+- "Session hatte 68 Calls" (technisch, einmalig)
+- "deploy-checklist braucht Patch" (Arbeitsaufgabe)
+- "Benni fragt ob X" (Frage, kein Fakt)
+- "Telefonnummer: +49..." (PII, niemals speichern)
+- "Error 4: API Endpoint falsch" (Bug, einmalig)
+
+Pruefe auch: Hat der USER das selbst gesagt? Hat er es in Folge-Turns zurueckgenommen?
+
+Antwort als JSON-Objekt (NICHTS anderes):
+{"verified": true, "reason": "dauerhafte Vorliebe"}
 oder
-{"verified": false, "reason": "kurze Begruendung"}`;
+{"verified": false, "reason": "technisch"}`;
 
 function buildVerifierUserPrompt(fact: string, window: ExtractionWindow): string {
   const userName = window.agentDisplayName;
@@ -152,18 +164,26 @@ export async function verifyFactQwenThink(
   }
 }
 
-const BEHAVIOR_VERIFIER_PROMPT = `Du bist ein kritischer Pruefer fuer Verhaltensanweisungen. Dir wird eine angebliche Anweisung und die zugehoerige Konversation gezeigt.
+const BEHAVIOR_VERIFIER_PROMPT = `Entscheide ob diese Anweisung eine DAUERHAFTE Verhaltensregel ist.
 
-Pruefe kritisch:
-1. Hat der USER diese Anweisung SELBST gegeben? (Assistenten-Vorschlaege allein reichen NICHT)
-2. Ist es eine DAUERHAFTE Arbeitsregel oder eine einmalige Bitte?
-3. Hat der User die Anweisung in Folge-Turns zurueckgenommen?
-4. Wuerde der User erwarten dass diese Regel auch in ZUKUENFTIGEN Gespraechen gilt?
+DAUERHAFT = der User erwartet dass der Assistent sich auch in zukuenftigen Gespraechen daran haelt.
 
-Antworte mit genau einem JSON-Objekt, NICHTS anderes:
-{"verified": true, "reason": "kurze Begruendung"}
+Beispiele fuer verified=true:
+- "Antworte mir auf Deutsch" (dauerhafte Sprachregel)
+- "Such immer zuerst in Deutschland" (dauerhafte Praeferenz)
+- "Frag immer erst nach dem Raum" (dauerhafte Arbeitsregel)
+
+Beispiele fuer verified=false:
+- "Analysiere diese Datei" (einmaliger Auftrag)
+- "Kannst du mal X recherchieren?" (einmalige Bitte)
+- "Erstelle eine Patch-Tabelle" (einmaliger Arbeitsauftrag)
+
+Pruefe auch: Hat der USER die Anweisung selbst gegeben? Wurde sie zurueckgenommen?
+
+Antwort als JSON-Objekt (NICHTS anderes):
+{"verified": true, "reason": "dauerhafte Regel"}
 oder
-{"verified": false, "reason": "kurze Begruendung"}`;
+{"verified": false, "reason": "einmaliger Auftrag"}`;
 
 function buildBehaviorVerifierUserPrompt(instruction: string, sourceContext: string, window: ExtractionWindow): string {
   const userName = window.agentDisplayName;

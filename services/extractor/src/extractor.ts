@@ -11,56 +11,41 @@ export interface ExtractedFact {
   scope?: 'personal' | 'household';
 }
 
-const SYSTEM_PROMPT = `Du extrahierst dauerhafte Fakten ueber Personen und deren Umgebung aus Konversationen.
+const SYSTEM_PROMPT = `Du extrahierst dauerhafte Fakten ueber Personen aus Konversationen.
+Extrahiere lieber etwas zu viel als zu wenig — ein separater Verifier prueft danach.
 
 AUFBAU DES PROMPTS:
 - <known_facts>: Bereits gespeicherte Fakten. Vermeide Duplikate, erkenne Widersprueche.
 - <context>: Vorherige Turns — nur zum Verstaendnis. NICHT daraus extrahieren.
 - <current>: Der aktuelle Turn — extrahiere NUR aus der USER-Nachricht.
-  Die Assistenten-Antwort dient nur als Kontext.
 - <followup>: Folge-Turns — pruefen ob der User sich korrigiert hat.
 
-WAS EXTRAHIEREN:
-- Persoenliche Fakten: Name, Beruf, Arbeitgeber, Familie, Wohnort, Hobbys, Haustiere
-- Praeferenzen: Mag/mag nicht, bevorzugt X ueber Y
-- Beziehungen: "mein Bruder", "meine Partnerin", "Kollege X"
-- Entscheidungen: "wir machen ab jetzt X", "ich will Y"
-- Haushalt: Smart-Home-Regeln, Raeume, gemeinsame Praeferenzen
-- Fakten ueber ANDERE Personen die der User erwaehnt ("Domi arbeitet bei...")
-- User BESTAETIGT eine Aussage des Assistenten ("ja genau", "perfekt", "stimmt")
+EXTRAHIEREN:
+- Wer ist die Person: Name, Beruf, Familie, Wohnort, Hobbys, Haustiere, Geburtstage
+- Beziehungen: "mein Bruder heisst X", "Domi hat am 22. April Geburtstag"
+- Praeferenzen: "ich mag X", "ich schaue Y auf Z", "ich bevorzuge A ueber B"
+- Smart-Home/Haushalt: Geraete, Raeume, Regeln, Routinen, Bewohner
 - User KORRIGIERT einen bekannten Fakt ("nein, nicht X sondern Y")
 
 NICHT EXTRAHIEREN:
-- Alles was NUR der Assistent sagt ohne User-Bestaetigung
-- Momentane Geraetezustaende, Sensorwerte, Temperaturen, "Licht ist an/aus"
-- API-Infos, Fehlermeldungen, technische Debug-Details, IP-Adressen
-- Reine Fragen ohne Informationsgehalt ("wie warm ist es?")
-- Smalltalk, momentane Befindlichkeiten ohne dauerhaften Wert
-- Bereits in <known_facts> vorhandene Fakten (ausser Korrektur oder wesentliche Ergaenzung)
+- Fragen (NIEMALS — auch nicht als Fakt umformuliert)
+- Technische Arbeit: Code, Configs, Patches, Bugs, Error-Counts, API-Details
+- Einmalige Auftraege und Session-spezifische Analyse-Ergebnisse
+- Projekt-Management: Tasks, Phasen, Deadlines
+- Telefonnummern, E-Mail-Adressen, Passwoerter, API-Keys (NIEMALS PII!)
+- Bereits in <known_facts> vorhandene Fakten (ausser Korrektur)
 
-KORREKTUREN: Wenn der User in <followup> seine eigene Aussage zuruecknimmt oder korrigiert
-→ als type "correction" die korrigierte Version formulieren (die neue Wahrheit, nicht die alte).
+TESTFRAGE: "Beschreibt das den MENSCHEN oder seine aktuelle ARBEIT?" Nur Menschen-Fakten.
 
-SCOPE:
-- "personal" — betrifft eine bestimmte Person
-- "household" — betrifft Haushalt, Wohnung, mehrere Bewohner, Smart-Home
+KORREKTUREN: Wenn der User in <followup> sich korrigiert → type "correction".
+SCOPE: "personal" = eine Person, "household" = Haushalt/Wohnung/Smart-Home.
 
-Antworte AUSSCHLIESSLICH mit einem JSON-Array. Kein Markdown, keine Erklaerungen.
+Antworte AUSSCHLIESSLICH mit einem JSON-Array:
+[{"fact": "Benni schaut Scrubs auf Disney+", "type": "preference", "confidence": 0.9, "sourceContext": "ich schaue gerade Scrubs", "scope": "personal"}]
 
-Format:
-[
-  {
-    "fact": "Benni arbeitet als Software-Entwickler bei Stackblitz",
-    "type": "preference|personal|decision|correction|project|deadline",
-    "confidence": 0.0-1.0,
-    "sourceContext": "kurzes Originalzitat max 100 Zeichen",
-    "scope": "personal|household"
-  }
-]
-
+Types: personal, preference, decision, correction. Scope: personal oder household.
 Verwende den Namen der Person im Fact wenn bekannt.
-Wenn keine extrahierbaren Fakten: leeres Array [].
-Sprache: Deutsch wenn Konversation Deutsch ist.`;
+Wenn keine Fakten: []. Sprache: Deutsch.`;
 
 let _minimax: MiniMaxChatClient | null = null;
 function getMiniMax(): MiniMaxChatClient {
