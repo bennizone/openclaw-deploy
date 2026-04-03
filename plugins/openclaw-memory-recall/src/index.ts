@@ -16,6 +16,7 @@ interface PluginConfig {
   embedFallbackUrl: string;
   embeddingModel: string;
   topK: number;
+  instructionsTopK: number;
   enableRules: boolean;
 }
 
@@ -49,6 +50,12 @@ interface QdrantSearchResult {
 function getAgentCollections(agentId: string): string[] {
   if (agentId === 'household') return ['memories_household'];
   return [`memories_${agentId}`, 'memories_household'];
+}
+
+// Agent → which instruction collections to search (same routing as memories)
+function getInstructionCollections(agentId: string): string[] {
+  if (agentId === 'household') return ['instructions_household'];
+  return [`instructions_${agentId}`, 'instructions_household'];
 }
 
 function extractLastUserText(messages: Message[]): string | null {
@@ -156,6 +163,7 @@ export default {
       embedFallbackUrl: { type: 'string', default: 'http://localhost:8081' },
       embeddingModel: { type: 'string', default: 'bge-m3' },
       topK: { type: 'number', default: 5 },
+      instructionsTopK: { type: 'number', default: 3 },
       enableRules: { type: 'boolean', default: true },
     },
   },
@@ -175,10 +183,11 @@ export default {
       embedFallbackUrl: api.pluginConfig?.embedFallbackUrl ?? 'http://localhost:8081',
       embeddingModel: api.pluginConfig?.embeddingModel ?? 'bge-m3',
       topK: api.pluginConfig?.topK ?? 5,
+      instructionsTopK: api.pluginConfig?.instructionsTopK ?? 3,
       enableRules: api.pluginConfig?.enableRules ?? true,
     };
 
-    api.logger.info(`[memory-recall] Registered — Qdrant: ${cfg.qdrantUrl}, topK: ${cfg.topK}, hybrid: dense+bm25+rrf, rules: ${cfg.enableRules}`);
+    api.logger.info(`[memory-recall] Registered — Qdrant: ${cfg.qdrantUrl}, topK: ${cfg.topK}, instructionsTopK: ${cfg.instructionsTopK}, hybrid: dense+bm25+rrf, rules: ${cfg.enableRules}`);
 
     api.on('before_prompt_build', async (event: unknown, ctx: unknown) => {
       const ev = event as Record<string, unknown>;
@@ -235,40 +244,75 @@ export default {
         }
       }
 
-      if (searchError && allFacts.length === 0) {
+      // --- Instructions search (instructions_* collections) ---
+      const instructionCollections = getInstructionCollections(agentId);
+      const allInstructions: Array<{ fact: string; type: string; score: number; source: string }> = [];
+
+      for (const collection of instructionCollections) {
+        const results = await searchQdrantHybrid(cfg.qdrantUrl, collection, vector, userText, cfg.instructionsTopK);
+        if (results === null) {
+          searchError = true;
+          api.logger.warn(`[memory-recall] Qdrant search failed for collection ${collection}`);
+          continue;
+        }
+        for (const r of results) {
+          allInstructions.push({
+            fact: r.payload.fact,
+            type: r.payload.type,
+            score: r.score,
+            source: collection.replace('instructions_', ''),
+          });
+        }
+      }
+
+      if (searchError && allFacts.length === 0 && allInstructions.length === 0) {
         return { prependContext: MEMORY_OFFLINE_HINT };
       }
 
-      if (allFacts.length === 0) {
-        // Still inject rules even without facts
+      if (allFacts.length === 0 && allInstructions.length === 0) {
+        // Still inject rules even without facts or instructions
         if (cfg.enableRules) {
           const rules = readRulesFile(agentId);
           if (rules) {
-            api.logger.debug(`[memory-recall] Injecting RULES.md for ${agentId} (no facts)`);
+            api.logger.debug(`[memory-recall] Injecting RULES.md for ${agentId} (no facts/instructions)`);
             return { prependContext: rules };
           }
         }
         return;
       }
 
-      // Deduplicate by fact text (keep highest score)
-      const deduped = new Map<string, typeof allFacts[0]>();
+      // Deduplicate facts by text (keep highest score)
+      const dedupedFacts = new Map<string, typeof allFacts[0]>();
       for (const f of allFacts) {
-        const existing = deduped.get(f.fact);
+        const existing = dedupedFacts.get(f.fact);
         if (!existing || f.score > existing.score) {
-          deduped.set(f.fact, f);
+          dedupedFacts.set(f.fact, f);
         }
       }
 
       // Sort by score descending, limit to topK
-      const topFacts = [...deduped.values()]
+      const topFacts = [...dedupedFacts.values()]
         .sort((a, b) => b.score - a.score)
         .slice(0, cfg.topK);
+
+      // Deduplicate instructions by text (keep highest score)
+      const dedupedInstructions = new Map<string, typeof allInstructions[0]>();
+      for (const i of allInstructions) {
+        const existing = dedupedInstructions.get(i.fact);
+        if (!existing || i.score > existing.score) {
+          dedupedInstructions.set(i.fact, i);
+        }
+      }
+
+      // Sort by score descending, limit to instructionsTopK
+      const topInstructions = [...dedupedInstructions.values()]
+        .sort((a, b) => b.score - a.score)
+        .slice(0, cfg.instructionsTopK);
 
       // Build prependContext parts
       const parts: string[] = [];
 
-      // Rules injection (static from workspace RULES.md)
+      // 1. Rules injection (static from workspace RULES.md)
       if (cfg.enableRules) {
         const rules = readRulesFile(agentId);
         if (rules) {
@@ -277,7 +321,18 @@ export default {
         }
       }
 
-      // Memory facts injection
+      // 2. Instructions injection (from instructions_* collections)
+      if (topInstructions.length > 0) {
+        const instructionLines = topInstructions.map(i => `- ${i.fact}`).join('\n');
+        api.logger.debug(`[memory-recall] Injecting ${topInstructions.length} instructions for ${agentId}: ${topInstructions.map(i => i.fact.slice(0, 40)).join(', ')}`);
+        parts.push([
+          '[Anweisungen — persönliche Verhaltensregeln]',
+          instructionLines,
+          '[/Anweisungen]',
+        ].join('\n'));
+      }
+
+      // 3. Memory facts injection
       if (topFacts.length > 0) {
         const factLines = topFacts.map(f => `- ${f.fact}`).join('\n');
         api.logger.debug(`[memory-recall] Injecting ${topFacts.length} facts for ${agentId}: ${topFacts.map(f => f.fact.slice(0, 40)).join(', ')}`);

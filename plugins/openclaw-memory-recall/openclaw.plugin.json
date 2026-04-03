@@ -2,7 +2,7 @@
   "id": "openclaw-memory-recall",
   "name": "Memory Recall (Qdrant)",
   "description": "Injects relevant facts from Qdrant before each LLM response",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
@@ -13,6 +13,7 @@
       "embeddingModel": { "type": "string", "default": "bge-m3" },
       "topK": { "type": "number", "default": 5 },
       "scoreThreshold": { "type": "number", "default": 0.3 },
+      "instructionsTopK": { "type": "number", "default": 3, "description": "Top-K for instruction recall from instructions_* collections" },
       "enableRules": { "type": "boolean", "default": true, "description": "Inject RULES.md from agent workspace" }
     }
   }

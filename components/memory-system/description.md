@@ -61,7 +61,8 @@ Konversation → JSONL-Log → Extractor
 Neue Nachricht → Memory-Recall Plugin (before_prompt_build)
   → Query → bge-m3 Embedding
   → Qdrant Hybrid-Search (Dense + BM25 + RRF Fusion)
-  → Top-K=5 → In System-Prompt injiziert (both memories_* und instructions_*)
+  → memories_*: Top-K=5, instructions_*: Top-K=3
+  → Injection: [Regeln] → [Anweisungen] → [Erinnerungen]
 ```
 
 ## Abhaengigkeiten
@@ -119,7 +120,8 @@ LOG_LEVEL=info
   "embedUrl": "http://<GPU_SERVER_IP>:8081",
   "embedFallbackUrl": "http://localhost:8081",
   "embeddingModel": "bge-m3",
-  "topK": 5
+  "topK": 5,
+  "instructionsTopK": 3
 }
 ```
 
