@@ -11,14 +11,14 @@ statt blindem "das hat bisher funktioniert".
 
 | Level | Name | Freigabe noetig fuer |
 |-------|------|----------------------|
-| 0 | Vollstaendig begleitet | Alles (read, write, deploy, config, new) |
+| 0 | Vollstaendig begleitet | Schreibende + neue Ops (write, deploy, config, new) |
 | 1 | Begleitet mit Vertrauen | Schreibende Aktionen (write, deploy, config, new) |
 | 2 | Ueberwacht | Neue/unbekannte Ops + Deploy (deploy, config, new) |
 | 3 | Autonom | Nur Deploy + Config-Aenderungen (deploy, config) |
 
 ### Operations-Typen
 
-- **read** — Lesende Aktionen (Dateien lesen, Status pruefen)
+- **read** — Lesende Aktionen (Dateien lesen, Status pruefen) (implizit erlaubt durch User-Anfrage)
 - **write** — Dateien schreiben, Code aendern
 - **deploy** — Service neustarten, Commit + Push
 - **config** — openclaw.json, systemd Units, .env aendern
@@ -99,5 +99,5 @@ python3 scripts/autonomy-status.py promote tool-hub
 ## Integration
 
 - **`/reflect` Schritt 8:** Nach Pattern-Eintrag auch `autonomy-status.py record <comp>` aufrufen
-- **Workflow Schritt 6:** Bei Level 2+ Standard-Ops (read, write) ohne extra Freigabe
+- **Workflow Schritt 6:** `read` ist auf allen Levels freigegeben (implizit durch User-Anfrage). `write` ab Level 2 ohne extra Freigabe
 - **Promotions:** Regelmaessig via `suggest-promotions` pruefen, User entscheidet

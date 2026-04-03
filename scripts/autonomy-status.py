@@ -37,7 +37,7 @@ LEVEL_NAMES = {
 # Level 2: only new/unknown ops + deploy
 # Level 3: only deploy + config changes
 APPROVAL_REQUIRED = {
-    0: {"read", "write", "deploy", "config", "new"},
+    0: {"write", "deploy", "config", "new"},
     1: {"write", "deploy", "config", "new"},
     2: {"deploy", "config", "new"},
     3: {"deploy", "config"},
@@ -83,8 +83,10 @@ def cmd_check(data: dict, component: str, operation: str) -> None:
 
     if needs_approval:
         print(f"JA — '{operation}' braucht Freigabe bei Level {level} ({LEVEL_NAMES[level]})")
+        print("→ User-Freigabe einholen bevor fortgefahren wird.")
     else:
         print(f"NEIN — '{operation}' ist bei Level {level} ({LEVEL_NAMES[level]}) freigegeben")
+        print("→ Eigenstaendig ausfuehren.")
 
     sys.exit(0 if not needs_approval else 1)
 

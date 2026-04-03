@@ -338,17 +338,33 @@ $second_half" "reduce-1b") || true
       sleep 3
 
       echo "INFO: Reduce Stufe 2 (finale Konsolidierung)..." >&2
-      send_request "$SYSTEM_PROMPT" "$local_reduce
+      reduce_result=$(send_request "$SYSTEM_PROMPT" "$local_reduce
 
 --- Zwischenergebnis A ---
 $sub1
 
 --- Zwischenergebnis B ---
-$sub2" "reduce-final"
+$sub2" "reduce-final") || true
+      if [[ -n "$reduce_result" ]]; then
+        echo "$reduce_result"
+      else
+        echo "WARN: Finale Reduktion fehlgeschlagen — gebe Zwischenergebnisse aus" >&2
+        [[ -n "$sub1" ]] && echo "$sub1"
+        [[ -n "$sub2" ]] && echo "$sub2"
+      fi
     else
-      send_request "$SYSTEM_PROMPT" "$local_reduce
+      reduce_result=$(send_request "$SYSTEM_PROMPT" "$local_reduce
 
-$consolidated" "reduce"
+$consolidated" "reduce") || true
+      if [[ -n "$reduce_result" ]]; then
+        echo "$reduce_result"
+      else
+        echo "WARN: Reduktion fehlgeschlagen — gebe Teilergebnisse aus" >&2
+        for partial in "${PARTIAL_RESULTS[@]}"; do
+          echo "$partial"
+          echo "---"
+        done
+      fi
     fi
   fi
 else

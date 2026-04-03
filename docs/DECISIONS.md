@@ -65,3 +65,40 @@ Shared Dependencies wuerden Plugin-Isolation brechen und Deployment verkomplizie
 
 **Ausnahme:** Pure Utilities ohne externe Abhaengigkeiten (z.B. bm25-tokenizer)
 koennen als shared Package extrahiert werden (siehe shared/bm25-tokenizer/).
+
+## 2026-04-03 — autonomy-status.py: read aus Level-0 Approval entfernt
+
+**Kontext:** Level-0 Check wurde 5x ignoriert (workflow-patterns.md). Ursache:
+`read` war in APPROVAL_REQUIRED[0], aber jede User-Anfrage impliziert Leseerlaubnis.
+Der Orchestrator MUSS lesen um zu arbeiten, hat die Freigabe-Anforderung also ignoriert.
+
+**Entscheidung:** `read` aus Level 0 entfernt. Level 0 und Level 1 haben jetzt
+identische Approval-Sets (`write, deploy, config, new`). Der konzeptuelle Unterschied
+liegt im Track-Record (Progressions-Schwellen), nicht in den erlaubten Operationen.
+
+## 2026-04-03 — Memory-Recall Resilience: Offline-Hinweis statt stiller Fehler
+
+**Kontext:** Bei Qdrant/Embedding-Ausfall wurde leerer String/Array zurueckgegeben.
+Das LLM wusste nicht, dass Memory nicht verfuegbar ist.
+
+**Entscheidung:** Bei Fehler (Timeout, Connection refused, HTTP non-200) wird ein
+separater System-Hinweis injiziert: `[Memory-System: offline]`. Keine Treffer
+bei erfolgreicher Suche bleiben leer (kein Fehler-Hinweis). Hinweis als separater
+Block, nicht als Memory-Eintrag (semantische Klarheit).
+
+## 2026-04-03 — consult-agent.sh: Reduce-Phase Fehlertoleranz
+
+**Kontext:** Chunking bei grossen Input-Dateien schlug mit Exit 1 fehl.
+Ursache: `send_request` in der Reduce-Phase hatte kein `|| true`,
+mit `set -euo pipefail` fuehrte ein Timeout zum Script-Abort.
+
+**Entscheidung:** Reduce-Aufrufe (einstufig + zweistufig) fangen Fehler ab.
+Bei Reduce-Fehler: Fallback auf Teilergebnisse statt Exit 1.
+
+## 2026-04-03 — SKIP-DOCS Enforcement: Severity + Pre-Commit Gate
+
+**Kontext:** DECISIONS.md in 40% der Sessions uebersprungen. Severity war NIEDRIG.
+
+**Entscheidung:** Severity auf MITTEL erhoeht. Workflow Step 11 mit klaren Kriterien:
+Pflicht bei bewussten Entscheidungen, optional nur bei mechanischen Changes.
+Step 13 (Ship it) hat jetzt Pre-Commit Gate fuer DECISIONS.md.

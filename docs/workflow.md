@@ -22,7 +22,11 @@
 10c. Nicht-blockierende Design-Findings die keine User-Entscheidung brauchen → SOFORT an `/coder` delegieren
 10d. Nicht-blockierende Design-Findings die User-Input brauchen → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
 11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
+    - **Pflicht** bei bewussten Entscheidungen (Design, Architektur, API, neue Patterns, Trade-offs)
+    - **Optional** nur bei mechanischen Changes (Typos, Formatting, Refactoring ohne Verhaltenssaenderung)
+    - Im Zweifel: DECISIONS.md schreiben — kostet wenig, verhindert Wissensverlust
 12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
 13. Ship it: Commit + Deploy — Zusammenfassung zeigt geparkte Design-Findings aus 10c
+    - **Pre-Commit Gate:** Enthielt diese Aenderung eine bewusste Entscheidung? → DECISIONS.md pruefen
 14. Reflection (optional): `/reflect` — MiniMax analysiert Session auf Token-Waste,
     Orchestrator ergaenzt, `/reviewer` prueft, User gibt frei. Skip mit "skip"

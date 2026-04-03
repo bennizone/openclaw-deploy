@@ -99,7 +99,7 @@ async function searchQdrantHybrid(
   denseVector: number[],
   queryText: string,
   topK: number,
-): Promise<QdrantSearchResult['result']> {
+): Promise<QdrantSearchResult['result'] | null> {
   const sparse = textToSparse(queryText);
   try {
     const resp = await fetch(`${qdrantUrl}/collections/${collection}/points/query`, {
@@ -118,11 +118,11 @@ async function searchQdrantHybrid(
       }),
       signal: AbortSignal.timeout(3000),
     });
-    if (!resp.ok) return [];
+    if (!resp.ok) return null;
     const data = (await resp.json()) as { result?: { points?: QdrantSearchResult['result'] } };
     return data.result?.points ?? [];
   } catch {
-    return [];
+    return null;
   }
 }
 
@@ -186,18 +186,26 @@ export default {
 
       if (!userText || userText.length < 3) return;
 
+      const MEMORY_OFFLINE_HINT = '[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]';
+
       // Embed the query
       const vector = await getEmbedding(userText, cfg.embedUrl, cfg.embedFallbackUrl, cfg.embeddingModel);
       if (!vector) {
-        api.logger.warn('[memory-recall] Embedding failed — skipping recall');
-        return;
+        api.logger.warn('[memory-recall] Embedding failed — injecting offline hint');
+        return { prependContext: MEMORY_OFFLINE_HINT };
       }
 
       // Hybrid search all relevant collections (dense + BM25 with RRF fusion)
       const allFacts: Array<{ fact: string; type: string; score: number; source: string }> = [];
+      let searchError = false;
 
       for (const collection of collections) {
         const results = await searchQdrantHybrid(cfg.qdrantUrl, collection, vector, userText, cfg.topK);
+        if (results === null) {
+          searchError = true;
+          api.logger.warn(`[memory-recall] Qdrant search failed for collection ${collection}`);
+          continue;
+        }
         for (const r of results) {
           allFacts.push({
             fact: r.payload.fact,
@@ -206,6 +214,10 @@ export default {
             source: collection.replace('memories_', ''),
           });
         }
+      }
+
+      if (searchError && allFacts.length === 0) {
+        return { prependContext: MEMORY_OFFLINE_HINT };
       }
 
       if (allFacts.length === 0) return;

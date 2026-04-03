@@ -374,7 +374,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
     async def _search_memories(self, query: str) -> str:
         vector = await self._get_embedding(query)
         if not vector:
-            return ""
+            return "[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]"
 
         try:
             async with aiohttp.ClientSession() as session:
@@ -389,7 +389,8 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                     timeout=aiohttp.ClientTimeout(total=3),
                 ) as resp:
                     if resp.status != 200:
-                        return ""
+                        _LOGGER.debug("Qdrant returned HTTP %s", resp.status)
+                        return "[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]"
                     data = await resp.json()
                     results = data.get("result", [])
                     if not results:
@@ -410,7 +411,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                     return f"Bekannte Fakten ({self._agent_id}, aus Memory):\n" + lines
         except (aiohttp.ClientError, TimeoutError, Exception) as err:
             _LOGGER.debug("Qdrant search failed: %s", err)
-            return ""
+            return "[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]"
 
     # ── Conversation buffer ──
 

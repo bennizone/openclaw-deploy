@@ -36,7 +36,7 @@ Trend-Tracking aus `/reflect` Sessions. Wenn ein Pattern >2x auftaucht → struk
 | 2026-04-02 | reviewer-doku | MiniMax-Konsultation liefert Wetter statt Reviewer-Kontext (9B-Halluzination) | Bekanntes 9B-Problem, kein Fix moeglich | offen | 1 |
 | 2026-04-02 | dead-code-cleanup | /reviewer git diff ohne '--' Separator → ambiguous argument | reviewer.md: '--' Separator Pflicht dokumentiert | geloest | 1 |
 | 2026-04-02 | dead-code-cleanup | Agent(Explore) statt Grep fuer Export-Suche (Ergebnis unzuverlaessig) | Grep bevorzugen fuer gezielte Symbol-Suchen | geloest | 1 |
-| 2026-04-02 | Token-Waste | autonomy-status.py Level-0 write-Check mehrfach ignoriert (Chunks 8,9,10,11,16) | MEMORY.md: Level-0 Constraint dokumentieren + autonomy-status.py HINWEIS | offen | 5 |
+| 2026-04-02 | Token-Waste | autonomy-status.py Level-0 write-Check mehrfach ignoriert (Chunks 8,9,10,11,16) | Fix: read aus Level-0 Approval entfernt, Check-Output mit Handlungsanweisung | geloest | 5 |
 | 2026-04-02 | Token-Waste | consult-agent.sh liefert falschen Agent-Kontext (Chunk 3) | consult-agent.sh: Explizite Agent-Config-Validierung | offen | 1 |
 | 2026-04-02 | Token-Waste | Skill-Launch verliert Parent-Kontext (Chunks 3,9,13) | MEMORY.md: Nach Skill-Launch Kontext nicht wiederverwendbar | offen | 3 |
 | 2026-04-02 | Token-Waste | TaskCreate-Kaskaden statt Batch (Chunks 7,14) | workflow.md: max 3 Tasks fuer triviale Jobs, Batch wenn moeglich | offen | 2 |

@@ -72,7 +72,8 @@ PATCH_SUGGESTIONS = {
     "SKIP-DOCS": {
         "file": "CLAUDE.md",
         "section": "Workflow Schritt 11",
-        "patch": "/docs fuer DECISIONS.md ist Pflicht bei nicht-trivialen Aenderungen.",
+        "patch": "/docs fuer DECISIONS.md ist Pflicht bei bewussten Entscheidungen. "
+                 "Optional nur bei mechanischen Changes (Typos, Formatting, Refactoring ohne Verhaltenssaenderung).",
     },
     "SKIP-DESCRIPTION": {
         "file": "CLAUDE.md",
@@ -257,7 +258,7 @@ def check_violations(calls: list[dict], segments: list[dict]) -> list[dict]:
         if not had_docs:
             violations.append({
                 "id": "SKIP-DOCS",
-                "severity": "NIEDRIG",
+                "severity": "MITTEL",
                 "details": "Kein /docs fuer DECISIONS.md",
                 "calls": [],
             })
