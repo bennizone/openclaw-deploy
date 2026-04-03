@@ -293,7 +293,34 @@ export class CalDavSource {
           data = data.replace("END:VEVENT", `DESCRIPTION:${changes.description}\r\nEND:VEVENT`);
         }
       }
-      // TODO: start/end changes require more complex DTSTART/DTEND handling
+      if (changes.start) {
+        const allDay = isAllDay(data);
+        if (allDay) {
+          const newVal = changes.start.replace(/-/g, "").slice(0, 8);
+          data = data.replace(/^DTSTART[^:\r\n]*:.*$/m, `DTSTART;VALUE=DATE:${newVal}`);
+        } else {
+          const newVal = new Date(changes.start).toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+          data = data.replace(/^DTSTART[^:\r\n]*:.*$/m, `DTSTART:${newVal}`);
+        }
+      }
+      if (changes.end) {
+        const allDay = isAllDay(data);
+        if (allDay) {
+          const newVal = changes.end.replace(/-/g, "").slice(0, 8);
+          if (/^DTEND[;:]/m.test(data)) {
+            data = data.replace(/^DTEND[^:\r\n]*:.*$/m, `DTEND;VALUE=DATE:${newVal}`);
+          } else {
+            data = data.replace("END:VEVENT", `DTEND;VALUE=DATE:${newVal}\r\nEND:VEVENT`);
+          }
+        } else {
+          const newVal = new Date(changes.end).toISOString().replace(/[-:]/g, "").replace(/\.\d+/, "");
+          if (/^DTEND[;:]/m.test(data)) {
+            data = data.replace(/^DTEND[^:\r\n]*:.*$/m, `DTEND:${newVal}`);
+          } else {
+            data = data.replace("END:VEVENT", `DTEND:${newVal}\r\nEND:VEVENT`);
+          }
+        }
+      }
 
       await client.updateCalendarObject({ calendarObject: { ...obj, data } });
       this.calendarsCache = null;
