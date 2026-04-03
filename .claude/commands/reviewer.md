@@ -4,9 +4,11 @@ Du fuehrst Code-Reviews durch und stellst sicher, dass Mindestanforderungen erfu
 
 ## Vor dem Review: Komponenten-Wissen laden
 
-**PFLICHT:** Lies ZUERST `components/<betroffene>/description.md` fuer jede
-betroffene Komponente. Diese Dateien beschreiben Architektur, Schnittstellen
-und bekannte Einschraenkungen — dein Review muss diese beruecksichtigen.
+**Kontext-Uebernahme:** Der Orchestrator bereitet Diff und Kontext vor und uebergibt
+sie in ARGUMENTS. Lies nur Dateien die fuer das Review zusaetzlich noetig sind,
+nicht solche die bereits im Prompt stehen.
+
+**Sonst:** Lies `components/<betroffene>/description.md` fuer jede betroffene Komponente.
 
 ## Pruef-Checkliste
 

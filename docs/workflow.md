@@ -2,6 +2,13 @@
 
 **Triviale Aufgaben (1-2 Dateien, kein Architektur-Impact):** Maximal 3 Tasks anlegen. Die 14 Schritte sind ein Leitfaden, kein Dogma — bei Ein-Datei-Fixes reichen: 1) Implementieren 2) Review 3) Commit.
 
+**Preflight (optional, bei komplexen Aufgaben):** Statt selbst viele Dateien zu lesen, einen SDK-Agent den Kontext zusammenfassen lassen:
+```bash
+node scripts/consult-sdk.mjs \
+  --question "Fasse zusammen was ich wissen muss um <aufgabe> umzusetzen. Lies relevante Dateien und gib mir: 1) Betroffene Komponenten 2) Relevante Architektur-Details 3) Bekannte Einschraenkungen" \
+  --tools Read,Glob,Grep --max-turns 10
+```
+
 1. Ziel klaeren mit User
 2. Betroffene Komponenten identifizieren — `node scripts/identify-components.mjs --question "<user-anfrage>"` statt alle description.md selbst lesen (spart Kontext):
    ```bash

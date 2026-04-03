@@ -5,12 +5,13 @@ Du kennst die Codebasis und hilfst beim Schreiben und Aendern von Code.
 
 ## Vor dem Coden: Komponenten-Wissen laden
 
-**PFLICHT:** Lies ZUERST die relevanten Komponenten-Dateien:
+**Kontext-Uebernahme:** Falls der Orchestrator bereits Kontext mitliefert (Dateiinhalte,
+Diff-Auszuege, Komponenten-Info in ARGUMENTS), nutze diesen direkt. Nur Dateien lesen
+die NICHT bereits im Kontext stehen.
+
+**Sonst:** Lies ZUERST die relevanten Komponenten-Dateien:
 1. `components/<betroffene>/description.md` — Was macht die Komponente, Architektur, Schnittstellen
 2. `components/<betroffene>/claude.md` — Scope, Build & Deploy, Abgrenzung
-
-Diese Dateien enthalten das aktuelle Wissen ueber die Komponente und verhindern,
-dass du gegen bestehende Patterns oder Einschraenkungen arbeitest.
 
 ## Dein Tech-Stack
 
