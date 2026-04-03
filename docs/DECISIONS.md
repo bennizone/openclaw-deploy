@@ -3,6 +3,45 @@
 Systemweite und architekturuebergreifende Entscheidungen.
 Komponentenspezifische Entscheidungen stehen in `components/<name>/decisions.md`.
 
+## 2026-04-03: Workflow v2 — 13 Schritte + 3 Stufen
+
+**Kontext:** 14-Schritte-Workflow hatte falsche Reihenfolge (Test vor Review vor Docs),
+war zu starr fuer kleine Aufgaben, und nutzte /coder-light nicht als Default.
+
+**Entscheidung:** Neuer 13-Schritte-Workflow mit:
+- Reihenfolge korrigiert: Review (7) → Fixes (8) → Re-Review (9) → Docs (10) → Test (11)
+- 3 Stufen: Minimal (Code→Build→Ship), Standard (alle 13), Komplex (+ Preflight)
+- Review-Loop (max 2x) und Test-Loop (max 2x, Orchestrator entscheidet Bug vs Design)
+- /coder-light als Default-Coder, /coder nur bei Architektur
+- Reviewer parkt nur bei Plan-Abweichung oder User-Entscheidung
+- Reflect + autonomy record immer Pflicht (Schritt 13)
+- TODO-Eintrag erledigt markieren in Schritt 13
+
+**Alternativen:** Alten 14-Schritte-Workflow beibehalten (zu starr), komplett
+auf ad-hoc wechseln (zu chaotisch).
+
+**Konsequenzen:** orchestrator-audit.py Step-Nummern angepasst. CLAUDE.md Verweise
+aktualisiert. Orchestrator klassifiziert Stufe bei Schritt 1.
+
+## 2026-04-03: Reflect-Erweiterung — Agent-Sessions + Learnings
+
+**Kontext:** /reflect analysierte nur Orchestrator-JSONL. MiniMax-Agent-Sessions
+(SDK-Calls) wurden nicht reflektiert. Kein Lernmechanismus fuer Agenten.
+
+**Entscheidung:**
+- consult-sdk.mjs: Neues `--session-log` Flag, schreibt JSONL nach `~/.openclaw/sdk-sessions/`
+- reflect-auto.sh: Neuer Schritt 3b analysiert SDK-Sessions via MiniMax
+- Learnings werden in `components/*/learnings.md` geschrieben (eigene Datei pro Komponente)
+- Meta-Loop-Schutz: reflect-eigene Sessions werden uebersprungen
+
+**Alternativen:** Learnings in claude.md (verworfen — wird vollgemuellt),
+in decisions.md (verworfen — andere Semantik), gar keine Learnings (verworfen — Agenten
+lernen nicht aus eigenen Fehlern).
+
+**Konsequenzen:** orchestrator-audit.py erlaubt jetzt Writes auf learnings.md.
+reflect.md Command hat neue Schritte (5: Learnings, 6: workflow-patterns, 7: Summary, 8: Aggregation).
+Session-Logging ist opt-in (--session-log Flag oder Default-Verzeichnis).
+
 ## 2026-04-03: consult-agent.sh → consult-sdk.mjs (SDK Agents auf MiniMax)
 
 **Kontext:** consult-agent.sh war ein 388-Zeilen Bash-Script das MiniMax ueber den OpenClaw Gateway aufrief. Probleme: Gateway musste laufen, kein Tool-Zugriff, manuelles Chunking.

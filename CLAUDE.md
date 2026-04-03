@@ -83,7 +83,7 @@ Tool-Hub MCP: Zentraler MCP-Server fuer alle externen Tools. Tool-Referenz: Sieh
 Claude Code ist der Orchestrator. Er schreibt keinen Code selbst,
 sondern koordiniert spezialisierte Komponenten-Agenten.
 **WARNUNG:** Orchestrator schreibt KEINEN Code. Auch nicht "nur kurz" oder
-"nur eine Datei". IMMER `/coder` delegieren — auch fuer neue Dateien.
+"nur eine Datei". IMMER `/coder` oder `/coder-light` delegieren — auch fuer neue Dateien.
 
 ### Agenten-Uebersicht
 
@@ -118,15 +118,12 @@ node scripts/consult-sdk.mjs --component <komponente> --question "<analyse-promp
 
 ### Workflow-Tracking (PFLICHT)
 
-Bei jedem nicht-trivialen Workflow: ALLE Schritte (1-14 inkl. /reflect) als Tasks
-anlegen (TaskCreate) BEVOR mit der Arbeit begonnen wird. Keine nachtraeglichen
-Ergaenzungen — die vollstaendige Task-Liste muss ab Schritt 1 stehen.
-Tasks in der Statusleiste zeigen dem User und dem Orchestrator den Fortschritt.
+Bei Standard/Komplex-Workflows: ALLE Schritte als Tasks anlegen (TaskCreate)
+BEVOR mit der Arbeit begonnen wird. Tasks in der Statusleiste zeigen den Fortschritt.
 Status laufend aktualisieren (pending → in_progress → completed).
-Abhaengigkeiten setzen (addBlockedBy). Tasks die aufgrund der Anfrage
-uebersprungen werden: Status auf completed mit Begruendung im Description-Feld.
+Abhaengigkeiten setzen (addBlockedBy). Nicht benoetigte Schritte: completed mit Begruendung.
 
-Vollstaendiger Workflow (Schritte 1-14): Siehe [docs/workflow.md](docs/workflow.md)
+Workflow (13 Schritte, 3 Stufen): Siehe [docs/workflow.md](docs/workflow.md)
 
 ### Stuetzraeder-Protokoll (Graduierte Autonomie)
 

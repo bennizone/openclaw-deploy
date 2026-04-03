@@ -15,7 +15,7 @@
 //     [--max-turns <n>]
 //     [--tools Read,Glob,Grep,Edit,Write,Bash]
 
-import { readFileSync, appendFileSync, existsSync } from "node:fs";
+import { readFileSync, appendFileSync, existsSync, mkdirSync } from "node:fs";
 import { resolve, join } from "node:path";
 import { homedir } from "node:os";
 import { query } from "@anthropic-ai/claude-agent-sdk";
@@ -28,6 +28,7 @@ let withDecisions = false;
 let brief = false;
 let inputFile = "";
 let usageLog = "";
+let sessionLogDir = null; // null = nicht aktiviert, string = Pfad (Default oder explizit)
 let maxTurns = 15;
 let tools = "";
 
@@ -51,6 +52,17 @@ for (let i = 0; i < args.length; i++) {
     case "--usage-log":
       usageLog = args[++i];
       break;
+    case "--session-log":
+      // Naechstes Argument ist der Pfad — wenn es eine Flag ist, Default verwenden
+      {
+        const next = args[i + 1];
+        if (next && !next.startsWith("--")) {
+          sessionLogDir = args[++i];
+        } else {
+          sessionLogDir = join(homedir(), ".openclaw", "sdk-sessions");
+        }
+      }
+      break;
     case "--max-turns":
       maxTurns = parseInt(args[++i], 10);
       break;
@@ -69,6 +81,8 @@ if (!question) {
     "  --brief              Kompakte Antwort (max 5-8 Saetze)\n" +
     "  --input-file <path>  Agent liest diese Datei als Teil der Aufgabe\n" +
     "  --usage-log <path>   Token-Usage loggen (append)\n" +
+    "  --session-log [dir]  Session-Streams als JSONL loggen\n" +
+    "                       (Default: ~/.openclaw/sdk-sessions/ wenn das Verzeichnis existiert)\n" +
     "  --max-turns <n>      Max agentic turns (Default: 15)\n" +
     "  --tools <list>       Komma-separierte Tool-Liste (Default: Read,Glob,Grep)\n"
   );
@@ -140,6 +154,36 @@ if (inputFile) {
     `\n\nLies die Datei ${inputFile} mit dem Read-Tool und analysiere ihren Inhalt als Teil deiner Aufgabe.`;
 }
 
+// --- Session-Log ---
+const resolvedSessionLogDir = sessionLogDir;
+
+let sessionLogEnabled = false;
+let sessionLogFile = null;
+
+if (resolvedSessionLogDir) {
+  try {
+    if (!existsSync(resolvedSessionLogDir)) {
+      mkdirSync(resolvedSessionLogDir, { recursive: true });
+    }
+    sessionLogEnabled = true;
+    const ts = new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19);
+    const safeName = (component || "generic").replace(/[^a-zA-Z0-9_-]/g, "_");
+    sessionLogFile = join(resolvedSessionLogDir, `${ts}_${safeName}.jsonl`);
+  } catch (err) {
+    process.stderr.write(`WARN: Session-Log deaktiviert (Konnte Datei nicht anlegen: ${err.message})\n`);
+    sessionLogEnabled = false;
+  }
+}
+
+function sessionLog(message) {
+  if (!sessionLogEnabled || !sessionLogFile) return;
+  try {
+    appendFileSync(sessionLogFile, JSON.stringify(message) + "\n");
+  } catch (_) {
+    // Logging darf den normalen Ablauf nicht stören
+  }
+}
+
 // --- SDK query() mit Retry ---
 const MAX_RETRIES = 2;
 const RETRY_DELAY_MS = 5000;
@@ -180,6 +224,7 @@ for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         permissionMode: "bypassPermissions",
       },
     })) {
+      sessionLog(message);
       if (message.type === "result") {
         if (message.subtype === "success") {
           result = message.result || "";
@@ -239,4 +284,22 @@ if (usageLog) {
   const ts = new Date().toISOString();
   const logLine = `${ts} ${component || "generic"} sdk prompt=${totalInputTokens} completion=${totalOutputTokens}\n`;
   appendFileSync(usageLog, logLine);
+}
+
+// --- Session-Log Summary ---
+if (sessionLogEnabled && sessionLogFile) {
+  try {
+    const summary = {
+      type: "summary",
+      component: component || "generic",
+      question: question,
+      totalInputTokens,
+      totalOutputTokens,
+      success,
+      timestamp: new Date().toISOString(),
+    };
+    appendFileSync(sessionLogFile, JSON.stringify(summary) + "\n");
+  } catch (_) {
+    // Logging darf den normalen Ablauf nicht stören
+  }
 }

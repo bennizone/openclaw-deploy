@@ -31,6 +31,7 @@ ALLOWED_ORCHESTRATOR_PATTERNS = [
     r"docs/PLAN-.*\.md$",
     r"MEMORY\.md$",
     r"docs/audits/.*\.md$",
+    r"components/.*/learnings\.md$",
 ]
 
 # Tools die als schreibend gelten
@@ -48,36 +49,36 @@ PATCH_SUGGESTIONS = {
     },
     "ORCH-FIX": {
         "file": "CLAUDE.md",
-        "section": "Workflow Schritt 10a",
+        "section": "Workflow Schritt 8",
         "patch": "WARNUNG: Nach /reviewer mechanische Findings IMMER an /coder delegieren. "
                  "Orchestrator fixt NIE selbst — auch nicht einzeilige Aenderungen.",
     },
     "SKIP-CONSULT": {
         "file": "CLAUDE.md",
-        "section": "Workflow Schritt 4",
+        "section": "Workflow Schritt 3",
         "patch": "Konsultationsrunde (/consult oder /plan-review) ist Pflicht vor Implementierung. "
                  "NICHT ueberspringen — kostet fast nichts, verhindert Fehlentscheidungen.",
     },
     "SKIP-REVIEWER": {
         "file": "CLAUDE.md",
-        "section": "Workflow Schritt 10",
+        "section": "Workflow Schritt 7",
         "patch": "/reviewer ist Pflicht nach jeder Implementierung. Kein Skip erlaubt.",
     },
     "SKIP-TESTER": {
         "file": "CLAUDE.md",
-        "section": "Workflow Schritt 9",
+        "section": "Workflow Schritt 11",
         "patch": "/tester nach Implementierung ausfuehren — mindestens Health-Checks "
                  "und Plugin-Doctor wenn Plugins betroffen sind.",
     },
     "SKIP-DOCS": {
         "file": "CLAUDE.md",
-        "section": "Workflow Schritt 11",
+        "section": "Workflow Schritt 10",
         "patch": "/docs fuer DECISIONS.md ist Pflicht bei bewussten Entscheidungen. "
                  "Optional nur bei mechanischen Changes (Typos, Formatting, Refactoring ohne Verhaltenssaenderung).",
     },
     "SKIP-DESCRIPTION": {
         "file": "CLAUDE.md",
-        "section": "Workflow Schritt 2",
+        "section": "Workflow Schritt 2 / Komponenten identifizieren",
         "patch": "components/*/description.md MUSS vor Implementierung gelesen werden.",
     },
 }

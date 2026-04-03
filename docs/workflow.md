@@ -1,46 +1,88 @@
 # Workflow bei neuen Features / Aenderungen
 
-**Triviale Aufgaben (1-2 Dateien, kein Architektur-Impact):** Maximal 3 Tasks anlegen. Die 14 Schritte sind ein Leitfaden, kein Dogma — bei Ein-Datei-Fixes reichen: 1) Implementieren 2) Review 3) Commit.
+## Stufen
 
-**Preflight (optional, bei komplexen Aufgaben):** Statt selbst viele Dateien zu lesen, einen SDK-Agent den Kontext zusammenfassen lassen:
+Der Orchestrator klassifiziert jede Aufgabe in eine von drei Stufen.
+Die Stufe bestimmt, welche Schritte durchlaufen werden.
+
+| Stufe | Wann | Schritte |
+|-------|------|----------|
+| **Minimal** | Einzeiler, Typo, Config-Tweak, 1-2 Dateien ohne Architektur-Impact | 5 → 6 → 12 |
+| **Standard** | Feature, Bugfix, eine Komponente | Alle 1-13 |
+| **Komplex** | Multi-Komponente, Architektur-Aenderung | Alle 1-13 + Preflight + erweiterte Konsultation |
+
+**Preflight (nur Komplex):** Statt selbst viele Dateien zu lesen, einen SDK-Agent den Kontext zusammenfassen lassen:
 ```bash
 node scripts/consult-sdk.mjs \
   --question "Fasse zusammen was ich wissen muss um <aufgabe> umzusetzen. Lies relevante Dateien und gib mir: 1) Betroffene Komponenten 2) Relevante Architektur-Details 3) Bekannte Einschraenkungen" \
   --tools Read,Glob,Grep --max-turns 10
 ```
 
-1. Ziel klaeren mit User
-2. Betroffene Komponenten identifizieren — `node scripts/identify-components.mjs --question "<user-anfrage>"` statt alle description.md selbst lesen (spart Kontext):
-   ```bash
-   node scripts/identify-components.mjs --question "User wants to add wake-word detection"
-   ```
-   Das Script liest description.md der Reihe nach und gibt betroffene Komponenten zurueck. Danach nur die relevanten description.md selbst lesen.
-3. Plan-Entwurf mit Checkliste:
-   - [ ] Ziel definiert
-   - [ ] Nutzer/Zielgruppe
-   - [ ] Sicherheit
-   - [ ] Laufzeitumgebung
-   - [ ] Abhaengigkeiten
-   - [ ] Testbarkeit
-4. Konsultationsrunde: Betroffene Agenten via MiniMax befragen (`/consult`) — NICHT ueberspringen, kostet fast nichts
-5. Plan konsolidieren, Konflikte aufloesen
-6. User-Freigabe — bei Level 2+ Standard-Ops (read, write) ohne extra Freigabe
-   (Autonomie-Level pruefen: `python3 scripts/autonomy-status.py check <comp> <op>`)
-7. Coding via `/coder` (Claude) — liest vorher `claude.md` der Komponente
-8. Build: `npm run build` / `openclaw plugins doctor`
-9. `/tester` liest `testinstruct.md`, fuehrt Tests aus — mindestens Health-Checks + Plugin-Doctor
-10. `/reviewer` prueft — listet Findings (mechanisch + Design)
-10a. Mechanische Findings (unused imports, Tippfehler, fehlende stderr) → SOFORT an `/coder` delegieren, nicht User fragen (NIE selbst fixen!)
-    Ausnahme: Tracking-Dateien (TODO.md, Plan-Status in docs/plans/) darf der Orchestrator direkt editieren — diese sind kein Code.
-10b. Design-Findings die den Workflow BLOCKIEREN (Architektur, API-Bruch, Sicherheit) → SOFORT User-Input holen
-10c. Nicht-blockierende Design-Findings die keine User-Entscheidung brauchen → SOFORT an `/coder` delegieren
-10d. Nicht-blockierende Design-Findings die User-Input brauchen → auf TODO-Liste parken, in Zusammenfassung (Schritt 13) anzeigen
-11. Protokollant (`/docs`): DECISIONS.md zentral + lokal
-    - **Pflicht** bei bewussten Entscheidungen (Design, Architektur, API, neue Patterns, Trade-offs)
-    - **Optional** nur bei mechanischen Changes (Typos, Formatting, Refactoring ohne Verhaltenssaenderung)
-    - Im Zweifel: DECISIONS.md schreiben — kostet wenig, verhindert Wissensverlust
-12. Betroffene Agenten aktualisieren ihre MDs (description, testinstruct)
-13. Ship it: Commit + Deploy — Zusammenfassung zeigt geparkte Design-Findings aus 10c
-    - **Pre-Commit Gate:** Enthielt diese Aenderung eine bewusste Entscheidung? → DECISIONS.md pruefen
-14. Reflection (optional): `/reflect` — MiniMax analysiert Session auf Token-Waste,
-    Orchestrator ergaenzt, `/reviewer` prueft, User gibt frei. Skip mit "skip"
+## Die 13 Schritte
+
+| # | Schritt | Wer | Details |
+|---|---------|-----|---------|
+| 1 | Ziel klaeren | User + Orchestrator | Stufe klassifizieren |
+| 2 | Komponenten identifizieren | `identify-components.mjs` | `node scripts/identify-components.mjs --question "<anfrage>"` |
+| 3 | Konsultationsrunde | MiniMax (alle betroffenen Agenten) | Konflikte, Abhaengigkeiten, Bedenken — lieber zu viel als zu wenig |
+| 4 | Plan + User-Freigabe | Orchestrator | Autonomie-Level pruefen (`autonomy-status.py check`), bei Level 2+ Standard-Ops direkt weiter |
+| 5 | Coding | `/coder-light` (Default), `/coder` bei Architektur/Multi-Komponente | Liest vorher `claude.md` der Komponente |
+| 6 | Build | `npm run build` / `openclaw plugins doctor` | |
+| 7 | Review | `/reviewer` | Findet mechanische + Design-Findings |
+| 8 | Fixes | `/coder-light` oder `/coder` | **Alles sofort fixen** — nur parken wenn: Plan-Abweichung oder User-Entscheidung noetig |
+| 9 | Re-Review | `/reviewer` | Prueft ob Fixes sauber sind (max 2 Review-Loops: 7→8→9→8→9) |
+| 10 | Docs | `/docs` | DECISIONS.md, description.md, **testinstruct.md** — nach finalem Code |
+| 11 | Test | `/tester` | Gegen **aktuelle** testinstruct.md |
+| 12 | Ship it | Commit + Deploy | Zusammenfassung mit geparkten Findings |
+| 13 | Record + Reflect + TODO | `autonomy record` + `/reflect` + TODO aktualisieren | Immer. MiniMax analysiert alle Sessions, Learnings → Agent-MDs. TODO-Eintrag als erledigt markieren falls vorhanden |
+
+## Loops
+
+### Review-Loop (Schritte 7-9)
+
+```
+7 (Review) → 8 (Fixes) → 9 (Re-Review)
+                              ↓ sauber? → weiter zu 10
+                              ↓ nicht sauber? → zurueck zu 8 (max 2 Durchlaeufe)
+                              ↓ nach 2 Loops nicht sauber → User einschalten
+```
+
+### Test-Loop (Schritt 11)
+
+```
+11 (Test) → Fehler gefunden?
+              ↓ nein → weiter zu 12
+              ↓ ja → zurueck zum Orchestrator
+                       ↓ Bug im Code → Schritt 5 (Coding)
+                       ↓ Design-Problem → Schritt 4 (Plan)
+                       (max 2 Test-Loops, danach User einschalten)
+```
+
+## Regeln
+
+- **Orchestrator schreibt KEINEN Code** — auch nicht "nur kurz". Immer `/coder` oder `/coder-light` delegieren
+- **`/coder-light` ist Default** — MiniMax fuer Einzel-Datei-Aenderungen, mechanische Fixes, bekannte Patterns. `/coder` (Claude) nur bei Architektur, Multi-Komponenten, komplexer Logik
+- **Reviewer parkt minimal** — Nur bei Plan-Abweichung oder User-Entscheidung. Alles andere sofort fixen
+- **Reflect ist Pflicht** — MiniMax analysiert Orchestrator- UND Agent-Sessions. Learnings werden in betroffene Agent-MDs geschrieben
+- **Docs NACH Review** — testinstruct.md wird erst aktualisiert wenn der Code final ist, damit der Tester gegen aktuelle Instruktionen testet
+- **Loop-Limits einhalten** — Max 2 Review-Loops, max 2 Test-Loops. Danach User einschalten
+
+## Stufen-Matrix
+
+Welche Schritte bei welcher Stufe:
+
+| Schritt | Minimal | Standard | Komplex |
+|---------|:-------:|:--------:|:-------:|
+| 1 Ziel klaeren | — | x | x |
+| 2 Komponenten identifizieren | — | x | x |
+| 3 Konsultationsrunde | — | x | x (erweitert) |
+| 4 Plan + Freigabe | — | x | x |
+| 5 Coding | x | x | x |
+| 6 Build | x | x | x |
+| 7 Review | — | x | x |
+| 8 Fixes | — | x | x |
+| 9 Re-Review | — | x | x |
+| 10 Docs | — | x | x |
+| 11 Test | — | x | x |
+| 12 Ship it | x | x | x |
+| 13 Record + Reflect + TODO | — | x | x |
