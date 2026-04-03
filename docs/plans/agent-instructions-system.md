@@ -158,30 +158,76 @@ Gleicher Mechanismus wie spaeter [Anweisungen] aus Qdrant (Phase 3).
 
 ### 2a. Neuer Behavior-Extractor (`services/extractor/src/behavior-extractor.ts`)
 
-Neue Datei mit eigenem BEHAVIOR_SYSTEM_PROMPT (getestet in Phase 0):
+Neue Datei. Folgt dem Muster von `extractor.ts` (gleicher callMiniMax(), gleicher Retry).
+
+**BEHAVIOR_SYSTEM_PROMPT** (getestet in Phase 0, `scripts/test-two-pass.py:82-107`):
 ```
 Du erkennst Verhaltensanweisungen in Konversationen.
+
 Eine Verhaltensanweisung ist wenn der User dem Assistenten sagt WIE er sich verhalten soll.
 Das sind dauerhafte Arbeitsregeln — KEINE einmaligen Bitten oder Fragen.
-[+ Beispiele, Abgrenzung, JSON-Format]
-```
 
-**Zusaetzliche Negativbeispiele (aus Full-Scan Phase 0):**
-```
+BEISPIELE fuer Verhaltensanweisungen:
+- "Such zukuenftig in Deutschland" → JA (dauerhafte Regel)
+- "Frag immer erst nach dem Raum" → JA (dauerhafte Regel)
+- "Bezieh dich nicht auf Sonarr" → JA (dauerhafte Regel)
+- "Antworte mir auf Deutsch" → JA (dauerhafte Regel)
+
+KEINE Verhaltensanweisungen:
+- "Kannst du mal X recherchieren?" → NEIN (einmalige Bitte)
+- "Wie warm ist es?" → NEIN (Frage)
+- "Ich mag Pizza" → NEIN (Praeferenz, kein Verhalten)
+- "Wir nehmen Tool X" → NEIN (Entscheidung, kein Verhalten)
 - "Analysiere diese Datei auf Token-Waste" → NEIN (einmaliger Analyse-Auftrag)
 - "Konsolidiere die Teilergebnisse" → NEIN (einmalige Aufgabe)
 - "Erstelle eine Patch-Tabelle" → NEIN (einmaliger Arbeitsauftrag)
-```
-Schluesselunterscheidung: Behavior = gilt auch in ZUKUENFTIGEN Gespraechen.
-Einmaliger Auftrag = nur fuer dieses Gespraech relevant.
 
-**Context-Cleaning (aus Full-Scan Phase 0):**
-Vor dem Senden an MiniMax den User-Text bereinigen:
-- `[Erinnerungen ... /Erinnerungen]` Block entfernen
-- `[SPRACHNACHRICHT — TTS-MODUS]` + Formatierungs-Anweisungen entfernen
-- `Conversation info (untrusted metadata)` + `Sender (untrusted metadata)` entfernen
-- `[Audio]\nUser text:\n[WhatsApp...]` Wrapper entfernen, nur Transcript behalten
-→ 50%+ kleinere Prompts, schnellere API-Calls, weniger Noise fuer MiniMax
+Schluesselunterscheidung: Behavior gilt auch in ZUKUENFTIGEN Gespraechen.
+Einmaliger Auftrag ist nur fuer dieses Gespraech relevant.
+
+AUFBAU: <known_facts>, <context>, <current>, <followup> — wie beim Fact-Extractor.
+Extrahiere NUR aus der USER-Nachricht in <current>.
+
+Antworte AUSSCHLIESSLICH mit einem JSON-Array:
+[{"instruction": "kurze Regel als Imperativ", "confidence": 0.0-1.0, "sourceContext": "max 100 Zeichen Originalzitat", "scope": "personal|household"}]
+
+Wenn KEINE Verhaltensanweisung: leeres Array [].
+Formuliere als klare Regel: "Bei Serien-Releases nach Deutschland-Terminen suchen" statt "Benni moechte dass...".
+Sprache: Deutsch.
+```
+
+**Context-Cleaning (`cleanWindowForBehavior`):**
+Vor dem Senden an MiniMax den User-Text in der Window bereinigen (neue Funktion in
+`behavior-extractor.ts` oder `window.ts`). Regex-Patterns:
+
+```typescript
+function cleanText(text: string): string {
+  return text
+    // [Erinnerungen] Block komplett entfernen
+    .replace(/\[Erinnerungen[^\]]*\][\s\S]*?\[\/Erinnerungen\]/g, '')
+    // TTS-Modus-Header entfernen
+    .replace(/\[SPRACHNACHRICHT[^\]]*\][\s\S]*?(?=\n\n|\n[A-Z])/g, '')
+    // Untrusted metadata entfernen
+    .replace(/Conversation info \(untrusted metadata\)[^\n]*\n/g, '')
+    .replace(/Sender \(untrusted metadata\)[^\n]*\n/g, '')
+    // WhatsApp Audio-Wrapper: nur Transcript behalten
+    .replace(/\[Audio\]\nUser text:\n/g, '')
+    .replace(/\[WhatsApp[^\]]*\]/g, '')
+    // Mehrfach-Leerzeilen normalisieren
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+}
+
+function cleanWindowForBehavior(window: ExtractionWindow): ExtractionWindow {
+  return {
+    ...window,
+    current: { ...window.current, userText: cleanText(window.current.userText) },
+    context: window.context.map(t => ({ ...t, userText: cleanText(t.userText) })),
+    followup: window.followup.map(t => ({ ...t, userText: cleanText(t.userText) })),
+    knownFacts: [],  // Behaviors sind unabhaengig von known_facts
+  };
+}
+```
 
 Interface:
 ```typescript
@@ -196,32 +242,111 @@ export async function extractBehavior(window: ExtractionWindow): Promise<Extract
 
 ### 2b. Behavior-Verifier (`services/extractor/src/verifier.ts`)
 
-Neue Funktion `verifyBehaviorMiniMax()` mit angepasstem Prompt:
-- "Hat der USER diese Anweisung SELBST gegeben?" (statt "Stimmt dieser Fakt?")
-- "Dauerhafte Arbeitsregel oder einmalige Bitte?" (statt "Dauerhafter Fakt?")
-- **NEU (aus Full-Scan Phase 0):** 4. Pruefkriterium:
-  "Wuerde der User erwarten dass diese Regel auch in ZUKUENFTIGEN Gespraechen gilt?"
-  Damit fallen einmalige Auftraege wie "Analysiere Token-Waste" zuverlaessig raus.
+Neue Funktion `verifyBehaviorMiniMax()`. Folgt dem Muster von `verifyFactMiniMax()` (gleicher
+Retry, gleicher parseVerifierResponse()). Eigener Prompt:
+
+**BEHAVIOR_VERIFIER_PROMPT** (getestet in Phase 0, `scripts/test-two-pass.py:123-133`):
+```
+Du bist ein kritischer Pruefer fuer Verhaltensanweisungen. Dir wird eine angebliche
+Anweisung und die zugehoerige Konversation gezeigt.
+
+Pruefe kritisch:
+1. Hat der USER diese Anweisung SELBST gegeben? (Assistenten-Vorschlaege allein reichen NICHT)
+2. Ist es eine DAUERHAFTE Arbeitsregel oder eine einmalige Bitte?
+3. Hat der User die Anweisung in Folge-Turns zurueckgenommen?
+4. Wuerde der User erwarten dass diese Regel auch in ZUKUENFTIGEN Gespraechen gilt?
+
+Antworte mit genau einem JSON-Objekt, NICHTS anderes:
+{"verified": true, "reason": "kurze Begruendung"}
+oder
+{"verified": false, "reason": "kurze Begruendung"}
+```
+
+Kriterium 4 ist NEU gegenueber Phase 0 — filtert einmalige Auftraege wie
+"Analysiere Token-Waste" zuverlaessig raus (Full-Scan Erkenntnis).
 
 ### 2c. Pipeline erweitern (`services/extractor/src/pipeline.ts`)
 
-`processTurn()` bekommt einen zweiten Pass NACH dem bestehenden Fact-Pass:
+`processTurn()` bekommt einen zweiten Pass NACH dem bestehenden Fact-Pass.
+**Pass 1 (Facts) bleibt KOMPLETT UNVERAENDERT.**
+
 ```typescript
-// --- Bestehender Pass 1 (UNVERAENDERT) ---
-const facts = await extractFacts(window);
-// ... validate, verify, embed, dedup, upsert to memories_*
+import { extractBehavior, cleanWindowForBehavior } from './behavior-extractor.js';
+import { verifyBehaviorMiniMax } from './verifier.js';
+
+// In processTurn(), NACH dem bestehenden Fact-Pass:
 
 // --- Neuer Pass 2: Behavior ---
-const cleanedWindow = cleanWindowForBehavior(window); // Context-Cleaning
-const behaviors = await extractBehavior(cleanedWindow);
-for (const behavior of behaviors) {
-  // validate (length, confidence)
-  // verify with verifyBehaviorMiniMax()
-  // embed (same embedder)
-  // dedup (same semantic dedup, 0.92 threshold)
-  // upsert to instructions_* (statt memories_*)
+let behaviorExtracted = 0;
+let behaviorWritten = 0;
+
+try {
+  const cleanedWindow = cleanWindowForBehavior(window);
+  const behaviors = await extractBehavior(cleanedWindow);
+  behaviorExtracted = behaviors.length;
+
+  for (const behavior of behaviors) {
+    // 2a. Validate
+    if (behavior.instruction.length < 5 || behavior.instruction.length > 500) continue;
+    if (behavior.confidence < 0.7) continue;  // Hoeher als bei Facts (0.5) — weniger Noise
+
+    // 2b. Verify
+    const verification = await verifyBehaviorMiniMax(
+      behavior.instruction,
+      behavior.sourceContext,
+      cleanedWindow,
+    );
+    if (!verification.verified) {
+      log('debug', 'pipeline', `Behavior rejected by verifier: ${verification.reason}`);
+      continue;
+    }
+
+    // 2c. Embed
+    const vector = await embed(behavior.instruction);
+    if (!vector) continue;
+
+    // 2d. Target collection
+    const collections = targetCollections(agentId, behavior.scope ?? 'personal', true);
+
+    for (const collection of collections) {
+      // 2e. Semantic dedup (gleicher 0.92 Threshold wie Facts)
+      const similar = await searchSimilar(collection, vector, 0.92);
+      if (similar.length > 0) {
+        log('debug', 'pipeline', `Behavior semantic dupe in ${collection}: ${behavior.instruction.slice(0, 40)}`);
+        continue;
+      }
+
+      // 2f. Upsert
+      await upsertFact(collection, {
+        vector,
+        payload: {
+          fact: behavior.instruction,  // Feld heisst "fact" wegen bestehendem Schema
+          type: 'behavior',
+          confidence: behavior.confidence,
+          sourceContext: behavior.sourceContext,
+          agentId,
+          sessionId,
+          turnIndex: index,
+          timestamp: window.timestamp,
+          extractedAt: new Date().toISOString(),
+          scope: behavior.scope ?? 'personal',
+        },
+      });
+      behaviorWritten++;
+    }
+  }
+} catch (err) {
+  log('warn', 'pipeline', `Behavior pass failed: ${err}`);
+  // Nicht fatal — Fact-Pass war bereits erfolgreich
 }
+
+// logProcessing() erweitern um behaviorExtracted, behaviorWritten
 ```
+
+**Validation-Schwellwerte fuer Behavior (strenger als Facts):**
+- `confidence >= 0.7` (Facts: 0.5) — weniger False Positives
+- Laenge: 5-500 Zeichen (Facts: 5-1000)
+- Semantic-Dedup: 0.92 (identisch zu Facts)
 
 **Parallelisierung (aus Full-Scan Phase 0):**
 Pass 1 und Pass 2 NICHT parallelisieren (Fact-Pass liefert known_facts fuer Context).
@@ -243,16 +368,21 @@ function targetCollections(agentId: string, scope: string, isBehavior: boolean):
 `ensureCollections()` erweitern: Fuer jeden Agent auch `instructions_*` anlegen.
 (Bereits manuell erstellt in Phase 0, muss nur noch ins Code.)
 
-### 2e. Fehlerbehandlung (NEU — aus Phase 0 Erkenntnissen)
+### 2e. Processing-Log erweitern (`services/extractor/src/offset.ts`)
 
-Aktuell fehlt:
-1. **Retry fuer gescheiterte Turns:** Nach 3 Retries wird ein Turn uebersprungen und
-   nie wieder versucht. Neues Feld in `ingestion_state`: `retry_count` + `last_error`.
-   Beim naechsten Service-Start: Turns mit `retry_count < 10` erneut versuchen.
-2. **Processing-Log erweitern:** `behavior_extracted`, `behavior_written` Felder
-   neben den bestehenden `facts_extracted`, `facts_written`.
-3. **Health-Endpoint:** Einfacher HTTP-Endpunkt (`/health`) der letzte Aktivitaet
-   und Fehlerrate zurueckgibt. Kann spaeter vom Morningbrief abgefragt werden.
+**PFLICHT:** `processing_log` Tabelle um Behavior-Felder erweitern:
+
+```sql
+ALTER TABLE processing_log ADD COLUMN behavior_extracted INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE processing_log ADD COLUMN behavior_written INTEGER NOT NULL DEFAULT 0;
+```
+
+In `logProcessing()` die neuen Felder in das INSERT aufnehmen.
+Die `LogEntry` TypeScript-Interfaces entsprechend erweitern.
+
+**OPTIONAL (nicht in Phase 2):**
+- Retry fuer gescheiterte Turns (retry_count + last_error in ingestion_state)
+- Health-Endpoint (/health) — spaeter fuer Morningbrief
 
 ---
 
