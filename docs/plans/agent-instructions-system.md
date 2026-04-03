@@ -22,7 +22,7 @@ Ziel: 3-Ebenen-System:
 | 1 | SOUL.md / RULES.md Trennung | erledigt (2026-04-03) |
 | 2 | Extractor erweitern (behavior → instructions_*) | erledigt (2026-04-03) |
 | 3 | Memory-Recall Plugin erweitern ([Anweisungen] Block) | erledigt (2026-04-03) |
-| 4 | Zeitbasierte Instructions (Geburtstage, Advent) | erledigt (2026-04-03) |
+| 4 | Zeitbasierte Instructions (Geburtstage, Advent) | verworfen (2026-04-03) — nicht noetig |
 
 ---
 
@@ -418,62 +418,24 @@ Die `LogEntry` TypeScript-Interfaces entsprechend erweitern.
 
 ---
 
-## Phase 4: Zeitbasierte Instructions (ENTSCHEIDUNG 2026-04-03)
+## Phase 4: Zeitbasierte Instructions — VERWORFEN (2026-04-03)
 
-**Entscheidung: Option B — JSON-Datei**
+**Urspruengliche Idee:** JSON-Datei mit Datumsfenstern fuer Geburtstage, Advent etc.
+Implementiert (timed-instructions.json + Plugin-Code) und nach Review wieder entfernt.
 
-Zeitbasierte Instructions sind deterministisch (immer injizieren wenn Datum passt),
-nicht semantisch. Qdrant-Payload-Filter waere Overengineering. JSON-Datei passt zum
-bestehenden Filesystem-Pattern (RULES.md als Vorlage).
+**Warum verworfen:** Zeitbasiertes Verhalten ergibt sich bereits aus:
+1. **Datum-Injection** via `userTimezone` — Agent kennt das aktuelle Datum
+2. **Fakten** in `memories_*` — "Domi hat am 22.4. Geburtstag" (auto-extrahiert)
+3. **Verhaltensregeln** in `instructions_*` — "Bei Gelegenheit auf Geburtstage hinweisen" (auto-extrahiert)
 
-### 4a. JSON-Datei Schema
+Die JSON-Datei war ein manueller Layer der dem Grundprinzip widerspricht:
+Alles soll autonom aus der Konversation extrahiert werden.
+Harte Erinnerungen/Trigger → spaeter via Cron/Heartbeat (separates Feature).
 
-Pfad: `~/.openclaw/workspace-<agentId>/timed-instructions.json`
-
-```json
-[
-  {
-    "label": "Domis Geburtstag",
-    "month": 5, "day": 15, "daysWindow": 7,
-    "instruction": "Domis Geburtstag naht am 15. Mai — bei passender Gelegenheit erwaehnen"
-  },
-  {
-    "label": "Adventszeit",
-    "activeFrom": "2026-12-01", "activeTo": "2026-12-24",
-    "instruction": "Wir sind in der Adventszeit — weihnachtliche Stimmung ist willkommen"
-  }
-]
-```
-
-Zwei Modi:
-- **Wiederkehrend (jaehrlich):** `month` + `day` + `daysWindow` (Tage VOR dem Datum aktiv)
-- **Einmalig/Saisonal:** `activeFrom` + `activeTo` (ISO-Datum, Bereich inklusiv)
-
-### 4b. Plugin-Erweiterung (`plugins/openclaw-memory-recall/src/index.ts`)
-
-Neue Funktion `readTimedInstructions(agentId)`:
-1. Liest `~/.openclaw/workspace-<agentId>/timed-instructions.json`
-2. Prueft jeden Eintrag gegen aktuelles Datum
-3. Gibt aktive Instructions als Array zurueck
-
-Injection als `[Zeitbasierte Hinweise]` Block VOR `[Anweisungen]`:
-```
-[Regeln] ... [/Regeln]
-[Zeitbasierte Hinweise] ... [/Zeitbasierte Hinweise]
-[Anweisungen] ... [/Anweisungen]
-[Erinnerungen] ... [/Erinnerungen]
-```
-
-### 4c. Template-Datei
-
-`agents/templates/timed-instructions.json.template` — Beispiel mit Kommentaren.
-
-### 4d. Verifikation
-
-1. `cd plugins/openclaw-memory-recall && npm run build` — kompiliert fehlerfrei
-2. Test-Datei mit heutigem Datum erstellen → Block muss erscheinen
-3. Test-Datei mit anderem Datum → Block darf NICHT erscheinen
-4. Kein Fehler wenn Datei nicht existiert (graceful fallback)
+**Stattdessen umgesetzt:**
+- Memory-Hinweis von SOUL.md nach RULES.md verschoben (operativer Charakter)
+- RULES.md erklaert dem Agent dass Fakten UND Verhaltensregeln automatisch
+  extrahiert und injiziert werden → Agent muss nichts selbst notieren
 
 ---
 

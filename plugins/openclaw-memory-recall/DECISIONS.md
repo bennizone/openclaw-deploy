@@ -69,34 +69,20 @@ fuer alle Agenten relevant. Persoenliches bleibt getrennt.
 - Collections: `memories_benni`, `memories_domi`, `memories_household`
 - Collections: `instructions_benni`, `instructions_domi`, `instructions_household`
 
-## Zeitbasierte Instructions (Phase 4, 2026-04-03)
+## Zeitbasierte Instructions — VERWORFEN (Phase 4, 2026-04-03)
 
-**Entscheidung:** JSON-Datei statt Qdrant Payload-Filter
-**Warum:** Zeitbasierte Instructions sind deterministisch (immer injizieren wenn Datum passt),
-nicht semantisch. Qdrant-Payload-Filter fuer Datumsbereiche erzeugt Komplexitaet ohne Mehrwert.
-JSON-Datei passt zum bestehenden Filesystem-Pattern (RULES.md).
+**Urspruengliche Idee:** JSON-Datei (`timed-instructions.json`) mit Datumsfenstern
+fuer Geburtstage, Advent, saisonale Regeln. Implementiert und wieder entfernt.
 
-**Dateipfad:** `~/.openclaw/workspace-<agentId>/timed-instructions.json`
-(analog zu RULES.md im selben Verzeichnis)
+**Warum verworfen:** Zeitbasiertes Verhalten ergibt sich aus der Kombination von:
+1. Datum/Uhrzeit-Injection via `userTimezone` (Agent kennt das Datum)
+2. Fakten in `memories_*` ("Domi hat am 22.4. Geburtstag")
+3. Verhaltensregeln in `instructions_*` ("Bei passender Gelegenheit auf Geburtstage hinweisen")
 
-**Schema:**
-```json
-[
-  {
-    "label": "Domis Geburtstag",
-    "month": 5,
-    "day": 15,
-    "daysWindow": 7,
-    "instruction": "Domis Geburtstag naht (15. Mai)"
-  },
-  {
-    "label": "Adventszeit",
-    "activeFrom": "2026-12-01",
-    "activeTo": "2026-12-24",
-    "instruction": "Wir sind in der Adventszeit"
-  }
-]
-```
-- Wiederkehrend (jaehrlich): `month` + `day` + `daysWindow` (Tage vorher aktiv)
-- Einmalig/Saisonal: `activeFrom` + `activeTo` (ISO-Datum)
-- Injection als `[Zeitbasierte Hinweise]` Block VOR `[Anweisungen]`
+Die JSON-Datei war ein manueller Layer der dem Prinzip "alles autonom aus Konversation
+extrahiert" widerspricht. Harte Erinnerungen/Trigger → spaeter via Cron/Heartbeat.
+
+**Entscheidung:** Memory-Hinweis in RULES.md statt SOUL.md
+**Warum:** SOUL.md ist Persoenlichkeit. Das Memory-System ist eine operative Regel
+("leg keine Notizen an, der Extractor macht das automatisch"). Gehoert zu den Regeln
+wie Admin-Policy und Feature-Requests.
