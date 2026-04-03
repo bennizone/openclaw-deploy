@@ -43,3 +43,7 @@ Gib das Ergebnis des MiniMax-Agents direkt an den User/Orchestrator weiter.
 Wenn der Agent Dateien geaendert hat, fasse die Aenderungen kurz zusammen.
 Bei Fehlern oder unvollstaendigem Ergebnis: melde das klar und schlage
 Eskalation an `/coder` vor.
+
+Wenn erfolgreich, beende mit:
+
+> **CODER-LIGHT FERTIG** — Orchestrator: Weiter mit naechstem Workflow-Schritt.

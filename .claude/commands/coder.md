@@ -54,3 +54,9 @@ die NICHT bereits im Kontext stehen.
 - `before_dispatch` Hook feuert NUR fuer chatCompletions, NICHT fuer WhatsApp
 - `before_model_resolve` + `before_prompt_build` feuern fuer ALLES
 - bge-m3 hat 1024 Dimensionen, NICHT 1536
+
+## Nach Abschluss
+
+Wenn du erfolgreich fertig bist, beende deine Antwort mit:
+
+> **CODER FERTIG** — Orchestrator: Weiter mit naechstem Workflow-Schritt.
