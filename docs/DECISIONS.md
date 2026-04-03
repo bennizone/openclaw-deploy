@@ -3,6 +3,26 @@
 Systemweite und architekturuebergreifende Entscheidungen.
 Komponentenspezifische Entscheidungen stehen in `components/<name>/decisions.md`.
 
+## 2026-04-04: System-Prompt Externalisierung (home-llm)
+
+**Kontext:** System-Prompt war als mehrzeiliger String in `conversation.py` hardcodiert.
+Unuebersichtlich bei Platzhalter-Substitution, keine Trennung zwischen Prompt-Logik und
+Prompt-Inhalt.
+
+**Entscheidung:** Prompt aus `conversation.py` in `system_prompt.txt` ausgelagert.
+Platzhalter: `TIME`, `DAYLIGHT`, `ENTITIES`, `MEMORY_BLOCK`, `PERSONA`.
+Datei wird bei jedem Request gelesen (kein Caching — Aenderungen sofort wirksam).
+Fallback auf hardcoded Default wenn Datei fehlt.
+
+**Alternativen:** Caching implementieren (verworfen — Aenderungen muessten Cache
+invalidieren, Mehr Complexity fuer wenig Mehrwert), INI/YAML-Format (verworfen —
+Plain-Text ist einfacher zu debuggen).
+
+**Konsequenzen:** Prompt-Pflege ohne Code-Aenderungen moeglich. Logging/Tracing
+einfacher da Platzhalter direkt in Datei sichtbar. Fallback schuetzt vor Dateifehlern.
+
+**Details:** `components/ha-integration/decisions.md`
+
 ## 2026-04-03: Workflow v2 — 13 Schritte + 3 Stufen
 
 **Kontext:** 14-Schritte-Workflow hatte falsche Reihenfolge (Test vor Review vor Docs),

@@ -3,8 +3,10 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from datetime import datetime
+from pathlib import Path
 
 import aiohttp
 
@@ -285,11 +287,40 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
 
     # ── System prompt ──
 
+    _PROMPT_TEMPLATE_PATH = Path(__file__).parent / "system_prompt.txt"
+
     def _build_system_prompt(self, memory_block: str) -> str:
         now = datetime.now()
         current_time = now.strftime("%H:%M")
         daylight = self._build_daylight_context()
+        entity_context = self._build_exposed_entities_context()
 
+        # Build entity block with header (or empty)
+        entity_block = ""
+        if entity_context:
+            entity_block = "Aktuelle Geräte- und Sensordaten:\n" + entity_context
+
+        try:
+            template = self._PROMPT_TEMPLATE_PATH.read_text(encoding="utf-8")
+        except (FileNotFoundError, IOError) as err:
+            _LOGGER.warning("system_prompt.txt nicht gefunden (%s), nutze Fallback", err)
+            return self._build_system_prompt_fallback(memory_block)
+
+        prompt = template.replace("{{TIME}}", current_time)
+        prompt = prompt.replace("{{DAYLIGHT}}", daylight)
+        prompt = prompt.replace("{{ENTITIES}}", entity_block)
+        prompt = prompt.replace("{{MEMORY_BLOCK}}", memory_block or "")
+        prompt = prompt.replace("{{PERSONA}}", self._persona or "")
+
+        # Remove lines that are now empty (from unfilled placeholders)
+        prompt = re.sub(r'\n{3,}', '\n\n', prompt)
+        return prompt.strip()
+
+    def _build_system_prompt_fallback(self, memory_block: str) -> str:
+        """Hardcoded fallback if system_prompt.txt is missing."""
+        now = datetime.now()
+        current_time = now.strftime("%H:%M")
+        daylight = self._build_daylight_context()
         entity_context = self._build_exposed_entities_context()
 
         parts = [

@@ -1,5 +1,13 @@
 # Entscheidungen: HA-Integration
 
+## 2026-04-04 — System-Prompt Externalisierung
+
+**Kontext:** System-Prompt in conversation.py hardcoded. Prompt-Tuning erforderte Code-Aenderung + HA-Restart.
+
+**Entscheidung:** Prompt in `system_prompt.txt` ausgelagert (gleicher Ordner). Platzhalter: `{{TIME}}`, `{{DAYLIGHT}}`, `{{ENTITIES}}`, `{{MEMORY_BLOCK}}`, `{{PERSONA}}`. Bei jedem Request gelesen, Fallback auf hardcoded. Kein HA-Restart bei Prompt-Aenderung noetig.
+
+**Konsequenzen:** Prompt editierbar ohne Code-Aenderung. `system_prompt.txt` muss bei Deploy mit kopiert werden.
+
 ## 2026-03-29 — Text-Prefix-Delegation statt Tool-Calling
 
 **Kontext:** HA-Voice soll komplexe Anfragen (Web-Suche, Medien) an OpenClaw delegieren koennen.
