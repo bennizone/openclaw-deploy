@@ -71,18 +71,10 @@ function parseVerifierResponse(raw: string): VerificationResult {
     };
   }
 
-  // Fallback: MiniMax sometimes responds with plain text instead of JSON.
-  // Try to infer verification from text content.
-  const cleaned = raw.replace(/<think>[\s\S]*?<\/think>\s*/g, '').trim().toLowerCase();
-  if (cleaned.includes('"verified": true') || cleaned.includes('"verified":true')) {
-    return { verified: true, reason: 'parsed_from_text' };
-  }
-  if (cleaned.includes('ja') && !cleaned.includes('nein') && cleaned.length < 500) {
-    return { verified: true, reason: 'inferred_yes' };
-  }
-  // If the response is a detailed rejection reason (not JSON), treat as rejected with the reason
-  if (cleaned.length > 20) {
-    return { verified: false, reason: cleaned.slice(0, 200) };
+  // Fallback: If JSON parsing fails, treat as rejected (conservative).
+  // Anthropic API should always return clean text, so this is a safety net.
+  if (raw.trim().length > 20) {
+    return { verified: false, reason: raw.trim().slice(0, 200) };
   }
   return { verified: false, reason: 'unparseable_response' };
 }
@@ -217,7 +209,7 @@ export async function verifyBehaviorMiniMax(
     const result = await getMiniMax().chat({
       systemPrompt: BEHAVIOR_VERIFIER_PROMPT,
       userPrompt: buildBehaviorVerifierUserPrompt(instruction, sourceContext, window),
-      maxTokens: 500,
+      maxTokens: 8192,
       temperature: 0.1,
       tag: 'behavior-verifier',
       timeoutMs: 30_000,
@@ -239,7 +231,7 @@ export async function verifyFactMiniMax(
     const result = await getMiniMax().chat({
       systemPrompt: VERIFIER_PROMPT,
       userPrompt: buildVerifierUserPrompt(fact, window),
-      maxTokens: 500,
+      maxTokens: 8192,
       temperature: 0.1,
       tag: 'fact-verifier',
       timeoutMs: 30_000,

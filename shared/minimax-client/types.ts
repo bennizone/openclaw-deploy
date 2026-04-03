@@ -15,6 +15,7 @@ export interface MiniMaxChatResult {
 
 export interface MiniMaxClientConfig {
   apiKey: string;
+  /** API host, e.g. 'https://api.minimax.io'. Accepts baseUrl with /v1 suffix for backwards compat. */
   baseUrl?: string;
   logFn?: (level: 'debug' | 'info' | 'warn' | 'error', msg: string) => void;
 }

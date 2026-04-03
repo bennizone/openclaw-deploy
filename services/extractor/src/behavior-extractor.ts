@@ -1,5 +1,5 @@
 import { config, log } from './config.js';
-import { MiniMaxChatClient, parseJsonArray, stripThinkTags } from '@openclaw/minimax-client';
+import { MiniMaxChatClient, parseJsonArray } from '@openclaw/minimax-client';
 import type { ExtractionWindow } from './window.js';
 import { formatWindowPrompt } from './window.js';
 
@@ -102,11 +102,11 @@ export async function extractBehavior(window: ExtractionWindow): Promise<Extract
       const result = await getMiniMax().chat({
         systemPrompt: BEHAVIOR_SYSTEM_PROMPT,
         userPrompt: prompt,
-        maxTokens: 2000,
+        maxTokens: 8192,
         temperature: 0.1,
         tag: 'behavior',
       });
-      const parsed = parseJsonArray<Record<string, unknown>>(stripThinkTags(result.content));
+      const parsed = parseJsonArray<Record<string, unknown>>(result.content);
       const instructions = validateInstructions(parsed);
       log('debug', 'behavior', `Extracted ${instructions.length} instructions from turn ${window.turnIndex}`, {
         instructions: instructions.map(i => `[${i.scope}] ${i.instruction}`),

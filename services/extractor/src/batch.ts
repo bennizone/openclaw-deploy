@@ -1,5 +1,5 @@
 import { config, log } from './config.js';
-import { MiniMaxChatClient, parseJsonArray, stripThinkTags } from '@openclaw/minimax-client';
+import { MiniMaxChatClient, parseJsonArray } from '@openclaw/minimax-client';
 import type { ExtractionWindow } from './window.js';
 
 let _minimax: MiniMaxChatClient | null = null;
@@ -105,7 +105,7 @@ export async function batchExtractFacts(windows: ExtractionWindow[]): Promise<Ba
     timeoutMs: 90_000,
   });
 
-  const parsed = parseJsonArray<Record<string, unknown>>(stripThinkTags(result.content));
+  const parsed = parseJsonArray<Record<string, unknown>>(result.content);
 
   // Group by turnIndex
   const byTurn = new Map<number, BatchFactResult['facts']>();
@@ -176,7 +176,7 @@ export async function batchExtractBehavior(windows: ExtractionWindow[]): Promise
     timeoutMs: 90_000,
   });
 
-  const parsed = parseJsonArray<Record<string, unknown>>(stripThinkTags(result.content));
+  const parsed = parseJsonArray<Record<string, unknown>>(result.content);
 
   const byTurn = new Map<number, BatchBehaviorResult['behaviors']>();
   for (const item of parsed) {
@@ -230,13 +230,13 @@ export async function batchVerifyFacts(
   const result = await getMiniMax().chat({
     systemPrompt: BATCH_VERIFY_SYSTEM,
     userPrompt: prompt,
-    maxTokens: 2000,
+    maxTokens: 8192,
     temperature: 0.1,
     tag: 'batch-verifier',
     timeoutMs: 60_000,
   });
 
-  const parsed = parseJsonArray<{ index: number; verified: boolean }>(stripThinkTags(result.content));
+  const parsed = parseJsonArray<{ index: number; verified: boolean }>(result.content);
 
   // Build boolean array in order
   const verified = new Array(facts.length).fill(false);
@@ -279,13 +279,13 @@ export async function batchVerifyBehaviors(
   const result = await getMiniMax().chat({
     systemPrompt: BATCH_VERIFY_BEHAVIOR_SYSTEM,
     userPrompt: prompt,
-    maxTokens: 2000,
+    maxTokens: 8192,
     temperature: 0.1,
     tag: 'batch-behavior-verifier',
     timeoutMs: 60_000,
   });
 
-  const parsed = parseJsonArray<{ index: number; verified: boolean }>(stripThinkTags(result.content));
+  const parsed = parseJsonArray<{ index: number; verified: boolean }>(result.content);
 
   const verified = new Array(behaviors.length).fill(false);
   for (const item of parsed) {

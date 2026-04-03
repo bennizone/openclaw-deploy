@@ -1,9 +1,13 @@
 import type { MiniMaxClientConfig, MiniMaxChatOptions, MiniMaxChatResult, MiniMaxRemainsInfo } from './types.js';
 import { UsageLogger } from './usage-logger.js';
 
-/** Anthropic Messages API response format */
+/** Anthropic Messages API response format (MiniMax variant) */
 interface AnthropicResponse {
-  content: Array<{ type: 'text' | 'thinking'; text?: string; thinking?: string }>;
+  content: Array<{
+    type?: 'text';       // Text blocks have type='text' + text field
+    text?: string;       // Present on text blocks
+    thinking?: string;   // Present on thinking blocks (no type field)
+  }>;
   usage?: { input_tokens: number; output_tokens: number };
   error?: { type: string; message: string };
 }
@@ -56,8 +60,6 @@ export class MiniMaxChatClient {
       tag = 'unknown',
     } = opts;
 
-    // Anthropic API requires temperature >= 1.0 when thinking is enabled.
-    // MiniMax always has thinking on, so we set temp=1.0 and rely on the prompt for determinism.
     const body = {
       model,
       system: systemPrompt,
@@ -65,7 +67,7 @@ export class MiniMaxChatClient {
         { role: 'user', content: userPrompt },
       ],
       max_tokens: maxTokens,
-      temperature: Math.max(temperature, 1.0),
+      temperature,
     };
 
     const maxRetries = 3;
@@ -112,10 +114,11 @@ export class MiniMaxChatClient {
           throw new Error(`MiniMax API error: ${data.error.message}`);
         }
 
-        // Extract text blocks only (skip thinking blocks)
+        // Extract text blocks only (skip thinking blocks).
+        // MiniMax: text blocks have type='text' + text field, thinking blocks have thinking field only.
         const content = data.content
-          .filter(b => b.type === 'text')
-          .map(b => b.text ?? '')
+          .filter(b => b.text !== undefined && !b.thinking)
+          .map(b => b.text!)
           .join('\n')
           .trim();
 

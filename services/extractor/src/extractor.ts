@@ -1,5 +1,5 @@
 import { config, log } from './config.js';
-import { MiniMaxChatClient, parseJsonArray, stripThinkTags } from '@openclaw/minimax-client';
+import { MiniMaxChatClient, parseJsonArray } from '@openclaw/minimax-client';
 import type { ExtractionWindow } from './window.js';
 import { formatWindowPrompt } from './window.js';
 
@@ -83,11 +83,11 @@ export async function extractFacts(window: ExtractionWindow): Promise<ExtractedF
       const result = await getMiniMax().chat({
         systemPrompt: SYSTEM_PROMPT,
         userPrompt: prompt,
-        maxTokens: 2000,
+        maxTokens: 8192,
         temperature: 0.1,
         tag: 'extractor',
       });
-      const parsed = parseJsonArray<Record<string, unknown>>(stripThinkTags(result.content));
+      const parsed = parseJsonArray<Record<string, unknown>>(result.content);
       const facts = validateFacts(parsed);
       log('debug', 'extractor', `Extracted ${facts.length} facts from turn ${window.turnIndex}`, {
         facts: facts.map(f => `[${f.scope}/${f.type}] ${f.fact}`),
