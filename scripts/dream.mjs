@@ -10,6 +10,7 @@
  * Usage:
  *   node scripts/dream.mjs
  *   node scripts/dream.mjs --dry-run    # Nur lesen, nichts injecten
+ *   node scripts/dream.mjs --weekly     # Weekly Meta-Reflect erzwingen
  *
  * Cron:
  *   1 4 * * * cd /home/openclaw/openclaw-deploy && node scripts/dream.mjs >> /tmp/dream.log 2>&1
@@ -32,6 +33,7 @@ const MAX_TURNS = 50;
 const SEMANTIC_DEDUP_THRESHOLD = 0.92;
 const DRY_RUN = process.argv.includes('--dry-run');
 const BACKFILL = process.argv.includes('--backfill');
+const WEEKLY = process.argv.includes('--weekly');
 const EXTRACTOR_LOGS = join(homedir(), 'extractor', 'logs');
 const REPO_DIR = new URL('..', import.meta.url).pathname;
 const CONSULT_SDK = join(REPO_DIR, 'scripts', 'consult-sdk.mjs');
@@ -1159,7 +1161,7 @@ Regeln:
 /**
  * Write dream report to /tmp.
  */
-function writeReport(agentReports, reflectActions) {
+function writeReport(agentReports, reflectActions, weeklyActions = []) {
   const date = new Date().toISOString().slice(0, 10);
   const reportPath = `/tmp/dream-report-${date}.md`;
 
@@ -1190,8 +1192,15 @@ function writeReport(agentReports, reflectActions) {
     if (a.source) lines.push(`  Source: ${a.source}`);
   }
 
+  if (weeklyActions.length > 0) {
+    lines.push('\n## Weekly Consolidation');
+    for (const a of weeklyActions) {
+      lines.push(`- ${a.action.toUpperCase()}: ${a.text?.slice(0, 80) ?? a.search?.slice(0, 80)} (${a.reason?.slice(0, 60) ?? ''})`);
+    }
+  }
+
   lines.push('\n## Statistik');
-  const totalSdk = agentReports.reduce((s, r) => s + (r.sdkCalls ?? 0), 0) + (reflectActions.length > 0 ? 1 : 0);
+  const totalSdk = agentReports.reduce((s, r) => s + (r.sdkCalls ?? 0), 0) + (reflectActions.length > 0 ? 1 : 0) + (weeklyActions.length > 0 ? 1 : 0);
   const totalWrites = agentReports.reduce((s, r) => s + (r.qdrantWrites?.new ?? 0) + (r.qdrantWrites?.superseded ?? 0) + (r.qdrantWrites?.lowered ?? 0), 0) + reflectActions.length;
   const totalDuration = agentReports.reduce((s, r) => s + (r.durationMs ?? 0), 0);
   lines.push(`- SDK-Calls: ${totalSdk}`);
@@ -1200,6 +1209,165 @@ function writeReport(agentReports, reflectActions) {
 
   writeFileSync(reportPath, lines.join('\n') + '\n');
   return reportPath;
+}
+
+/**
+ * Weekly Meta-Reflect — runs on Sundays, consolidates the week's learnings.
+ * Checks for contradictions, redundancies, outdated hints, and merges.
+ */
+async function processWeeklyReflect(minimaxKey) {
+  if (!minimaxKey) return [];
+
+  log('weekly', 'Starting weekly Meta-Reflect...');
+
+  const reflectCollection = 'reflect_learnings';
+  await ensureCollection(reflectCollection);
+
+  // Load ALL learnings from reflect_learnings
+  let allLearnings = [];
+  try {
+    const resp = await fetch(`${QDRANT}/collections/${reflectCollection}/points/scroll`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        limit: 100,
+        with_payload: true,
+        with_vector: false,
+      }),
+      signal: AbortSignal.timeout(10000),
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      allLearnings = (data.result?.points ?? []).map(p => ({
+        id: p.id,
+        ...p.payload,
+      }));
+    }
+  } catch (err) {
+    log('weekly', `Failed to load learnings: ${err.message}`);
+    return [];
+  }
+
+  if (allLearnings.length < 2) {
+    log('weekly', `Only ${allLearnings.length} learnings — nothing to consolidate`);
+    return [];
+  }
+
+  log('weekly', `Loaded ${allLearnings.length} learnings for consolidation`);
+
+  // Also load all memories and instructions for cross-check
+  const agentDirs = readdirSync(AGENTS_DIR).filter(d => {
+    try { return statSync(join(AGENTS_DIR, d)).isDirectory(); } catch { return false; }
+  });
+
+  let allFacts = [];
+  for (const agentId of agentDirs) {
+    const memCollection = `memories_${agentId}`;
+    const instrCollection = `instructions_${agentId}`;
+    for (const col of [memCollection, instrCollection]) {
+      try {
+        const resp = await fetch(`${QDRANT}/collections/${col}/points/scroll`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ limit: 50, with_payload: true, with_vector: false }),
+          signal: AbortSignal.timeout(5000),
+        });
+        if (resp.ok) {
+          const data = await resp.json();
+          for (const p of data.result?.points ?? []) {
+            allFacts.push({ id: p.id, collection: col, ...p.payload });
+          }
+        }
+      } catch { /* skip */ }
+    }
+  }
+
+  // Write context files
+  const tmpDir = '/tmp/dream-v2';
+  if (!existsSync(tmpDir)) mkdirSync(tmpDir, { recursive: true });
+
+  const learningsFile = join(tmpDir, 'weekly-learnings.json');
+  const factsFile = join(tmpDir, 'weekly-facts.json');
+  writeFileSync(learningsFile, JSON.stringify(allLearnings, null, 2));
+  writeFileSync(factsFile, JSON.stringify(allFacts.map(f => ({
+    fact: f.fact, confidence: f.confidence, collection: f.collection, id: f.id,
+  })), null, 2));
+
+  const weeklyPrompt = `Du bist der wöchentliche Meta-Reflect-Agent. Konsolidiere die gesammelten Learnings und Fakten der Woche.
+
+Die Learnings und Fakten sind im Kontext enthalten.
+
+Lies die Learnings-Datei ${learningsFile} und die Fakten-Datei ${factsFile}.
+
+Prüfe:
+1. Widersprüche zwischen Learnings oder zwischen Learnings und Fakten
+2. Redundante Einträge die gemerged werden können
+3. Veraltete Hints (der Fehler tritt nicht mehr auf, z.B. weil das Tool/Verhalten gefixt wurde)
+4. Hints die spezifischer formuliert werden könnten (basierend auf mehreren Beispielen)
+5. Facts mit sehr niedriger Confidence (< 0.5) die entfernt werden könnten
+
+Antwort NUR als JSON-Array:
+[
+  {"action": "delete", "collection": "reflect_learnings", "search": "veralteter Hint", "reason": "..."},
+  {"action": "merge", "collection": "reflect_learnings", "search": "erster Hint", "mergeWith": "zweiter Hint", "text": "zusammengefasster Hint", "confidence": 0.9},
+  {"action": "update", "collection": "...", "search": "ungenauer Hint", "text": "präziserer Hint", "confidence": 0.9},
+  {"action": "delete", "collection": "memories_...", "search": "sehr alter/falscher Fakt", "reason": "..."}
+]
+
+Regeln:
+- NUR Aktionen vorschlagen wo klarer Grund vorliegt
+- "merge" nur bei tatsächlich redundanten Einträgen
+- "delete" nur bei nachweislich veralteten oder widersprüchlichen Einträgen
+- Bei Unsicherheit: nicht anfassen
+- Leeres Array [] wenn alles OK ist`;
+
+  const actions = callDreamSDK(weeklyPrompt, {
+    inputFile: learningsFile,
+    contextFile: factsFile,
+    maxTurns: 25,
+    agentId: 'weekly',
+  });
+
+  if (!actions || !Array.isArray(actions)) {
+    log('weekly', 'No weekly actions returned');
+    return [];
+  }
+
+  log('weekly', `Weekly Meta-Reflect: ${actions.length} consolidation actions`);
+
+  // Execute consolidation actions
+  for (const action of actions) {
+    try {
+      const collection = action.collection ?? 'reflect_learnings';
+
+      if (action.action === 'delete') {
+        // Lower confidence to near-zero (soft delete)
+        const id = await lowerConfidence(collection, action.search, 0.05);
+        if (id) log('weekly', `Soft-deleted: ${action.search?.slice(0, 50)} (${action.reason?.slice(0, 50)})`);
+      } else if (action.action === 'merge') {
+        // Supersede first entry with merged text
+        const id = await supersedeFact(collection, action.search, {
+          fact: action.text,
+          confidence: action.confidence ?? 0.85,
+        });
+        // Lower the second entry
+        if (id && action.mergeWith) {
+          await lowerConfidence(collection, action.mergeWith, 0.1);
+        }
+        if (id) log('weekly', `Merged: ${action.text?.slice(0, 60)}`);
+      } else if (action.action === 'update') {
+        const id = await supersedeFact(collection, action.search, {
+          fact: action.text,
+          confidence: action.confidence ?? 0.85,
+        });
+        if (id) log('weekly', `Updated: ${action.text?.slice(0, 60)}`);
+      }
+    } catch (err) {
+      log('weekly', `Action failed: ${err.message?.slice(0, 80)}`);
+    }
+  }
+
+  return actions;
 }
 
 async function main() {
@@ -1252,8 +1420,19 @@ async function main() {
     }
   }
 
+  // Weekly Meta-Reflect (Sundays only, or --weekly flag)
+  let weeklyActions = [];
+  const isSunday = new Date().getDay() === 0;
+  if ((isSunday || WEEKLY) && !DRY_RUN && minimaxKey) {
+    try {
+      weeklyActions = await processWeeklyReflect(minimaxKey);
+    } catch (err) {
+      console.error(`ERROR in weekly reflect: ${err.message}`);
+    }
+  }
+
   // Write report
-  const reportPath = writeReport(agentReports, reflectActions);
+  const reportPath = writeReport(agentReports, reflectActions, weeklyActions);
   console.log(`\nReport: ${reportPath}`);
 
   // Summary
@@ -1265,6 +1444,9 @@ async function main() {
   }
   if (reflectActions.length > 0) {
     console.log(`  reflect: ${reflectActions.length} new learnings`);
+  }
+  if (weeklyActions.length > 0) {
+    console.log(`  weekly: ${weeklyActions.length} consolidation actions`);
   }
   console.log(`${'='.repeat(50)}\n`);
 }
