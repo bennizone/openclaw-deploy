@@ -151,7 +151,35 @@ def build_segments(calls: list[dict]) -> list[dict]:
     return segments
 
 
-def check_violations(calls: list[dict], segments: list[dict]) -> list[dict]:
+def classify_session(calls: list[dict], segments: list[dict]) -> str:
+    """Klassifiziert eine Session als 'admin' oder 'feature'.
+
+    admin: Keine Projekt-Edits (oder nur erlaubte Orchestrator-Pfade), kein /coder, ODER <= 5 Calls.
+    feature: Projekt-Edits vorhanden ODER /coder aufgerufen.
+    """
+    if len(calls) <= 5:
+        return "admin"
+
+    has_project_edits = False
+    had_coder = False
+
+    for call in calls:
+        if call["name"] in WRITE_TOOLS:
+            fp = extract_file_path(call)
+            if fp and not is_allowed_orchestrator_path(fp):
+                has_project_edits = True
+        if call["name"] == "Skill":
+            skill = extract_skill_name(call)
+            if skill == "coder":
+                had_coder = True
+
+    if has_project_edits or had_coder:
+        return "feature"
+    return "admin"
+
+
+def check_violations(calls: list[dict], segments: list[dict],
+                     session_type: str = "feature") -> list[dict]:
     """Prueft alle Violations deterministisch."""
     violations = []
     has_edits = False
@@ -230,8 +258,8 @@ def check_violations(calls: list[dict], segments: list[dict]) -> list[dict]:
                 "calls": seqs,
             })
 
-    # SKIP-Violations (nur wenn es Edits auf Projektdateien gab)
-    if has_edits:
+    # SKIP-Violations (nur wenn es Edits auf Projektdateien gab UND feature-Session)
+    if has_edits and session_type == "feature":
         if not had_consult:
             violations.append({
                 "id": "SKIP-CONSULT",
@@ -299,14 +327,16 @@ def format_calls_range(seqs: list[int]) -> str:
 
 
 def format_report(session_name: str, calls: list[dict], segments: list[dict],
-                  violations: list[dict]) -> str:
+                  violations: list[dict], session_type: str = "feature") -> str:
     """Formatiert den Audit-Report als lesbaren Text."""
     lines = ["# Orchestrator Self-Audit", ""]
 
     orch_calls = sum(len(s["calls"]) for s in segments if s["agent"] == "orchestrator")
     agent_calls = len(calls) - orch_calls
 
+    type_hint = "(keine Projekt-Edits)" if session_type == "admin" else "(Projekt-Edits oder /coder)"
     lines.append(f"Session: {session_name}")
+    lines.append(f"Session-Typ: {session_type} {type_hint}")
     lines.append(f"Tool-Calls: {len(calls)} total | {orch_calls} Orchestrator | {agent_calls} Sub-Agent")
     lines.append("")
 
@@ -375,7 +405,7 @@ def format_report(session_name: str, calls: list[dict], segments: list[dict],
 
 
 def format_json(session_name: str, calls: list[dict], segments: list[dict],
-                violations: list[dict]) -> str:
+                violations: list[dict], session_type: str = "feature") -> str:
     """Formatiert den Audit-Report als JSON."""
     orch_calls = sum(len(s["calls"]) for s in segments if s["agent"] == "orchestrator")
 
@@ -391,8 +421,29 @@ def format_json(session_name: str, calls: list[dict], segments: list[dict],
         for c in calls
     )
 
+    # Bei Admin-Sessions: compliance auf null (nicht anwendbar)
+    if session_type == "admin":
+        compliance = {
+            "description_read": None,
+            "consult": None,
+            "coder": None,
+            "reviewer": None,
+            "tester": None,
+            "docs": None,
+        }
+    else:
+        compliance = {
+            "description_read": has_desc_read,
+            "consult": bool(skills_used & {"consult", "plan-review"}),
+            "coder": "coder" in skills_used,
+            "reviewer": "reviewer" in skills_used,
+            "tester": "tester" in skills_used,
+            "docs": "docs" in skills_used,
+        }
+
     result = {
         "session": session_name,
+        "session_type": session_type,
         "stats": {
             "total_calls": len(calls),
             "orchestrator_calls": orch_calls,
@@ -408,14 +459,7 @@ def format_json(session_name: str, calls: list[dict], segments: list[dict],
             }
             for v in violations
         ],
-        "compliance": {
-            "description_read": has_desc_read,
-            "consult": bool(skills_used & {"consult", "plan-review"}),
-            "coder": "coder" in skills_used,
-            "reviewer": "reviewer" in skills_used,
-            "tester": "tester" in skills_used,
-            "docs": "docs" in skills_used,
-        },
+        "compliance": compliance,
     }
     return json.dumps(result, indent=2, ensure_ascii=False)
 
@@ -439,14 +483,15 @@ def main():
         sys.exit(0)
 
     segments = build_segments(calls)
-    violations = check_violations(calls, segments)
+    session_type = classify_session(calls, segments)
+    violations = check_violations(calls, segments, session_type)
 
     session_name = jsonl_path.name
 
     if args.json:
-        print(format_json(session_name, calls, segments, violations))
+        print(format_json(session_name, calls, segments, violations, session_type))
     else:
-        print(format_report(session_name, calls, segments, violations))
+        print(format_report(session_name, calls, segments, violations, session_type))
 
 
 
