@@ -224,7 +224,7 @@ async function supersedeFact(collection, searchQuery, newPayload) {
     if (updateResp.ok && newPayload.fact) {
       const newVector = await getEmbedding(newPayload.fact);
       if (newVector) {
-        await fetch(`${QDRANT}/collections/${collection}/points`, {
+        await fetch(`${QDRANT}/collections/${collection}/points?wait=true`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -1201,7 +1201,7 @@ function writeReport(agentReports, reflectActions, weeklyActions = []) {
 
   lines.push('\n## Statistik');
   const totalSdk = agentReports.reduce((s, r) => s + (r.sdkCalls ?? 0), 0) + (reflectActions.length > 0 ? 1 : 0) + (weeklyActions.length > 0 ? 1 : 0);
-  const totalWrites = agentReports.reduce((s, r) => s + (r.qdrantWrites?.new ?? 0) + (r.qdrantWrites?.superseded ?? 0) + (r.qdrantWrites?.lowered ?? 0), 0) + reflectActions.length;
+  const totalWrites = agentReports.reduce((s, r) => s + (r.qdrantWrites?.new ?? 0) + (r.qdrantWrites?.superseded ?? 0) + (r.qdrantWrites?.lowered ?? 0), 0) + reflectActions.length + weeklyActions.length;
   const totalDuration = agentReports.reduce((s, r) => s + (r.durationMs ?? 0), 0);
   lines.push(`- SDK-Calls: ${totalSdk}`);
   lines.push(`- Qdrant-Writes: ${totalWrites}`);
@@ -1223,26 +1223,27 @@ async function processWeeklyReflect(minimaxKey) {
   const reflectCollection = 'reflect_learnings';
   await ensureCollection(reflectCollection);
 
-  // Load ALL learnings from reflect_learnings
+  // Load ALL learnings from reflect_learnings (paginated)
   let allLearnings = [];
   try {
-    const resp = await fetch(`${QDRANT}/collections/${reflectCollection}/points/scroll`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        limit: 100,
-        with_payload: true,
-        with_vector: false,
-      }),
-      signal: AbortSignal.timeout(10000),
-    });
-    if (resp.ok) {
+    let scrollId = null;
+    do {
+      const resp = await fetch(`${QDRANT}/collections/${reflectCollection}/points/scroll`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          limit: 100,
+          with_payload: true,
+          with_vector: false,
+          ...(scrollId ? { offset: scrollId } : {}),
+        }),
+        signal: AbortSignal.timeout(10000),
+      });
+      if (!resp.ok) break;
       const data = await resp.json();
-      allLearnings = (data.result?.points ?? []).map(p => ({
-        id: p.id,
-        ...p.payload,
-      }));
-    }
+      allLearnings.push(...(data.result?.points ?? []).map(p => ({ id: p.id, ...p.payload })));
+      scrollId = data.result?.next_page_offset ?? null;
+    } while (scrollId !== null);
   } catch (err) {
     log('weekly', `Failed to load learnings: ${err.message}`);
     return [];
@@ -1266,18 +1267,21 @@ async function processWeeklyReflect(minimaxKey) {
     const instrCollection = `instructions_${agentId}`;
     for (const col of [memCollection, instrCollection]) {
       try {
-        const resp = await fetch(`${QDRANT}/collections/${col}/points/scroll`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ limit: 50, with_payload: true, with_vector: false }),
-          signal: AbortSignal.timeout(5000),
-        });
-        if (resp.ok) {
+        let factScrollId = null;
+        do {
+          const resp = await fetch(`${QDRANT}/collections/${col}/points/scroll`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ limit: 100, with_payload: true, with_vector: false, ...(factScrollId ? { offset: factScrollId } : {}) }),
+            signal: AbortSignal.timeout(5000),
+          });
+          if (!resp.ok) break;
           const data = await resp.json();
           for (const p of data.result?.points ?? []) {
             allFacts.push({ id: p.id, collection: col, ...p.payload });
           }
-        }
+          factScrollId = data.result?.next_page_offset ?? null;
+        } while (factScrollId !== null);
       } catch { /* skip */ }
     }
   }
@@ -1335,8 +1339,13 @@ Regeln:
 
   log('weekly', `Weekly Meta-Reflect: ${actions.length} consolidation actions`);
 
-  // Execute consolidation actions
-  for (const action of actions) {
+  // Validate and execute consolidation actions
+  const validActions = actions.filter(a => a.action && ['delete', 'merge', 'update'].includes(a.action));
+  if (validActions.length < actions.length) {
+    log('weekly', `Filtered ${actions.length - validActions.length} invalid actions`);
+  }
+
+  for (const action of validActions) {
     try {
       const collection = action.collection ?? 'reflect_learnings';
 
