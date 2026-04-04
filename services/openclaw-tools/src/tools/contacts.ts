@@ -1,37 +1,16 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { CardDavSource } from "../clients/carddav.js";
 import {
   resolveAgentId,
   getContactSources,
   getCalendarSources,
   hasWriteAccess,
+  getOrCreateCardDavSource,
+  getOrCreateCalDavSource,
 } from "../lib/pim-access.js";
-import { CalDavSource } from "../clients/caldav.js";
-import type { ResolvedSource, Contact, BirthdayEntry } from "../lib/types.js";
+import type { Contact, BirthdayEntry } from "../lib/types.js";
 
 const log = (msg: string) => process.stderr.write(`[contacts] ${msg}\n`);
-
-const contactSourcePool = new Map<string, CardDavSource>();
-const calSourcePool = new Map<string, CalDavSource>();
-
-function getOrCreateContactSource(rs: ResolvedSource): CardDavSource {
-  let src = contactSourcePool.get(rs.id);
-  if (!src) {
-    src = new CardDavSource(rs);
-    contactSourcePool.set(rs.id, src);
-  }
-  return src;
-}
-
-function getOrCreateCalSource(rs: ResolvedSource): CalDavSource {
-  let src = calSourcePool.get(rs.id);
-  if (!src) {
-    src = new CalDavSource(rs);
-    calSourcePool.set(rs.id, src);
-  }
-  return src;
-}
 
 function formatContactList(contacts: Contact[]): string {
   if (contacts.length === 0) return "Keine Kontakte gefunden.";
@@ -90,7 +69,7 @@ export function registerContacts(server: McpServer): void {
         if (sources.length === 0) return textResult("Keine Kontaktquellen konfiguriert.", true);
 
         const results = await Promise.allSettled(
-          sources.map((rs) => getOrCreateContactSource(rs).fetchContacts(query))
+          sources.map((rs) => getOrCreateCardDavSource(rs).fetchContacts(query))
         );
 
         const contacts: Contact[] = [];
@@ -143,7 +122,7 @@ export function registerContacts(server: McpServer): void {
         const rs = sources.find((s) => s.id === source_name);
         if (!rs) return textResult(`Quelle "${source_name}" nicht verfügbar.`, true);
 
-        const src = getOrCreateContactSource(rs);
+        const src = getOrCreateCardDavSource(rs);
         const contact = await src.createContact(name, { email, phone, organization, address, birthday });
 
         return textResult(
@@ -186,7 +165,7 @@ export function registerContacts(server: McpServer): void {
         const rs = sources.find((s) => s.id === source_name);
         if (!rs) return textResult(`Quelle "${source_name}" nicht verfügbar.`, true);
 
-        const src = getOrCreateContactSource(rs);
+        const src = getOrCreateCardDavSource(rs);
         const contact = await src.updateContact(contact_uid, {
           name,
           email,
@@ -232,7 +211,7 @@ export function registerContacts(server: McpServer): void {
         // Collect birthdays from CardDAV contacts
         const contactSources = getContactSources(agentId);
         const contactResults = await Promise.allSettled(
-          contactSources.map((rs) => getOrCreateContactSource(rs).fetchBirthdays())
+          contactSources.map((rs) => getOrCreateCardDavSource(rs).fetchBirthdays())
         );
 
         const allBirthdays: BirthdayEntry[] = [];
@@ -251,7 +230,7 @@ export function registerContacts(server: McpServer): void {
 
         for (const rs of calSources) {
           try {
-            const src = getOrCreateCalSource(rs);
+            const src = getOrCreateCalDavSource(rs);
             const events = await src.fetchEvents(now.toISOString(), futureDate.toISOString());
             for (const ev of events) {
               if (

@@ -1,7 +1,8 @@
 # /ha-admin — Home Assistant Verwaltung
 
 Du verwaltest Home Assistant fuer das OpenClaw-System.
-Verbindung via REST API. HA laeuft unter `https://haos.home.benni.zone`.
+Verbindung via REST API. Die HA-URL liegt in `~/.openclaw-deploy-state.json` → `config.ha_url`
+und in `~/.openclaw/.env` als `$HA_URL`.
 
 ## Vor dem Start: Komponenten-Wissen laden
 
@@ -13,8 +14,9 @@ Verbindung via REST API. HA laeuft unter `https://haos.home.benni.zone`.
 
 ```bash
 source ~/.openclaw/.env
+HA_BASE="$HA_URL"
 # Test:
-curl -s "https://haos.home.benni.zone/api/" \
+curl -s "${HA_BASE}/api/" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq .message
 ```
 
@@ -26,15 +28,15 @@ Der Token kommt aus `~/.openclaw/.env` (Variable `HA_LONG_LIVED_TOKEN`).
 
 ```bash
 # Alle Entities
-curl -s "https://haos.home.benni.zone/api/states" \
+curl -s "${HA_BASE}/api/states" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq '.[].entity_id' | head -20
 
 # Einzelne Entity
-curl -s "https://haos.home.benni.zone/api/states/<entity_id>" \
+curl -s "${HA_BASE}/api/states/<entity_id>" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq .
 
 # Template rendern
-curl -s -X POST "https://haos.home.benni.zone/api/template" \
+curl -s -X POST "${HA_BASE}/api/template" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json" \
   -d '{"template": "{{ states.sensor.example.state }}"}'
 ```
@@ -43,17 +45,17 @@ curl -s -X POST "https://haos.home.benni.zone/api/template" \
 
 ```bash
 # Alle auflisten
-curl -s "https://haos.home.benni.zone/api/states" \
+curl -s "${HA_BASE}/api/states" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | \
   jq '[.[] | select(.entity_id | startswith("automation.")) | {entity_id, state, last_triggered: .attributes.last_triggered}]'
 
 # Automation triggern
-curl -s -X POST "https://haos.home.benni.zone/api/services/automation/trigger" \
+curl -s -X POST "${HA_BASE}/api/services/automation/trigger" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json" \
   -d '{"entity_id": "automation.example"}'
 
 # Automation ein/ausschalten
-curl -s -X POST "https://haos.home.benni.zone/api/services/automation/turn_on" \
+curl -s -X POST "${HA_BASE}/api/services/automation/turn_on" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json" \
   -d '{"entity_id": "automation.example"}'
 ```
@@ -62,12 +64,12 @@ curl -s -X POST "https://haos.home.benni.zone/api/services/automation/turn_on" \
 
 ```bash
 # Service aufrufen
-curl -s -X POST "https://haos.home.benni.zone/api/services/<domain>/<service>" \
+curl -s -X POST "${HA_BASE}/api/services/<domain>/<service>" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json" \
   -d '{"entity_id": "<entity_id>"}'
 
 # Beispiel: Licht einschalten
-curl -s -X POST "https://haos.home.benni.zone/api/services/light/turn_on" \
+curl -s -X POST "${HA_BASE}/api/services/light/turn_on" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json" \
   -d '{"entity_id": "light.wohnzimmer", "brightness": 255}'
 ```
@@ -76,15 +78,15 @@ curl -s -X POST "https://haos.home.benni.zone/api/services/light/turn_on" \
 
 ```bash
 # Areas auflisten
-curl -s -X POST "https://haos.home.benni.zone/api/config/area_registry/list" \
+curl -s -X POST "${HA_BASE}/api/config/area_registry/list" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq '.[].name'
 
 # Device Registry
-curl -s -X POST "https://haos.home.benni.zone/api/config/device_registry/list" \
+curl -s -X POST "${HA_BASE}/api/config/device_registry/list" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq '.[0]'
 
 # Entity Registry
-curl -s -X POST "https://haos.home.benni.zone/api/config/entity_registry/list" \
+curl -s -X POST "${HA_BASE}/api/config/entity_registry/list" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq 'length'
 ```
 
@@ -92,16 +94,16 @@ curl -s -X POST "https://haos.home.benni.zone/api/config/entity_registry/list" \
 
 ```bash
 # WICHTIG: IMMER Backup VOR destruktiven Aenderungen!
-curl -s -X POST "https://haos.home.benni.zone/api/services/backup/create" \
+curl -s -X POST "${HA_BASE}/api/services/backup/create" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json" \
   -d '{"name": "pre-change-backup"}'
 
 # HA Restart (WARNUNG: Unterbricht laufende Automationen!)
-curl -s -X POST "https://haos.home.benni.zone/api/services/homeassistant/restart" \
+curl -s -X POST "${HA_BASE}/api/services/homeassistant/restart" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json"
 
 # HA Config Reload (weniger invasiv als Restart)
-curl -s -X POST "https://haos.home.benni.zone/api/services/homeassistant/reload_all" \
+curl -s -X POST "${HA_BASE}/api/services/homeassistant/reload_all" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" -H "Content-Type: application/json"
 ```
 
@@ -109,15 +111,15 @@ curl -s -X POST "https://haos.home.benni.zone/api/services/homeassistant/reload_
 
 ```bash
 # Error-Log
-curl -s "https://haos.home.benni.zone/api/error_log" \
+curl -s "${HA_BASE}/api/error_log" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | tail -30
 
 # Entity-History (letzte Stunde)
-curl -s "https://haos.home.benni.zone/api/history/period?filter_entity_id=<entity_id>" \
+curl -s "${HA_BASE}/api/history/period?filter_entity_id=<entity_id>" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq '.[0] | length'
 
 # Logbook
-curl -s "https://haos.home.benni.zone/api/logbook" \
+curl -s "${HA_BASE}/api/logbook" \
   -H "Authorization: Bearer $HA_LONG_LIVED_TOKEN" | jq '.[:5]'
 ```
 

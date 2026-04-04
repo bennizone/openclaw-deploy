@@ -58,3 +58,5 @@ config/
 | GPU-Server (llama.cpp, Modell-Dateien) | **gpu-server** |
 | HA Custom Component (home-llm) | **ha-integration** |
 | LXC Setup (Bootstrap, Pakete) | **onboard** |
+| SOUL.md (Agent-Persoenlichkeit) | Agent selbst (liegt im Workspace) |
+| Behavior-Extraction + Instructions (Qdrant) | **memory-system** |

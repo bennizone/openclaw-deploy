@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 import type { PimConfig, PimAccess, ResolvedSource } from "./types.js";
+import { CalDavSource } from "../clients/caldav.js";
+import { CardDavSource } from "../clients/carddav.js";
 
 const log = (msg: string) => process.stderr.write(`[pim-access] ${msg}\n`);
 
@@ -142,4 +144,31 @@ export function findCalendarSource(agentId: string, sourceId: string): ResolvedS
 
 export function findContactSource(agentId: string, sourceId: string): ResolvedSource | null {
   return getContactSources(agentId).find((s) => s.id === sourceId) ?? null;
+}
+
+// ── Shared source instance pools ───────────────────────────────────
+// CalDavSource and CardDavSource are stateless aside from an internal
+// connection/cache, so a single instance per source ID is sufficient.
+
+const calDavPool = new Map<string, CalDavSource>();
+const cardDavPool = new Map<string, CardDavSource>();
+
+/** Get or lazily create a CalDavSource instance for the given resolved source. */
+export function getOrCreateCalDavSource(rs: ResolvedSource): CalDavSource {
+  let src = calDavPool.get(rs.id);
+  if (!src) {
+    src = new CalDavSource(rs);
+    calDavPool.set(rs.id, src);
+  }
+  return src;
+}
+
+/** Get or lazily create a CardDavSource instance for the given resolved source. */
+export function getOrCreateCardDavSource(rs: ResolvedSource): CardDavSource {
+  let src = cardDavPool.get(rs.id);
+  if (!src) {
+    src = new CardDavSource(rs);
+    cardDavPool.set(rs.id, src);
+  }
+  return src;
 }

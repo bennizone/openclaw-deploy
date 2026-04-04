@@ -1,26 +1,14 @@
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { CalDavSource } from "../clients/caldav.js";
 import {
   resolveAgentId,
   getCalendarSources,
   hasWriteAccess,
+  getOrCreateCalDavSource,
 } from "../lib/pim-access.js";
-import type { CalendarEvent, ResolvedSource } from "../lib/types.js";
+import type { CalendarEvent } from "../lib/types.js";
 
 const log = (msg: string) => process.stderr.write(`[calendar] ${msg}\n`);
-
-/** Shared map of lazily-created CalDavSource instances. */
-const sourcePool = new Map<string, CalDavSource>();
-
-function getOrCreateSource(rs: ResolvedSource): CalDavSource {
-  let src = sourcePool.get(rs.id);
-  if (!src) {
-    src = new CalDavSource(rs);
-    sourcePool.set(rs.id, src);
-  }
-  return src;
-}
 
 function formatEventList(events: CalendarEvent[]): string {
   if (events.length === 0) return "Keine Termine gefunden.";
@@ -80,7 +68,7 @@ export function registerCalendar(server: McpServer): void {
         if (sources.length === 0) return textResult("Keine Kalenderquellen konfiguriert.", true);
 
         const results = await Promise.allSettled(
-          sources.map((rs) => getOrCreateSource(rs).fetchEvents(start_date, end_date))
+          sources.map((rs) => getOrCreateCalDavSource(rs).fetchEvents(start_date, end_date))
         );
 
         const events: CalendarEvent[] = [];
@@ -131,7 +119,7 @@ export function registerCalendar(server: McpServer): void {
         if (sources.length === 0) return textResult("Keine Kalenderquellen konfiguriert.", true);
 
         const results = await Promise.allSettled(
-          sources.map((rs) => getOrCreateSource(rs).searchEvents(query, start_date, end_date))
+          sources.map((rs) => getOrCreateCalDavSource(rs).searchEvents(query, start_date, end_date))
         );
 
         const events: CalendarEvent[] = [];
@@ -190,7 +178,7 @@ export function registerCalendar(server: McpServer): void {
         const rs = sources.find((s) => s.id === source_name);
         if (!rs) return textResult(`Quelle "${source_name}" nicht verfügbar.`, true);
 
-        const src = getOrCreateSource(rs);
+        const src = getOrCreateCalDavSource(rs);
         const ev = await src.createEvent(calendar_name, title, start, end, {
           location,
           description,
@@ -241,7 +229,7 @@ export function registerCalendar(server: McpServer): void {
         const rs = sources.find((s) => s.id === source_name);
         if (!rs) return textResult(`Quelle "${source_name}" nicht verfügbar.`, true);
 
-        const src = getOrCreateSource(rs);
+        const src = getOrCreateCalDavSource(rs);
         const ev = await src.updateEvent(event_uid, calendar_name, {
           title,
           start,
@@ -288,7 +276,7 @@ export function registerCalendar(server: McpServer): void {
         const rs = sources.find((s) => s.id === source_name);
         if (!rs) return textResult(`Quelle "${source_name}" nicht verfügbar.`, true);
 
-        const src = getOrCreateSource(rs);
+        const src = getOrCreateCalDavSource(rs);
         await src.deleteEvent(event_uid, calendar_name);
 
         return textResult(`✅ Termin gelöscht (UID: ${event_uid}).`);

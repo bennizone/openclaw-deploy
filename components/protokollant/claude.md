@@ -68,6 +68,7 @@ Kein Build — Protokollant ist ein uebergreifender Agent ohne eigenen Code.
 | components/*/description.md | Jeweilige Komponente |
 | components/*/testinstruct.md | Jeweilige Komponente |
 | CLAUDE.md (Haupt-Config) | Nur von Orchestrator geaendert |
+| DECISIONS.md schreiben/pflegen | **protokollant** (nicht reviewer) |
 
 ## MiniMax SDK-Delegation
 

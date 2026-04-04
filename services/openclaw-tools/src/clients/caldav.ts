@@ -1,5 +1,6 @@
 import { DAVClient, type DAVCalendar, type DAVCalendarObject } from "tsdav";
 import type { ResolvedSource, CalendarEvent } from "../lib/types.js";
+import { unfoldField } from "../lib/ical-utils.js";
 
 const log = (msg: string) => process.stderr.write(`[caldav] ${msg}\n`);
 
@@ -17,22 +18,9 @@ function fmtLocal(d: Date): string {
   });
 }
 
-/** Minimal iCal field extractor — works without a full parser. */
+/** Minimal iCal field extractor — delegates to shared unfoldField. */
 function icalField(data: string, field: string): string | undefined {
-  // Handle folded lines (RFC 5545: lines can be continued with CRLF + space/tab)
-  const unfolded = data.replace(/\r?\n[ \t]/g, "");
-  const re = new RegExp(`^${field}[;:](.*)$`, "m");
-  const m = unfolded.match(re);
-  if (!m) return undefined;
-  // strip params from value (e.g. DTSTART;TZID=Europe/Berlin:20260401T100000 → 20260401T100000)
-  const raw = m[1];
-  const colonIdx = raw.indexOf(":");
-  // If the regex already matched after ':', the value is the whole match.
-  // But we matched field;... or field:..., so we need to check for params.
-  if (field === m[0].split(/[;:]/)[0] && raw.includes(":")) {
-    return raw.slice(colonIdx + 1).trim();
-  }
-  return raw.trim();
+  return unfoldField(data, field);
 }
 
 /** Parse an iCal datetime value (basic or extended) into a Date. */

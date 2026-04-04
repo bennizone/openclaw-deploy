@@ -20,6 +20,8 @@ openclaw-gateway (systemd user service, Port 18789)
 │   └── agents.defaults.model.fallbacks → Qwen 3.5 9B
 ├── Plugin-System
 │   ├── plugins.entries → Aktivierte Plugins
+│   │   ├── openclaw-ha-voice
+│   │   └── openclaw-memory-recall
 │   ├── plugins.slots.memory = "none" (eigenes Memory-System)
 │   └── Hooks: before_prompt_build, before_model_resolve, before_message_write
 ├── MCP-Server

@@ -1,18 +1,8 @@
-import { config, log } from './config.js';
-import { MiniMaxChatClient, parseJsonArray } from '@openclaw/minimax-client';
+import { log } from './config.js';
+import { parseJsonArray } from '@openclaw/minimax-client';
+import { getMiniMax } from './lib/minimax.js';
 import type { ExtractionWindow } from './window.js';
 
-let _minimax: MiniMaxChatClient | null = null;
-function getMiniMax(): MiniMaxChatClient {
-  if (!_minimax) {
-    _minimax = new MiniMaxChatClient({
-      apiKey: config.minimaxApiKey,
-      baseUrl: config.minimaxBaseUrl,
-      logFn: (level, msg) => log(level, 'minimax', msg),
-    });
-  }
-  return _minimax;
-}
 
 // --- Batch Fact Extraction ---
 

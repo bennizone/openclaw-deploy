@@ -1,33 +1,20 @@
 import { DAVClient, type DAVAddressBook, type DAVVCard } from "tsdav";
 import type { ResolvedSource, Contact, BirthdayEntry } from "../lib/types.js";
+import { unfoldField, unfoldFieldAll } from "../lib/ical-utils.js";
 
 const log = (msg: string) => process.stderr.write(`[carddav] ${msg}\n`);
 
-/** Extract a field value from a vCard line. */
+/** vCard options: case-insensitive, use lastColon for param stripping. */
+const VCARD_OPTS = { ignoreCase: true, lastColon: true } as const;
+
+/** Extract a field value from a vCard line — delegates to shared unfoldField. */
 function vcardField(data: string, field: string): string | undefined {
-  const unfolded = data.replace(/\r?\n[ \t]/g, "");
-  const re = new RegExp(`^${field}[;:](.*)$`, "im");
-  const m = unfolded.match(re);
-  if (!m) return undefined;
-  const raw = m[1];
-  // If the matched line has params (e.g. TEL;TYPE=CELL:+49...) extract the value after last ':'
-  const colonIdx = raw.lastIndexOf(":");
-  return colonIdx >= 0 ? raw.slice(colonIdx + 1).trim() : raw.trim();
+  return unfoldField(data, field, VCARD_OPTS);
 }
 
 /** Extract all values for a field (e.g. multiple TEL or EMAIL lines). */
 function vcardFieldAll(data: string, field: string): string[] {
-  const unfolded = data.replace(/\r?\n[ \t]/g, "");
-  const re = new RegExp(`^${field}[;:](.*)$`, "gim");
-  const results: string[] = [];
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(unfolded)) !== null) {
-    const raw = m[1];
-    const colonIdx = raw.lastIndexOf(":");
-    const val = colonIdx >= 0 ? raw.slice(colonIdx + 1).trim() : raw.trim();
-    if (val) results.push(val);
-  }
-  return results;
+  return unfoldFieldAll(data, field, VCARD_OPTS);
 }
 
 /** Parse FN (formatted name) or build from N field. */
