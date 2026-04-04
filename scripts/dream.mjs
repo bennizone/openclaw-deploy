@@ -489,7 +489,7 @@ function callDreamSDK(prompt, { inputFile, contextFile, maxTurns = 20, agentId =
   try {
     const result = execFileSync('node', args, {
       cwd: REPO_DIR,
-      timeout: 120000,
+      timeout: 300000,
       maxBuffer: 10 * 1024 * 1024,
       encoding: 'utf-8',
       env: { ...process.env, NODE_NO_WARNINGS: '1' },
