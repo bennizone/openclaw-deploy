@@ -3,6 +3,63 @@
 Systemweite und architekturuebergreifende Entscheidungen.
 Komponentenspezifische Entscheidungen stehen in `components/<name>/decisions.md`.
 
+## 2026-04-04: Wetter-Vorhersage als HA Template-Sensoren
+
+**Kontext:** Qwen konnte nur aktuelles Wetter beantworten (weather.forecast_home Entity).
+Vorhersage-Fragen ("Wie wird das Wetter morgen?") wurden faelschlich an OpenClaw delegiert
+oder mit fehlenden Daten beantwortet.
+
+**Entscheidung:** 3 Template-Trigger-Sensoren in HA configuration.yaml statt Code-Aenderung
+in conversation.py. Sensoren: `sensor.wetter_morgen`, `sensor.wetter_ubermorgen`,
+`sensor.wetter_in_3_tagen`. Stuendlich aktualisiert via `weather.get_forecasts` Service.
+Als Conversation-Entitaeten verfuegbar gemacht.
+
+**Alternativen:** Forecast-Daten in conversation.py per API holen und in Prompt injecten
+(verworfen — Code-Abhaengigkeit, HA-seitige Loesung ist sauberer und schneller).
+
+**Konsequenzen:** Qwen sieht Vorhersage direkt im Entity-Kontext. Keine Code-Aenderung noetig.
+Sensoren muessen in HA als Conversation-Entitaeten exposed bleiben.
+
+## 2026-04-04: orchestrator-audit.py Session-Klassifikation
+
+**Kontext:** Compliance-Metriken (consult, reviewer, docs, tester) waren bei Admin-Sessions
+immer 0%, obwohl der volle Workflow dort nicht anwendbar ist. Fuehrte zu irreführenden
+Audit-Ergebnissen.
+
+**Entscheidung:** Neue Funktion `classify_session()` unterscheidet "admin" vs "feature".
+Admin: <=5 Calls ODER keine Projekt-Edits und kein /coder. Feature: Projekt-Edits oder /coder.
+SKIP-Violations nur bei Feature-Sessions. Admin-Compliance wird als `null` ausgegeben.
+
+**Konsequenzen:** Audit-Berichte differenzieren jetzt nach Session-Typ. Keine false-positive
+SKIP-Violations mehr bei Admin/Routing/Config-Sessions.
+
+## 2026-04-04: Code-Refactoring Batch (Audit-Findings)
+
+**Kontext:** Audit 2026-04-04 fand 4 MEDIUM Code-Duplikationen.
+
+**Entscheidung:** Drei Refactorings in einem Batch:
+- `getMiniMax()` Singleton: 4x im Extractor → 1x `lib/minimax.ts`
+- `unfoldField()` Utility: `icalField` + `vcardField` vereinheitlicht in `lib/ical-utils.ts`
+- CalDavSource/CardDavSource Pool: Zentralisiert in `lib/pim-access.ts`
+
+**Alternativen:** Einzeln in separaten Sessions (verworfen — zusammenhaengend, gleicher Scope).
+
+**Konsequenzen:** ~60 Zeilen Code-Duplikation eliminiert. Plugin-Isolation bleibt gewahrt
+(Sonarr/Radarr bewusst getrennt, siehe DECISIONS.md 2026-04-03).
+
+## 2026-04-04: workflow-patterns.md Bereinigung
+
+**Kontext:** 79% der "geloesten" Fixes verwiesen auf nicht-existierende Dateien.
+38 von 62 Patterns waren offen, viele davon obsolet durch SDK-Umstellung.
+
+**Entscheidung:** 20 Patterns als geloest markiert:
+- consult-agent.sh Patterns → obsolet durch consult-sdk.mjs
+- Claude-Verhalten-Patterns (redundant-grep, read-after-edit etc.) → Awareness reicht
+- Fix-Referenzen korrigiert auf tatsaechliche Dateien (CLAUDE.md, workflow.md, feedback_*.md)
+
+**Konsequenzen:** Umsetzungsrate steigt von 39% auf ~65%. Verbleibende offene Patterns
+sind echte strukturelle Probleme (ORCH-FIX, Skill-Isolation).
+
 ## 2026-04-04: System-Prompt Externalisierung (home-llm)
 
 **Kontext:** System-Prompt war als mehrzeiliger String in `conversation.py` hardcodiert.
