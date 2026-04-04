@@ -58,8 +58,8 @@ async function processFile(
 
   const batchSize = parseInt(process.env.EXTRACTION_BATCH_SIZE ?? '10', 10);
 
-  if (mode === 'backfill' && processCount >= 2 && batchSize > 1) {
-    // Batch mode: process turns in groups
+  if (mode === 'backfill' && processCount >= 2 && batchSize > 1 && config.extractorEngine !== 'sdk') {
+    // Batch mode: process turns in groups (not used in sdk engine — 1 call/turn is already optimal)
     for (let i = 0; i < processCount; i += batchSize) {
       const count = Math.min(batchSize, processCount - i);
       const result = await processTurnBatch(turns, i, count, filePath, bytesRead);

@@ -25,6 +25,7 @@ EXTRAHIEREN:
 - Wer ist die Person: Name, Beruf, Familie, Wohnort, Hobbys, Haustiere, Geburtstage
 - Beziehungen: "mein Bruder heisst X", "Domi hat am 22. April Geburtstag"
 - Praeferenzen: "ich mag X", "ich schaue Y auf Z", "ich bevorzuge A ueber B"
+- Kontext einbacken: Statt nur "Benni mag X" schreibe "Benni mag X weil Y" wenn der Grund erkennbar ist. Der Kontext hilft dem Agent die Information richtig anzuwenden.
 - Smart-Home/Haushalt: Geraete, Raeume, Regeln, Routinen, Bewohner
 - User KORRIGIERT einen bekannten Fakt ("nein, nicht X sondern Y")
 

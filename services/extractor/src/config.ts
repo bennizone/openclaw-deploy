@@ -93,6 +93,8 @@ export const config = {
   // Quality thresholds
   confidenceFloor: parseFloat(env('CONFIDENCE_FLOOR', '0.5')),
   semanticDedupThreshold: parseFloat(env('SEMANTIC_DEDUP_THRESHOLD', '0.92')),
+  // Feature flag: 'sdk' uses Claude Agent SDK + Structured Output, 'legacy' uses direct MiniMax calls
+  extractorEngine: env('EXTRACTOR_ENGINE', 'legacy') as 'sdk' | 'legacy',
   // Agent display names (loaded from openclaw.json)
   agentNames: loadAgentNames(),
 } as const;

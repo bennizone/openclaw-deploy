@@ -9,6 +9,7 @@
     "benchmark": "node dist/benchmark.js"
   },
   "dependencies": {
+    "@anthropic-ai/claude-agent-sdk": "^0.2.91",
     "@openclaw/bm25-tokenizer": "file:../../shared/bm25-tokenizer",
     "@openclaw/minimax-client": "file:../../shared/minimax-client",
     "@qdrant/js-client-rest": "^1.14.0",

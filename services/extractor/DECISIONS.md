@@ -162,6 +162,34 @@ auch in ZUKÜNFTIGEN Gesprächen gilt?"
 ("Nutze Emojis nicht", "Antworte auf Deutsch") müssen generaliserbar sein.
 Konversations-Kontext für Verifier wird aus cleanWindowForBehavior() gewonnen.
 
+## 2026-04-05: Phase 3 — SDK-Redesign (Phase 1+2)
+
+### Extractor auf Claude Agent SDK umgestellt
+**Status:** Implementiert, Feature-Flag `EXTRACTOR_ENGINE=sdk` (default: `legacy`)
+
+**Entscheidung:** SDK-Agent ersetzt Custom MiniMax Chat-Client im Extractor
+
+**Kontext:** Custom MiniMax Client mit bis zu 11 API-Calls pro Turn (Extract + je Verify),
+JSON-Parse-Fehler im Verifier bei unparseable_response, Behaviors zu vage formuliert.
+
+**Lösung:**
+- `query()` aus `@anthropic-ai/claude-agent-sdk` mit MiniMax M2.7 Backend via `ANTHROPIC_BASE_URL`
+- `outputFormat: { type: 'json_schema', schema: ... }` → kein JSON-Parse-Fehler mehr
+- Kombinierter System-Prompt: Facts + Behaviors + Inline-Verifikation in 1 Call
+- Feature-Flag `EXTRACTOR_ENGINE=sdk|legacy` für sicheren Rollout
+- Fallback auf Legacy-Pipeline bei SDK-Fehler (nach 3 Retries mit Exponential Backoff)
+- PII-Filter (Telefon/E-Mail Regex) nach dem Parsen in TypeScript
+- Confidence-Schwelle: 0.7 (strenger als Legacy 0.5 — Inline-Verifikation übernimmt)
+- SDK-Mode deaktiviert Batch-Verarbeitung in watcher.ts (1 Call/Turn = bereits optimal)
+
+**Alternativen verworfen:**
+- Batch-Optimierung: Architektur bleibt komplex, JSON-Parse-Fehler bleiben
+- Lokales Qwen: Nicht mehr vorhanden nach GPU-Umbau
+
+**Konsequenzen:**
+- Phase 3 (Legacy-Cleanup: batch.ts, verifier.ts, lib/minimax.ts löschen) in separater
+  Session nach Validierung des SDK-Modes im Produktivbetrieb
+
 ### Context-Cleaning vor Behavior-Pass
 **Entscheidung:** cleanWindowForBehavior() entfernt [Erinnerungen], [Regeln],
 TTS-Metadata, WhatsApp-Wrapper vor Behavior-Extraktion

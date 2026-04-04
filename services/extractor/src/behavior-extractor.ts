@@ -37,11 +37,20 @@ Einmaliger Auftrag ist nur fuer dieses Gespraech relevant.
 AUFBAU: <known_facts>, <context>, <current>, <followup> — wie beim Fact-Extractor.
 Extrahiere NUR aus der USER-Nachricht in <current>.
 
+REFORMULIERUNG (WICHTIG):
+Formuliere die Anweisung so KONKRET, dass ein LLM sie ohne weiteren Kontext befolgen kann.
+Beschreibe WANN die Regel greift und WAS konkret anders gemacht werden soll.
+
+Schlecht: "Bei Serien-Releases nach Deutschland suchen"
+Gut: "Wenn du Release-Daten, Episoden-Verfuegbarkeit oder Staffel-Status nennst, nenne IMMER den deutschen Release-Termin, nicht den US-Termin."
+
+Schlecht: "Frag nach dem Raum"
+Gut: "Wenn ein Smart-Home-Befehl ohne Raumangabe kommt, frage ZUERST in welchem Raum — fuehre den Befehl NICHT ohne Raum aus."
+
 Antworte AUSSCHLIESSLICH mit einem JSON-Array:
-[{"instruction": "kurze Regel als Imperativ", "confidence": 0.0-1.0, "sourceContext": "max 100 Zeichen Originalzitat", "scope": "personal|household"}]
+[{"instruction": "konkrete Regel mit WANN und WAS", "confidence": 0.0-1.0, "sourceContext": "max 100 Zeichen Originalzitat", "scope": "personal|household"}]
 
 Wenn KEINE Verhaltensanweisung: leeres Array [].
-Formuliere als klare Regel: "Bei Serien-Releases nach Deutschland-Terminen suchen" statt "Benni moechte dass...".
 Sprache: Deutsch.`;
 
 

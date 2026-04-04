@@ -9,6 +9,7 @@ import { setOffset, logProcessing } from './offset.js';
 import { validateFact } from './validator.js';
 import { verifyFactMiniMax, verifyBehaviorMiniMax } from './verifier.js';
 import { batchExtractFacts, batchExtractBehavior, batchVerifyFacts, batchVerifyBehaviors } from './batch.js';
+import { extractAndVerify } from './lib/sdk-extractor.js';
 
 function targetCollections(agentId: string, scope: string): string[] {
   return scope === 'household'
@@ -23,6 +24,195 @@ function searchCollections(agentId: string): string[] {
 }
 
 /**
+ * Process a single turn using the Claude Agent SDK (EXTRACTOR_ENGINE=sdk).
+ * 1 SDK call per turn: combined fact + behavior extraction with inline verification.
+ * Falls back to legacy processTurn() on SDK failure.
+ */
+async function processTurnSdk(
+  turns: Turn[],
+  index: number,
+  filePath: string,
+  byteOffset: number,
+): Promise<{ extracted: number; written: number; skipped: number }> {
+  const turn = turns[index];
+  const window = buildWindow(turns, index);
+  window.agentDisplayName = config.agentNames[turn.agentId] ?? turn.agentId;
+
+  let extracted = 0;
+  let written = 0;
+  let skipped = 0;
+  let semanticDupes = 0;
+  let behaviorWritten = 0;
+  let behaviorSemanticDupes = 0;
+
+  try {
+    // Step 1: Known facts lookup (same as legacy)
+    const knownFactsSet = new Set<string>();
+    const turnText = `${turn.userText} ${turn.assistantText}`.slice(0, 500);
+    try {
+      const turnEmbed = await embed(turnText);
+      const collections = searchCollections(turn.agentId);
+      const results = await Promise.all(
+        collections.map(coll =>
+          searchSimilar(coll, turnEmbed.vector, config.knownFactsLimit, config.knownFactsScoreThreshold)
+            .catch((err) => { log('debug', 'pipeline-sdk', `Known facts search failed for ${coll}: ${(err as Error).message}`); return []; })
+        )
+      );
+      for (const hits of results) {
+        for (const s of hits) knownFactsSet.add(s.fact);
+      }
+    } catch (err) {
+      log('debug', 'pipeline-sdk', `Known facts lookup failed: ${(err as Error).message}`);
+    }
+    window.knownFacts = [...knownFactsSet];
+
+    if (knownFactsSet.size > 0) {
+      log('debug', 'pipeline-sdk', `Turn ${turn.turnIndex}: ${knownFactsSet.size} known facts`);
+    }
+
+    // Step 2: SDK extraction — 1 call for facts + behaviors with inline verification
+    const { facts, behaviors } = await extractAndVerify(window);
+    extracted = facts.length;
+
+    if (facts.length > 0) {
+      log('info', 'pipeline-sdk', `Turn ${turn.turnIndex}: ${facts.length} fact candidates`);
+    }
+
+    // Step 3: Facts — validate → embed → dedup → write
+    for (const fact of facts) {
+      const validation = validateFact(fact);
+      if (!validation.valid) {
+        log('debug', 'pipeline-sdk', `Validator rejected: "${fact.fact.slice(0, 50)}" (${validation.reason})`);
+        continue;
+      }
+
+      let embeddingResult;
+      try {
+        embeddingResult = await embed(fact.fact);
+      } catch (err) {
+        log('warn', 'pipeline-sdk', `Embedding failed for "${fact.fact.slice(0, 40)}": ${(err as Error).message}`);
+        continue;
+      }
+
+      const targets = targetCollections(turn.agentId, fact.scope ?? 'personal');
+      for (const collection of targets) {
+        const [isDup, similarFacts] = await Promise.all([
+          checkDuplicate(collection, turn.sessionId, turn.turnIndex, fact.fact),
+          searchSimilar(collection, embeddingResult.vector, 3, config.semanticDedupThreshold)
+            .catch((err) => { log('warn', 'pipeline-sdk', `Semantic dedup failed: ${(err as Error).message}`); return []; }),
+        ]);
+
+        if (isDup) {
+          skipped++;
+          log('debug', 'pipeline-sdk', `Exact duplicate skipped in ${collection}`);
+          continue;
+        }
+
+        if (similarFacts.length > 0) {
+          semanticDupes++;
+          log('info', 'pipeline-sdk', `Semantic dupe (${similarFacts[0].score.toFixed(3)}): "${fact.fact.slice(0, 50)}" ≈ "${similarFacts[0].fact.slice(0, 50)}"`);
+          continue;
+        }
+
+        const payload: FactPayload = {
+          fact: fact.fact,
+          type: fact.type,
+          confidence: fact.confidence,
+          sourceContext: fact.sourceContext,
+          agentId: turn.agentId,
+          sessionId: turn.sessionId,
+          turnIndex: turn.turnIndex,
+          timestamp: turn.timestamp,
+          extractedAt: new Date().toISOString(),
+          embeddingSource: embeddingResult.source,
+        };
+        if (fact.scope === 'household') payload.scope = 'household';
+
+        await upsertFact(collection, { vector: embeddingResult.vector, payload });
+        written++;
+        log('info', 'pipeline-sdk', `Written to ${collection}: [${fact.scope}/${fact.type}] ${fact.fact.slice(0, 60)}`);
+      }
+    }
+
+    // Step 4: Behaviors — validate → embed → dedup → write
+    if (behaviors.length > 0) {
+      log('info', 'pipeline-sdk', `Turn ${turn.turnIndex}: ${behaviors.length} behavior candidates`);
+    }
+
+    for (const behavior of behaviors) {
+      if (behavior.instruction.length < 5 || behavior.instruction.length > 500) continue;
+      if (behavior.confidence < 0.7) continue;
+
+      let embeddingResult;
+      try {
+        embeddingResult = await embed(behavior.instruction);
+      } catch (err) {
+        log('warn', 'pipeline-sdk', `Behavior embedding failed: ${(err as Error).message}`);
+        continue;
+      }
+
+      const targets = targetInstructionCollections(turn.agentId, behavior.scope ?? 'personal');
+      for (const collection of targets) {
+        const [isDup, similarFacts] = await Promise.all([
+          checkDuplicate(collection, turn.sessionId, turn.turnIndex, behavior.instruction),
+          searchSimilar(collection, embeddingResult.vector, 3, config.semanticDedupThreshold)
+            .catch((err) => { log('warn', 'pipeline-sdk', `Behavior dedup failed: ${(err as Error).message}`); return []; }),
+        ]);
+
+        if (isDup) {
+          behaviorSemanticDupes++;
+          continue;
+        }
+
+        if (similarFacts.length > 0) {
+          behaviorSemanticDupes++;
+          log('info', 'pipeline-sdk', `Behavior semantic dupe (${similarFacts[0].score.toFixed(3)}): "${behavior.instruction.slice(0, 50)}"`);
+          continue;
+        }
+
+        const payload: FactPayload = {
+          fact: behavior.instruction,
+          type: 'behavior',
+          confidence: behavior.confidence,
+          sourceContext: behavior.sourceContext,
+          agentId: turn.agentId,
+          sessionId: turn.sessionId,
+          turnIndex: turn.turnIndex,
+          timestamp: turn.timestamp,
+          extractedAt: new Date().toISOString(),
+          embeddingSource: embeddingResult.source,
+          scope: behavior.scope ?? 'personal',
+        };
+
+        await upsertFact(collection, { vector: embeddingResult.vector, payload });
+        behaviorWritten++;
+        log('info', 'pipeline-sdk', `Behavior written to ${collection}: ${behavior.instruction.slice(0, 60)}`);
+      }
+    }
+
+    setOffset(filePath, byteOffset, turn.turnIndex);
+    logProcessing({
+      filePath,
+      turnIndex: turn.turnIndex,
+      factsExtracted: extracted,
+      factsWritten: written,
+      skippedDup: skipped,
+      semanticDupes,
+      behaviorExtracted: behaviors.length,
+      behaviorWritten,
+      behaviorSemanticDupes,
+    });
+
+  } catch (err) {
+    const msg = (err as Error).message;
+    log('warn', 'pipeline-sdk', `SDK failed for turn ${turn.turnIndex}, falling back to legacy: ${msg}`);
+    return processTurn(turns, index, filePath, byteOffset);
+  }
+
+  return { extracted, written, skipped };
+}
+
+/**
  * Process a single turn through the extraction pipeline:
  * 1. Embed turn text, fetch known facts from Qdrant (parallel across collections)
  * 2. Extract facts (MiniMax, user-only prompt, known-facts-aware)
@@ -34,6 +224,9 @@ export async function processTurn(
   filePath: string,
   byteOffset: number,
 ): Promise<{ extracted: number; written: number; skipped: number }> {
+  if (config.extractorEngine === 'sdk') {
+    return processTurnSdk(turns, index, filePath, byteOffset);
+  }
   const turn = turns[index];
   const window = buildWindow(turns, index);
   window.agentDisplayName = config.agentNames[turn.agentId] ?? turn.agentId;

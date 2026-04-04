@@ -72,6 +72,7 @@ async function main(): Promise<void> {
   log('info', 'startup', 'OpenClaw Memory Extractor v1.0.0');
   log('info', 'startup', `State dir: ${config.openclawStateDir}`);
   log('info', 'startup', `Agents: ${config.agents.join(', ')}`);
+  log('info', 'startup', `Engine: ${config.extractorEngine}`);
   log('info', 'startup', `Log level: ${config.logLevel}`);
   log('info', 'startup', '═══════════════════════════════════════════');
 
