@@ -1061,7 +1061,19 @@ async function processReflect(agents, minimaxKey) {
     return [];
   }
 
-  log('reflect', `Found ${allSessionPaths.length} sessions for reflect`);
+  // Also collect home-llm tool-call logs
+  const toolLogPattern = '_home-llm_tools.jsonl';
+  let toolLogPaths = [];
+  if (existsSync(EXTRACTOR_LOGS)) {
+    toolLogPaths = readdirSync(EXTRACTOR_LOGS)
+      .filter(f => f.endsWith(toolLogPattern))
+      .sort()
+      .reverse()
+      .slice(0, 7)  // Last 7 days
+      .map(f => join(EXTRACTOR_LOGS, f));
+  }
+
+  log('reflect', `Found ${allSessionPaths.length} sessions + ${toolLogPaths.length} tool-logs for reflect`);
 
   // Load existing learnings
   const reflectCollection = 'reflect_learnings';
@@ -1086,15 +1098,20 @@ async function processReflect(agents, minimaxKey) {
     fact: l.fact, confidence: l.confidence, tools: l.tools,
   })), null, 2));
 
-  // Point SDK to all session files
+  // Point SDK to all session + tool-log files
   const sessionsListFile = join(tmpDir, 'reflect-sessions.txt');
-  writeFileSync(sessionsListFile, allSessionPaths.join('\n'));
+  writeFileSync(sessionsListFile, allSessionPaths.concat(toolLogPaths).join('\n'));
+
+  const toolLogHint = toolLogPaths.length > 0
+    ? `\nLies auch die Home-LLM Tool-Call-Logs:\n${toolLogPaths.join('\n')}\nDiese JSONL-Dateien enthalten Tool-Aufrufe des lokalen HA-Sprachassistenten (Ministral-3 3B).\nJeder Eintrag hat: query (User-Anfrage), tool (aufgerufenes Tool), args, success, error.\nAnalysiere besonders: Falsche Tool-Wahl, falsche Parameter, wiederholte Fehler.\n`
+    : '';
 
   const reflectPrompt = `Du bist der nächtliche Reflect-Agent. Analysiere alle Agent-Sessions auf Fehler, Ineffizienzen und Optimierungspotential.
 
 Die bekannten Learnings sind im Kontext enthalten.
 
 Lies die Session-Dateien die in ${sessionsListFile} aufgelistet sind. Es sind JSONL-Dateien mit OpenClaw-Konversationen.
+${toolLogHint}
 
 Analysiere:
 1. Tool-Call-Loops: Gleicher Tool mehrfach mit ähnlichen Parametern ohne Lerneffekt

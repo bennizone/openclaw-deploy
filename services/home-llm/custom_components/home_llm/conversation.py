@@ -53,6 +53,24 @@ _LOGGER = logging.getLogger(__name__)
 _TOOL_LOGGER = logging.getLogger(f"{__name__}.tool_calls")
 
 
+def _log_tool_call_jsonl(entry: dict) -> None:
+    """Append tool-call entry to daily JSONL log (04:00-04:00 boundary)."""
+    try:
+        from datetime import timedelta
+        now = datetime.now()
+        # 04:00-Tagesschnitt: vor 04:00 zählt zum Vortag
+        boundary = now - timedelta(hours=4)
+        date_str = boundary.strftime("%Y-%m-%d")
+        log_dir = Path.home() / "extractor" / "logs"
+        log_dir.mkdir(parents=True, exist_ok=True)
+        log_path = log_dir / f"{date_str}_home-llm_tools.jsonl"
+        entry["timestamp"] = now.isoformat()
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass  # Logging darf nie den Hauptflow stören
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     config_entry: ConfigEntry,
@@ -407,42 +425,85 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
         if not vector:
             return "[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]"
 
+        collections = {
+            "memories": [f"memories_{self._agent_id}", "memories_household"],
+            "instructions": [f"instructions_{self._agent_id}", "instructions_household"],
+            "learnings": ["reflect_learnings"],
+        }
+
+        results_by_type: dict[str, list[tuple[float, str, float]]] = {
+            "memories": [],
+            "instructions": [],
+            "learnings": [],
+        }
+
         try:
             async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self._qdrant_url}/collections/{self._qdrant_collection}/points/search",
-                    json={
-                        "vector": vector,
-                        "limit": self._top_k,
-                        "with_payload": True,
-                        "score_threshold": 0.3,
-                    },
-                    timeout=aiohttp.ClientTimeout(total=3),
-                ) as resp:
-                    if resp.status != 200:
-                        _LOGGER.debug("Qdrant returned HTTP %s", resp.status)
-                        return "[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]"
-                    data = await resp.json()
-                    results = data.get("result", [])
-                    if not results:
-                        return ""
-
-                    facts = []
-                    seen = set()
-                    for r in results:
-                        fact = r.get("payload", {}).get("fact", "")
-                        if fact and fact not in seen:
-                            facts.append(fact)
-                            seen.add(fact)
-
-                    if not facts:
-                        return ""
-
-                    lines = "\n".join(f"- {f}" for f in facts)
-                    return f"Bekannte Fakten ({self._agent_id}, aus Memory):\n" + lines
+                for result_type, colls in collections.items():
+                    for col in colls:
+                        try:
+                            async with session.post(
+                                f"{self._qdrant_url}/collections/{col}/points/query",
+                                json={
+                                    "query": vector,
+                                    "using": "dense",
+                                    "limit": self._top_k if result_type == "memories" else 3,
+                                    "with_payload": True,
+                                    "score_threshold": 0.3 if result_type == "memories" else 0.5,
+                                },
+                                timeout=aiohttp.ClientTimeout(total=3),
+                            ) as resp:
+                                if resp.status != 200:
+                                    continue
+                                data = await resp.json()
+                                for r in (data.get("result", {}).get("points", [])):
+                                    payload = r.get("payload", {})
+                                    fact = payload.get("fact", "")
+                                    score = r.get("score", 0)
+                                    confidence = payload.get("confidence", 1.0)
+                                    if fact:
+                                        results_by_type[result_type].append((score, fact, confidence))
+                        except Exception:
+                            continue
         except (aiohttp.ClientError, TimeoutError, Exception) as err:
-            _LOGGER.debug("Qdrant search failed: %s", err)
+            _LOGGER.debug("Memory search failed: %s", err)
             return "[Memory-System: offline]\nLangzeitspeicher nicht erreichbar — antworte mit Kurzzeit-/Konversationswissen.\n[/Memory-System]"
+
+        parts: list[str] = []
+
+        # Deduplicate and sort by score * confidence
+        def dedup_and_sort(items: list, limit: int) -> list:
+            seen: set[str] = set()
+            unique = []
+            for score, fact, conf in items:
+                if fact not in seen:
+                    seen.add(fact)
+                    unique.append((score * conf, fact, conf))
+            unique.sort(key=lambda x: x[0], reverse=True)
+            return unique[:limit]
+
+        # Instructions
+        instructions = dedup_and_sort(results_by_type["instructions"], 3)
+        if instructions:
+            lines = "\n".join(f"- {fact}" for _, fact, _ in instructions)
+            parts.append(f"[Anweisungen — persönliche Verhaltensregeln]\n{lines}\n[/Anweisungen]")
+
+        # Learnings / Hinweise
+        learnings = dedup_and_sort(results_by_type["learnings"], 3)
+        if learnings:
+            lines = "\n".join(f"- {fact} [{int(conf*100)}%]" for _, fact, conf in learnings)
+            parts.append(f"[Hinweise — aus vergangenen Fehlern gelernt]\n{lines}\n[/Hinweise]")
+
+        # Memory facts
+        memories = dedup_and_sort(results_by_type["memories"], self._top_k)
+        if memories:
+            lines = "\n".join(f"- {fact}" for _, fact, _ in memories)
+            parts.append(f"[Erinnerungen — relevante Fakten aus früheren Gesprächen]\n{lines}\n[/Erinnerungen]")
+
+        if not parts:
+            return ""
+
+        return "\n\n".join(parts)
 
     # ── Conversation buffer ──
 
@@ -579,6 +640,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                 "TOOL_CALL_FAIL user=%s tool=? args=? error=bad format: %s",
                 query[:80], err,
             )
+            _log_tool_call_jsonl({"type": "tool_call", "success": False, "query": query[:200], "tool": None, "args": None, "error": f"bad format: {err}"})
             return False
 
         matching_tool = None
@@ -592,6 +654,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                 "TOOL_CALL_FAIL user=%s tool=%s args=%s error=tool not found",
                 query[:80], tool_name, json.dumps(tool_args),
             )
+            _log_tool_call_jsonl({"type": "tool_call", "success": False, "query": query[:200], "tool": tool_name, "args": tool_args, "error": "tool not found"})
             return False
 
         try:
@@ -604,12 +667,14 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                 "TOOL_CALL_SUCCESS user=%s tool=%s args=%s",
                 query[:80], tool_name, json.dumps(tool_args),
             )
+            _log_tool_call_jsonl({"type": "tool_call", "success": True, "query": query[:200], "tool": tool_name, "args": tool_args, "error": None})
             return True
         except Exception as err:
             _TOOL_LOGGER.warning(
                 "TOOL_CALL_FAIL user=%s tool=%s args=%s error=%s",
                 query[:80], tool_name, json.dumps(tool_args), err,
             )
+            _log_tool_call_jsonl({"type": "tool_call", "success": False, "query": query[:200], "tool": tool_name, "args": tool_args, "error": str(err)[:200]})
             return False
 
     # ── Main processing ──
@@ -664,6 +729,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
             elif content:
                 # Retry: feed speech text to HA intent system
                 _TOOL_LOGGER.info("Retry als Intent: %s", content[:80])
+                _log_tool_call_jsonl({"type": "intent_retry", "success": None, "query": query[:200], "tool": None, "args": None, "error": None, "retryText": content[:200]})
                 try:
                     retry_result = await conversation.async_converse(
                         self.hass,
