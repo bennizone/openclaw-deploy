@@ -486,14 +486,23 @@ function callDreamSDK(prompt, { inputFile, contextFile, maxTurns = 20, agentId =
   if (inputFile) args.push('--input-file', inputFile);
   if (contextFile) args.push('--context-file', contextFile);
 
+  const SDK_TIMEOUT = 300000;
+  const startMs = Date.now();
   try {
     const result = execFileSync('node', args, {
       cwd: REPO_DIR,
-      timeout: 300000,
+      timeout: SDK_TIMEOUT,
       maxBuffer: 10 * 1024 * 1024,
       encoding: 'utf-8',
       env: { ...process.env, NODE_NO_WARNINGS: '1' },
     });
+
+    const durationSec = Math.round((Date.now() - startMs) / 1000);
+    if (durationSec > SDK_TIMEOUT / 1000 * 0.8) {
+      log(agentId, `SDK call took ${durationSec}s (timeout: ${SDK_TIMEOUT / 1000}s) — near limit!`);
+    } else {
+      log(agentId, `SDK call took ${durationSec}s`);
+    }
 
     // Parse JSON from result — strip any non-JSON prefix/suffix
     const jsonMatch = result.match(/\[[\s\S]*?\]/);
@@ -503,7 +512,8 @@ function callDreamSDK(prompt, { inputFile, contextFile, maxTurns = 20, agentId =
     }
     return JSON.parse(jsonMatch[0]);
   } catch (err) {
-    log(agentId, `SDK call failed: ${err.message?.slice(0, 100)}`);
+    const durationSec = Math.round((Date.now() - startMs) / 1000);
+    log(agentId, `SDK call failed after ${durationSec}s: ${err.message?.slice(0, 100)}`);
     return null;
   }
 }
