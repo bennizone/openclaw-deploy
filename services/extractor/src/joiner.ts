@@ -184,8 +184,12 @@ function logFileName(date: string, agentId: string, channel: string): string {
   return `${date}_${agentId}_${channel}.jsonl`;
 }
 
+const DAY_BOUNDARY_HOUR = 4; // Dream-Tag beginnt um 04:00
+
 function dateFromTimestamp(ts: string): string {
-  return ts.slice(0, 10); // YYYY-MM-DD
+  const d = new Date(ts);
+  d.setHours(d.getHours() - DAY_BOUNDARY_HOUR);
+  return d.toISOString().slice(0, 10);
 }
 
 function appendTurnsToLog(turns: JoinedTurn[], agentId: string, channel: string): void {

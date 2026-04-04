@@ -288,11 +288,30 @@ export default {
         }
       }
 
-      if (searchError && allFacts.length === 0 && allInstructions.length === 0) {
+      // --- Reflect learnings search (reflect_learnings collection, global) ---
+      const allLearnings: Array<{ fact: string; type: string; score: number; source: string }> = [];
+
+      const learningsResults = await searchQdrantHybrid(cfg.qdrantUrl, 'reflect_learnings', vector, userText, 3);
+      if (learningsResults === null) {
+        searchError = true;
+        api.logger.warn('[memory-recall] Qdrant search failed for collection reflect_learnings');
+      }
+      if (learningsResults) {
+        for (const r of learningsResults) {
+          allLearnings.push({
+            fact: r.payload.fact,
+            type: r.payload.type,
+            score: r.score,
+            source: 'reflect',
+          });
+        }
+      }
+
+      if (searchError && allFacts.length === 0 && allInstructions.length === 0 && allLearnings.length === 0) {
         return { prependContext: MEMORY_OFFLINE_HINT };
       }
 
-      if (allFacts.length === 0 && allInstructions.length === 0) {
+      if (allFacts.length === 0 && allInstructions.length === 0 && allLearnings.length === 0) {
         // Still inject rules even without facts or instructions
         if (cfg.enableRules) {
           const rules = readRulesFile(agentId);
@@ -313,9 +332,13 @@ export default {
         }
       }
 
-      // Sort by score descending, limit to topK
+      // Sort by score * confidence descending, limit to topK
       const topFacts = [...dedupedFacts.values()]
-        .sort((a, b) => b.score - a.score)
+        .sort((a, b) => {
+          const aConf = (a as any).confidence ?? 1;
+          const bConf = (b as any).confidence ?? 1;
+          return (b.score * bConf) - (a.score * aConf);
+        })
         .slice(0, cfg.topK);
 
       // Deduplicate instructions by text (keep highest score)
@@ -355,9 +378,29 @@ export default {
         ].join('\n'));
       }
 
-      // 3. Memory facts injection
+      // 3. Reflect learnings injection
+      if (allLearnings.length > 0) {
+        const learningLines = allLearnings.map(l => {
+          const p = l as typeof allLearnings[0] & { confidence?: number };
+          const conf = p.confidence != null ? ` [${Math.round(p.confidence * 100)}%]` : '';
+          return `- ${l.fact}${conf}`;
+        }).join('\n');
+        api.logger.debug(`[memory-recall] Injecting ${allLearnings.length} learnings`);
+        parts.push([
+          '[Hinweise — aus vergangenen Fehlern gelernt]',
+          learningLines,
+          '[/Hinweise]',
+        ].join('\n'));
+      }
+
+      // 4. Memory facts injection
       if (topFacts.length > 0) {
-        const factLines = topFacts.map(f => `- ${f.fact}`).join('\n');
+        const factLines = topFacts.map(f => {
+          const p = f as typeof allFacts[0] & { confidence?: number; updatedAt?: string };
+          const conf = p.confidence != null ? ` [${Math.round(p.confidence * 100)}%]` : '';
+          const age = p.updatedAt ? ` (${p.updatedAt.slice(0, 10)})` : '';
+          return `- ${f.fact}${conf}${age}`;
+        }).join('\n');
         api.logger.debug(`[memory-recall] Injecting ${topFacts.length} facts for ${agentId}: ${topFacts.map(f => f.fact.slice(0, 40)).join(', ')}`);
         parts.push([
           '[Erinnerungen — relevante Fakten aus früheren Gesprächen]',

@@ -31,6 +31,8 @@ let usageLog = "";
 let sessionLogDir = null; // null = nicht aktiviert, string = Pfad (Default oder explizit)
 let maxTurns = 15;
 let tools = "";
+let contextFile = "";
+let outputFormat = "";
 
 for (let i = 0; i < args.length; i++) {
   switch (args[i]) {
@@ -69,6 +71,12 @@ for (let i = 0; i < args.length; i++) {
     case "--tools":
       tools = args[++i];
       break;
+    case "--context-file":
+      contextFile = args[++i];
+      break;
+    case "--output-format":
+      outputFormat = args[++i];
+      break;
   }
 }
 
@@ -84,7 +92,9 @@ if (!question) {
     "  --session-log [dir]  Session-Streams als JSONL loggen\n" +
     "                       (Default: ~/.openclaw/sdk-sessions/ wenn das Verzeichnis existiert)\n" +
     "  --max-turns <n>      Max agentic turns (Default: 15)\n" +
-    "  --tools <list>       Komma-separierte Tool-Liste (Default: Read,Glob,Grep)\n"
+    "  --tools <list>       Komma-separierte Tool-Liste (Default: Read,Glob,Grep)\n" +
+    "  --context-file <path>  JSON-Datei als Kontext an den System-Prompt anhaengen\n" +
+    "  --output-format <fmt>  Erwartetes Ausgabeformat (z.B. 'json') — Hinweis an System-Prompt\n"
   );
   process.exit(1);
 }
@@ -143,6 +153,19 @@ if (component) {
 if (brief) {
   systemPrompt +=
     "\n\nWICHTIG: Antworte kompakt — maximal 5-8 Saetze. Nur wesentliche Inhalte.";
+}
+
+if (contextFile) {
+  if (!existsSync(contextFile)) {
+    process.stderr.write(`ERROR: Context-Datei '${contextFile}' nicht gefunden\n`);
+    process.exit(1);
+  }
+  const contextData = readFileSync(contextFile, "utf-8");
+  systemPrompt += `\n\n---\n\nKontext (bestehende Daten):\n${contextData}`;
+}
+
+if (outputFormat === "json") {
+  systemPrompt += "\n\nWICHTIG: Antworte NUR als valides JSON. Kein Markdown, kein Text drumherum. Nur das JSON-Array oder -Objekt.";
 }
 
 // --- Prompt bauen ---
@@ -229,6 +252,10 @@ for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
           },
         }
       : undefined;
+
+    if (!mcpServers) {
+      process.stderr.write("WARN: Tool-Hub MCP nicht gefunden — SDK-Agent laeuft ohne externe Tools\n");
+    }
 
     for await (const message of query({
       prompt: fullPrompt,
