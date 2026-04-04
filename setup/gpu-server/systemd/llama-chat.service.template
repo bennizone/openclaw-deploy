@@ -1,34 +1,32 @@
 [Unit]
-Description=llama.cpp Chat Server (Qwen 3.5 9B)
+Description=llama.cpp Chat Server (Ministral-3 3B)
 After=network.target
 
 [Service]
 # threads-batch wird dynamisch berechnet: CPU-Kerne - 2
-# (1 Kern fuer Inference-Thread, 1 Reserve fuer OS)
-# Minimum: 2
 ExecStartPre=/bin/bash -c 'CORES=$(nproc); TB=$((CORES > 4 ? CORES - 2 : 2)); echo "THREADS_BATCH=$TB" > /tmp/llama-chat-env'
 EnvironmentFile=/tmp/llama-chat-env
 # --- GPU-Server Parameter-Guide ---
-# ctx-size: VRAM-abhaengig. 8GB→32768, 11GB→196608.
-#   Groesserer ctx = mehr VRAM fuer KV-Cache. Im Onboarding mit User abstimmen.
-# parallel: parallel=2 halbiert ctx pro Slot. Bei knappem VRAM: parallel=1 fuer maximalen Context.
-#   Im Onboarding wird der User gefragt ob parallel=2 oder parallel=1 gewuenscht ist.
-# cache-type q4_0: KV-Cache Quantisierung spart ~1.5GB VRAM vs F16. Gehoert zur ctx-size Optimierung.
-# flash-attn: Reduziert VRAM-Verbrauch fuer Attention-Berechnung.
-# reasoning-budget: Server-Maximum, per API-Request steuerbar. Verdoppelt auf 2048 (2026-04-02).
+# Modell: Ministral-3 3B (2 GB, kein Thinking, natives Tool-Calling)
+# Gewechselt 2026-04-04 von Qwen3.5-9B-Opus-Distilled (5.3 GB, 2629ms → 300ms, 9x schneller)
+# parallel=2: Modell klein genug fuer 2 Slots mit f16 KV (6.2 GB total mit Embedding)
+# f16 KV: Beste Qualitaet, bei 2x16k Kontext nur ~60 MB. Kein Grund zu quantisieren.
+# no-mmap: Eliminiert Page-Fault-Serialisierung (Cold TTFT -81%)
+# -b 4096: Groessere Batches fuer schnelleren Prefill
+# Kein --reasoning-budget: Ministral-3 hat kein Thinking
 ExecStart=/home/GPUUSER/llama.cpp/build/bin/llama-server \
-  --model /home/GPUUSER/models/Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M.gguf \
+  --model /home/GPUUSER/models/Ministral-3-3B-Instruct-Q4_K_M.gguf \
   --port 8080 --host 0.0.0.0 \
   --ctx-size 32768 \
-  --n-predict 8192 \
+  --n-predict 4096 \
   --n-gpu-layers 999 \
   --parallel 2 \
-  --cache-type-k q4_0 --cache-type-v q4_0 \
   --flash-attn auto \
   --jinja \
-  --threads 1 \
+  --threads 2 \
   --threads-batch ${THREADS_BATCH} \
-  --reasoning-budget 2048
+  --no-mmap \
+  -b 4096 -ub 512
 Restart=always
 RestartSec=5
 

@@ -418,7 +418,13 @@ echo "Starting benchmark..." >&2
 
 # Determine budgets to test
 BUDGETS_ARRAY=()
-if [[ -n "$THINKING_BUDGETS" ]]; then
+if [[ "$THINKING_BUDGETS" == "auto" ]]; then
+  # Auto mode: test with thinking OFF and ON (server-default budget)
+  # Per-request budget control is not supported by llama-server — only enable_thinking on/off
+  echo "" >&2
+  echo "Auto-thinking: will test with thinking OFF (0) and ON (default)" >&2
+  BUDGETS_ARRAY=("0" "")
+elif [[ -n "$THINKING_BUDGETS" ]]; then
   IFS=',' read -ra BUDGETS_ARRAY <<< "$THINKING_BUDGETS"
 else
   BUDGETS_ARRAY=("")  # Single run with default
@@ -490,36 +496,35 @@ fi
 # ── Quality tests ──
 
 if [[ "$SPEED_ONLY" != "true" ]]; then
-  for ((c=0; c<CONV_COUNT; c++)); do
-    CONV_NAME=$(jq -r ".conversations[$c].name" "$DATASET_FILE")
-    CONV_CATEGORY=$(jq -r ".conversations[$c].category // \"unknown\"" "$DATASET_FILE")
+  # Budget as outer loop — prevents KV cache warmth from biasing cross-budget comparison
+  for budget in "${BUDGETS_ARRAY[@]}"; do
+    BUDGET_LABEL="${budget:-default}"
+    echo "" >&2
+    echo "=== Budget: $BUDGET_LABEL ===" >&2
 
-    echo "  [$((c+1))/$CONV_COUNT] $CONV_NAME ($CONV_CATEGORY)" >&2
+    for ((c=0; c<CONV_COUNT; c++)); do
+      CONV_NAME=$(jq -r ".conversations[$c].name" "$DATASET_FILE")
+      CONV_CATEGORY=$(jq -r ".conversations[$c].category // \"unknown\"" "$DATASET_FILE")
 
-    MESSAGES=$(build_messages "$c")
+      echo "  [$((c+1))/$CONV_COUNT] $CONV_NAME ($CONV_CATEGORY)" >&2
 
-    # Check if this conversation requires tool definitions
-    CONV_MODE=$(jq -r ".conversations[$c].mode // \"default\"" "$DATASET_FILE")
-    TOOLS_JSON=""
-    if [[ "$CONV_MODE" == "with_tools" ]]; then
-      TOOLS_JSON=$(jq -r '.tool_definitions // []' "$DATASET_FILE")
-      echo "    (with tool definitions)" >&2
-    fi
+      MESSAGES=$(build_messages "$c")
 
-    CONV_RESULTS="[]"
+      # Check if this conversation requires tool definitions
+      CONV_MODE=$(jq -r ".conversations[$c].mode // \"default\"" "$DATASET_FILE")
+      TOOLS_JSON=""
+      if [[ "$CONV_MODE" == "with_tools" ]]; then
+        TOOLS_JSON=$(jq -r '.tool_definitions // []' "$DATASET_FILE")
+      fi
 
-    for budget in "${BUDGETS_ARRAY[@]}"; do
-      BUDGET_LABEL="${budget:-default}"
-      echo "    Budget: $BUDGET_LABEL" >&2
-
+      # Brief pause between requests for clean metrics (no residual GPU state)
+      sleep 1
       RESULT=$(send_request "$MESSAGES" "$budget" "$TOOLS_JSON" 2>/dev/null || echo '{"error":"request_failed"}')
       RESULT=$(echo "$RESULT" | jq --arg name "$CONV_NAME" --arg cat "$CONV_CATEGORY" --arg mode "$CONV_MODE" \
         '. + {conversation: $name, category: $cat, mode: $mode}')
 
-      CONV_RESULTS=$(echo "$CONV_RESULTS" | jq --argjson r "$RESULT" '. + [$r]')
+      ALL_RESULTS=$(jq -s '.[0] + [.[1]]' <(echo "$ALL_RESULTS") <(echo "$RESULT"))
     done
-
-    ALL_RESULTS=$(echo "$ALL_RESULTS" | jq --argjson r "$CONV_RESULTS" '. + $r')
   done
 
   # Parallel test (use first conversation's messages)
@@ -545,8 +550,13 @@ TOOL_CALL_VALID=$(echo "$ALL_RESULTS" | jq '[.[] | select(.has_tool_calls == tru
 ERRORS=$(echo "$ALL_RESULTS" | jq '[.[] | select(.error)] | length')
 AVG_PROMPT_TOKENS=$(echo "$ALL_RESULTS" | jq '[.[].prompt_tokens | select(. > 0)] | if length > 0 then (add / length | floor) else 0 end')
 AVG_COMPLETION_TOKENS=$(echo "$ALL_RESULTS" | jq '[.[].completion_tokens | select(. > 0)] | if length > 0 then (add / length | floor) else 0 end')
+AVG_TOOL_CALL_MS=$(echo "$ALL_RESULTS" | jq '[.[] | select(.has_tool_calls == true) | .total_ms] | if length > 0 then (add / length | floor) else 0 end')
 
 # ── Build final output ──
+
+# Write results to temp file to avoid "argument list too long" with large thinking outputs
+RESULTS_TMP=$(mktemp)
+echo "$ALL_RESULTS" > "$RESULTS_TMP"
 
 FINAL=$(jq -n \
   --arg timestamp "$TIMESTAMP" \
@@ -565,9 +575,10 @@ FINAL=$(jq -n \
   --argjson errors "$ERRORS" \
   --argjson avg_prompt_tokens "$AVG_PROMPT_TOKENS" \
   --argjson avg_completion_tokens "$AVG_COMPLETION_TOKENS" \
+  --argjson avg_tool_call_ms "$AVG_TOOL_CALL_MS" \
   --argjson speed_test "$SPEED_RESULT" \
   --argjson parallel "$PARALLEL_RESULT" \
-  --argjson results "$ALL_RESULTS" \
+  --slurpfile results "$RESULTS_TMP" \
   '{
     meta: {
       timestamp: $timestamp,
@@ -581,6 +592,7 @@ FINAL=$(jq -n \
       speed_test: $speed_test,
       ttft_ms: { avg: $avg_ttft, p50: $p50_ttft, p95: $p95_ttft },
       tokens_per_sec_avg: $avg_tps,
+      avg_tool_call_ms: $avg_tool_call_ms,
       avg_prompt_tokens: $avg_prompt_tokens,
       avg_completion_tokens: $avg_completion_tokens,
       parallel: $parallel
@@ -591,8 +603,10 @@ FINAL=$(jq -n \
       tool_calls_valid: $tool_call_valid,
       errors: $errors
     },
-    results: $results
+    results: $results[0]
   }')
+
+rm -f "$RESULTS_TMP"
 
 # Save
 echo "$FINAL" | jq . > "$OUTPUT_FILE"
@@ -620,7 +634,7 @@ if [[ "$PARALLEL_TEST" == "true" ]]; then
 fi
 echo "Tests:     $TOTAL_TESTS total, $ERRORS errors" >&2
 if [[ "$TOOL_CALL_TESTS" -gt 0 ]]; then
-  echo "Tool-Calls: $TOOL_CALL_VALID/$TOOL_CALL_TESTS valid JSON" >&2
+  echo "Tool-Calls: $TOOL_CALL_VALID/$TOOL_CALL_TESTS valid JSON (avg ${AVG_TOOL_CALL_MS}ms)" >&2
 fi
 echo "═════════════════════════" >&2
 

@@ -1,0 +1,583 @@
+{
+  "meta": {
+    "timestamp": "2026-04-04T14:34:14Z",
+    "model": "Qwen3-8B-Q4_K_M.gguf",
+    "gpu": "unknown",
+    "gpu_vram": "unknown",
+    "dataset": "ha",
+    "endpoint": "http://localhost:8080"
+  },
+  "performance": {
+    "speed_test": {},
+    "ttft_ms": {
+      "avg": 433,
+      "p50": 309,
+      "p95": 885
+    },
+    "tokens_per_sec_avg": 50.9,
+    "avg_tool_call_ms": 744,
+    "avg_prompt_tokens": 814,
+    "avg_completion_tokens": 22,
+    "parallel": {}
+  },
+  "summary": {
+    "total_tests": 28,
+    "tool_call_tests": 8,
+    "tool_calls_valid": 8,
+    "errors": 0
+  },
+  "results": [
+    {
+      "content": "Deckenlampe Wohnzimmer ist an. Ambiente ist aus.",
+      "thinking": "",
+      "ttft_ms": 688,
+      "total_ms": 688,
+      "prompt_tokens": 675,
+      "completion_tokens": 15,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 21.8,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Schlafzimmer ist es 18 Grad warm.",
+      "thinking": "",
+      "ttft_ms": 243,
+      "total_ms": 243,
+      "prompt_tokens": 675,
+      "completion_tokens": 13,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 53.4,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Das Klima im Wohnzimmer ist 21 Grad Celsius und 43 Prozent Luftfeuchtigkeit.",
+      "thinking": "",
+      "ttft_ms": 420,
+      "total_ms": 420,
+      "prompt_tokens": 676,
+      "completion_tokens": 24,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.1,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "mode": "default"
+    },
+    {
+      "content": "Deckenlampe Wohnzimmer an. Erledigt.",
+      "thinking": "",
+      "ttft_ms": 242,
+      "total_ms": 242,
+      "prompt_tokens": 674,
+      "completion_tokens": 13,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 53.7,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Gerätsteuerung: Licht einschalten",
+      "category": "entity-control",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Suche mir ein gutes veganes Restaurant in Sindelfingen",
+      "thinking": "",
+      "ttft_ms": 309,
+      "total_ms": 309,
+      "prompt_tokens": 679,
+      "completion_tokens": 17,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 55.0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Delegation: Websuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Was steht morgen im Kalender?",
+      "thinking": "",
+      "ttft_ms": 242,
+      "total_ms": 242,
+      "prompt_tokens": 674,
+      "completion_tokens": 13,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 53.7,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Haben wir Severance in der Bibliothek?",
+      "thinking": "",
+      "ttft_ms": 291,
+      "total_ms": 291,
+      "prompt_tokens": 677,
+      "completion_tokens": 16,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 54.9,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "Licht an.",
+      "thinking": "",
+      "ttft_ms": 111,
+      "total_ms": 111,
+      "prompt_tokens": 670,
+      "completion_tokens": 5,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 45.0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "mode": "default"
+    },
+    {
+      "content": "Paris.",
+      "thinking": "",
+      "ttft_ms": 82,
+      "total_ms": 82,
+      "prompt_tokens": 675,
+      "completion_tokens": 3,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 36.5,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "mode": "default"
+    },
+    {
+      "content": "Klimasensor Wohnzimmer: 21 Grad, Klimasensor Schlafzimmer: 19 Grad, Bewegungsmelder Küche: 17 Grad.",
+      "thinking": "",
+      "ttft_ms": 662,
+      "total_ms": 662,
+      "prompt_tokens": 679,
+      "completion_tokens": 38,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.4,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "0",
+      "conversation": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "mode": "default"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 887,
+      "total_ms": 887,
+      "prompt_tokens": 1160,
+      "completion_tokens": 35,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 39.4,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOn",
+          "arguments": {
+            "name": "Deckenlampe Wohnzimmer",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 711,
+      "total_ms": 711,
+      "prompt_tokens": 1161,
+      "completion_tokens": 41,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.6,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassLightSet",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro",
+            "brightness": "100"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 777,
+      "total_ms": 777,
+      "prompt_tokens": 1167,
+      "completion_tokens": 45,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.9,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassClimateSetTemperature",
+          "arguments": {
+            "name": "Heizung Schlafzimmer",
+            "area": "Schlafzimmer",
+            "temperature": "20 Grad"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 607,
+      "total_ms": 607,
+      "prompt_tokens": 1164,
+      "completion_tokens": 33,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 54.3,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOff",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "0",
+      "conversation": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "Deckenlampe Wohnzimmer ist an. Ambiente ist aus.",
+      "thinking": "",
+      "ttft_ms": 277,
+      "total_ms": 277,
+      "prompt_tokens": 675,
+      "completion_tokens": 15,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 54.1,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Licht-Status",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Im Schlafzimmer ist es 19 Grad.",
+      "thinking": "",
+      "ttft_ms": 227,
+      "total_ms": 227,
+      "prompt_tokens": 675,
+      "completion_tokens": 12,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 52.8,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Temperatur",
+      "category": "entity-query-simple",
+      "mode": "default"
+    },
+    {
+      "content": "Das Klima im Wohnzimmer ist 21 Grad Celsius und 43 Prozent Luftfeuchtigkeit.",
+      "thinking": "",
+      "ttft_ms": 419,
+      "total_ms": 419,
+      "prompt_tokens": 676,
+      "completion_tokens": 24,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.2,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Entity-Abfrage: Mehrere Sensoren",
+      "category": "entity-query-multi",
+      "mode": "default"
+    },
+    {
+      "content": "Deckenlampe Wohnzimmer ist an. Erledigt.",
+      "thinking": "",
+      "ttft_ms": 258,
+      "total_ms": 259,
+      "prompt_tokens": 674,
+      "completion_tokens": 14,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 54.0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Gerätsteuerung: Licht einschalten",
+      "category": "entity-control",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Suche mir ein gutes veganes Restaurant in Sindelfingen",
+      "thinking": "",
+      "ttft_ms": 308,
+      "total_ms": 308,
+      "prompt_tokens": 679,
+      "completion_tokens": 17,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 55.1,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Websuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Was steht morgen im Kalender?",
+      "thinking": "",
+      "ttft_ms": 243,
+      "total_ms": 243,
+      "prompt_tokens": 674,
+      "completion_tokens": 13,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 53.4,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Kalender",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "OPENCLAW: Haben wir Severance in der Bibliothek?",
+      "thinking": "",
+      "ttft_ms": 291,
+      "total_ms": 291,
+      "prompt_tokens": 677,
+      "completion_tokens": 16,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 54.9,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Delegation: Mediensuche",
+      "category": "openclaw-delegation",
+      "mode": "default"
+    },
+    {
+      "content": "Licht an.",
+      "thinking": "",
+      "ttft_ms": 111,
+      "total_ms": 111,
+      "prompt_tokens": 670,
+      "completion_tokens": 5,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 45.0,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Mehrdeutiger Raum",
+      "category": "edge-ambiguous",
+      "mode": "default"
+    },
+    {
+      "content": "Paris.",
+      "thinking": "",
+      "ttft_ms": 85,
+      "total_ms": 85,
+      "prompt_tokens": 675,
+      "completion_tokens": 3,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 35.2,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Allgemeinwissen ohne Tool",
+      "category": "edge-no-tool",
+      "mode": "default"
+    },
+    {
+      "content": "Klimasensor Wohnzimmer: 21 Grad, Klimasensor Schlafzimmer: 19 Grad, Bewegungsmelder Küche: 17 Grad.",
+      "thinking": "",
+      "ttft_ms": 667,
+      "total_ms": 667,
+      "prompt_tokens": 679,
+      "completion_tokens": 38,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 56.9,
+      "has_tool_calls": false,
+      "tool_calls_valid": true,
+      "tool_calls": [],
+      "thinking_budget": "default",
+      "conversation": "Edge: Format-Compliance",
+      "category": "edge-format",
+      "mode": "default"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 885,
+      "total_ms": 885,
+      "prompt_tokens": 1160,
+      "completion_tokens": 35,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 39.5,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOn",
+          "arguments": {
+            "name": "Deckenlampe Wohnzimmer",
+            "area": "Wohnzimmer"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Licht einschalten",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 711,
+      "total_ms": 711,
+      "prompt_tokens": 1161,
+      "completion_tokens": 41,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.6,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassLightSet",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro",
+            "brightness": "100"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Licht heller machen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 776,
+      "total_ms": 776,
+      "prompt_tokens": 1167,
+      "completion_tokens": 45,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 57.9,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassClimateSetTemperature",
+          "arguments": {
+            "name": "Heizung Schlafzimmer",
+            "area": "Schlafzimmer",
+            "temperature": "20 Grad"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Heizung einstellen",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    },
+    {
+      "content": "",
+      "thinking": "",
+      "ttft_ms": 598,
+      "total_ms": 598,
+      "prompt_tokens": 1164,
+      "completion_tokens": 33,
+      "thinking_tokens": 0,
+      "tokens_per_sec": 55.1,
+      "has_tool_calls": true,
+      "tool_calls_valid": true,
+      "tool_calls": [
+        {
+          "name": "HassTurnOff",
+          "arguments": {
+            "name": "Stehlampe",
+            "area": "Büro"
+          },
+          "valid_json": true
+        }
+      ],
+      "thinking_budget": "default",
+      "conversation": "Tool-Call: Zwei Geräte gleichzeitig",
+      "category": "tool-call-validate",
+      "mode": "with_tools"
+    }
+  ]
+}

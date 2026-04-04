@@ -227,7 +227,7 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
                         state_str = state_str + ";" + ";".join(extra)
 
                 area_str = f" ({area})" if area else ""
-                entry = f"{state.entity_id} '{name}'{area_str} = {state_str}"
+                entry = f"{name}{area_str}: {state_str}"
                 lines.append(entry)
 
             _LOGGER.debug("Exposed entities context: %d entities", len(lines))
@@ -560,6 +560,20 @@ class HomeLLMConversationEntity(conversation.ConversationEntity):
             tool_name = func.get("name", "")
             raw_args = func.get("arguments", "{}")
             tool_args = json.loads(raw_args) if isinstance(raw_args, str) else raw_args
+
+            # Clean up name field — some models return "entity_id 'friendly_name'" or quoted names
+            if "name" in tool_args and isinstance(tool_args["name"], str):
+                name = tool_args["name"]
+                # Strip entity_id prefix: "light.ambiente 'Ambiente'" → "Ambiente"
+                if "'" in name:
+                    import re
+                    match = re.search(r"'([^']+)'", name)
+                    if match:
+                        name = match.group(1)
+                # Strip quotes
+                name = name.strip("'\"")
+                tool_args["name"] = name
+
         except (json.JSONDecodeError, KeyError) as err:
             _TOOL_LOGGER.warning(
                 "TOOL_CALL_FAIL user=%s tool=? args=? error=bad format: %s",

@@ -1,5 +1,37 @@
 # Entscheidungen: GPU-Server
 
+## 2026-04-04 — Ministral-3 3B statt Qwen 3.5 9B Opus-Distilled
+
+**Kontext:** Benchmark-Marathon ueber 19 Modelle (Dense + Thinking, 7-9B und kleiner).
+Qwen3.5-9B Opus-Distilled war 2629ms pro Request. Ziel: schnelleres HA-Modell mit
+zuverlaessigem Tool-Calling.
+
+**Entscheidung:** Ministral-3 3B Instruct (Q4_K_M, 2 GB) als neues HA-Primary-Modell.
+- 9x schneller: 300ms vs 2629ms
+- 60% weniger VRAM: 2 GB vs 5.3 GB
+- 100% Tool-Calls (mit Prompt-Anpassung: "Nutze IMMER die verfuegbaren Tools")
+- parallel=2 moeglich mit f16 KV-Cache (6.2 GB total mit Embedding)
+- Kein Thinking-Overhead (Ministral hat kein Thinking)
+
+**Setup:** parallel=2, f16 KV-Cache, ctx 32768 (2x16k), --no-mmap, -b 4096
+
+**System-Prompt angepasst:** "Nutze IMMER die verfuegbaren Tools um Geraete zu steuern."
+hinzugefuegt — ohne diesen Hinweis antwortet Ministral mit Text statt Tool-Calls.
+
+**Thinking-Budget:** DEFAULT_THINKING_BUDGET 256→0 (Ministral hat kein Thinking)
+
+**Alternativen getestet:**
+- Qwen3-8B: 448ms, 100% Tools, aber 5 GB VRAM und Thinking-Budget nicht steuerbar
+- Qwen3-4B: 238ms, nur 1/4 Tools ohne Thinking (braucht Thinking fuer Tool-Calls)
+- Qwen3.5-9B/4B vanilla: 0% Tool-Calls (kein Tool-Calling ohne Opus-Distilling)
+- DeepSeek-R1-0528-Qwen3-8B: 5068ms, zu langsam
+- Ministral-8B-2410 (alt): 0% Tools (kein Tool-Template im GGUF)
+- Ministral-3 8B: 1/4 Tools, fragt zu oft nach
+- Alle anderen Dense (Hermes, Dolphin, Granite, Llama, Mistral-7B): 0% Tools (fehlendes Template)
+
+**Qwen-Fallback aus OpenClaw entfernt** — lokales LLM als OpenClaw-Fallback ist nicht sinnvoll,
+MiniMax M2.7 ist zuverlässiger. Lokales LLM fokussiert sich auf HA-Steuerung.
+
 ## 2026-03-30 — Qwen 3.5 9B Opus-Distilled v2 statt Original
 
 **Kontext:** Modellwahl fuer lokalen Chat-Server. Original Qwen 3.5 9B vs.

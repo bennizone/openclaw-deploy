@@ -16,7 +16,7 @@ DEFAULT_EMBED_URL = "http://localhost:8081"
 DEFAULT_RETENTION_MINUTES = 15
 DEFAULT_TOP_K = 3
 DEFAULT_LLM_URL = "http://localhost:8080"
-DEFAULT_LLM_MODEL = "Qwen3.5-9B-Opus-Distilled-v2-Q4_K_M"
+DEFAULT_LLM_MODEL = "Ministral-3-3B-Instruct-Q4_K_M"
 
 EMBEDDING_MODEL = "bge-m3"
 EMBEDDING_DIM = 1024
@@ -36,7 +36,7 @@ CONF_ENABLE_CONTROL = "enable_control"
 DEFAULT_ENABLE_CONTROL = True
 
 CONF_THINKING_BUDGET = "thinking_budget"
-DEFAULT_THINKING_BUDGET = 256
+DEFAULT_THINKING_BUDGET = 0
 
 EXTRA_ATTRIBUTES_TO_EXPOSE = [
     "brightness", "temperature", "rgb_color", "color_temp",

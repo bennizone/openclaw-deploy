@@ -77,6 +77,32 @@ function extractLastUserText(messages: Message[]): string | null {
   return null;
 }
 
+/**
+ * Combines the last N user messages for better recall context.
+ * When the user says "tell me more" or references something from earlier,
+ * including previous turns helps the embedding match relevant memories.
+ */
+function extractRecentUserContext(messages: Message[], maxTurns: number = 3): string | null {
+  const userTexts: string[] = [];
+  for (let i = messages.length - 1; i >= 0 && userTexts.length < maxTurns; i--) {
+    const msg = messages[i];
+    if (msg.role !== 'user') continue;
+
+    let text = '';
+    if (typeof msg.content === 'string') {
+      text = msg.content;
+    } else if (Array.isArray(msg.content)) {
+      text = msg.content
+        .filter((b: ContentBlock) => b.type === 'text')
+        .map((b: ContentBlock) => b.text ?? '')
+        .join(' ')
+        .trim();
+    }
+    if (text) userTexts.unshift(text);
+  }
+  return userTexts.length > 0 ? userTexts.join(' ') : null;
+}
+
 function getWorkspacePath(agentId: string): string {
   const home = process.env.HOME ?? '/home/openclaw';
   return join(home, '.openclaw', `workspace-${agentId}`);
@@ -199,17 +225,14 @@ export default {
       const collections = getAgentCollections(agentId);
       if (!collections.length) return;
 
-      // Get user text — event.prompt has the current input
-      let userText: string | null = null;
+      // Build search query from recent context (last 3 user turns)
+      // This helps when the user references earlier topics ("tell me more", "was war das nochmal?")
+      const messages = (ev.messages ?? []) as Message[];
+      let userText = extractRecentUserContext(messages, 3);
 
-      if (typeof ev.prompt === 'string' && ev.prompt.length > 0) {
+      // Fallback: event.prompt (e.g. for non-chat APIs)
+      if (!userText && typeof ev.prompt === 'string' && ev.prompt.length > 0) {
         userText = ev.prompt;
-      }
-
-      // Fallback: check messages array
-      if (!userText) {
-        const messages = (ev.messages ?? []) as Message[];
-        userText = extractLastUserText(messages);
       }
 
       if (!userText || userText.length < 3) return;
